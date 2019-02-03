@@ -1,0 +1,22 @@
+{
+  "name": "endorphin",
+  "version": "1.0.0",
+  "description": "Component-based UI rendering library",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/endorphinjs/endorphin.git"
+  },
+  "keywords": [],
+  "author": "Sergey Chikuyonok <serge.che@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/endorphinjs/endorphin/issues"
+  },
+  "homepage": "https://github.com/endorphinjs/endorphin#readme"
+}
