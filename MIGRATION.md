@@ -113,6 +113,6 @@ export function onClick({ props, setState }) {
 import { on, emit } from 'endorphin';
 
 export function init(component) {
-	component.on('play', () => emit(component, 'play-init'));
+	on(component, 'play', () => emit(component, 'play-init'));
 }
 ```
