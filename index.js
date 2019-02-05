@@ -1,5 +1,7 @@
 import { createComponent, mountComponent } from '@endorphinjs/template-runtime';
 
+export * from '@endorphinjs/template-runtime';
+
 /**
  * @typedef {import('@endorphinjs/template-runtime/types').ComponentDefinition} ComponentDefinition
  * @typedef {import('@endorphinjs/template-runtime/types').Component} Component
