@@ -116,3 +116,35 @@ export function init(component) {
 	on(component, 'play', () => emit(component, 'play-init'));
 }
 ```
+
+## Стили и скрипты в шаблонах
+
+В шаблона стили и скрипты можно подключать как внешними ресурсами:
+
+```xml
+<template>
+	<p>Hello world</p>
+</template>
+<script src="my-component.js" />
+<link rel="stylesheet" href="my-component.scss" />
+```
+
+...так и писать инлайн:
+
+```xml
+<template>
+	<p>Hello world</p>
+</template>
+<script>
+export function init() {
+	console.log('inited');
+}
+</script>
+<style type="scss">
+p {
+	font-size: 20px;
+}
+</style>
+```
+
+В случае, если скрипты и стили отличаются от JS и CSS, в тэгах `<script>` и `<style>` можно указать атрибут с MIME-типом кода, который там используется: этот тип будет учтён при компиляции.
