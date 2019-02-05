@@ -5,8 +5,8 @@
   "main": "index.js",
   "module": "index.js",
   "dependencies": {
-    "@endorphinjs/template-compiler": "^0.1.0",
-    "@endorphinjs/template-runtime": "^0.1.0"
+    "@endorphinjs/template-compiler": "^0.1.1",
+    "@endorphinjs/template-runtime": "^0.1.1"
   },
   "devDependencies": {},
   "repository": {
