@@ -18,7 +18,7 @@ export * from '@endorphinjs/template-runtime';
 export default function endorphin(name, definition, target, initialProps) {
 	const component = createComponent(name, definition, target);
 	if (target) {
-		target.appendChild(target);
+		target.appendChild(component);
 	}
 	mountComponent(component, initialProps);
 	return component;
