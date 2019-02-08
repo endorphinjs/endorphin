@@ -5,7 +5,7 @@
   "main": "index.js",
   "module": "index.js",
   "dependencies": {
-    "@endorphinjs/css-module": "^0.2.0",
+    "@endorphinjs/css-module": "^0.2.1",
     "@endorphinjs/template-compiler": "^0.1.1",
     "@endorphinjs/template-runtime": "^0.1.2",
     "merge-source-map": "^1.1.0",
