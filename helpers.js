@@ -26,10 +26,10 @@ export function emit(elem, type, detail) {
 /**
  * Subscribes on given `type` event on `elem` element
  * @template {Element} T
- * @param {T} elem 
- * @param {String} type 
- * @param {Function} callback 
- * @param {Object} options 
+ * @param {T} elem
+ * @param {String} type
+ * @param {Function} callback
+ * @param {Object} options
  * @returns {T}
  */
 export function on(elem, type, callback, options) {
@@ -49,4 +49,15 @@ export function on(elem, type, callback, options) {
 export function off(elem, name, callback, options) {
 	elem.removeEventListener(name, callback, options);
 	return elem;
+}
+
+/**
+ * Updates state of given component
+ * @param {Element} component
+ * @param {Object} value
+ */
+export function setState(component, value) {
+	if (value != null) {
+		component.setState(value);
+	}
 }
