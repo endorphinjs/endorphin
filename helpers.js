@@ -61,3 +61,16 @@ export function setState(component, value) {
 		component.setState(value);
 	}
 }
+
+/**
+ * Updates state of given component
+ * @param {Element} component
+ * @param {Object} value
+ */
+export function setStore(component, value) {
+	if (!component.store) {
+		console.warn(`${component.nodeName} doesn’t have attached store`);
+	} else if (value != null) {
+		component.store.set(value);
+	}
+}
