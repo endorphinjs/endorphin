@@ -8,19 +8,31 @@ export * from '@endorphinjs/template-runtime';
  */
 
 /**
- * Creates Endorphin component and mounts it into given `target` container
+ * @typedef {Object} ComponentOptions
+ * @property {HTMLElement} [target] Parent element where created component should be mounted
+ * @property {Object} [props] Initial component props
+ * @property {import('@endorphinjs/template-runtime').Store} [store] Store for component
+ */
+
+/**
+ * Creates Endorphin component and mounts it into given `options.target` container
  * @param {String} name Name of DOM element for created component
  * @param {ComponentDefinition} definition Component definition
- * @param {HTMLElement} [target] Where to mount created component
- * @param {Object} [initialProps] Initial component properties
+ * @param {ComponentOptions} [options] Options for component mount
  * @returns {Component}
  */
-export default function endorphin(name, definition, target, initialProps) {
-	const component = createComponent(name, definition, target);
-	if (target) {
-		target.appendChild(component);
+export default function endorphin(name, definition, options = {}) {
+	const component = createComponent(name, definition, options.target);
+
+	if (options.store) {
+		component.store = options.store;
 	}
-	mountComponent(component, initialProps);
+
+	if (options.target) {
+		options.target.appendChild(component);
+	}
+
+	mountComponent(component, options.props);
 	return component;
 }
 
