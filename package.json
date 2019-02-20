@@ -6,7 +6,7 @@
   "module": "index.js",
   "dependencies": {
     "@endorphinjs/css-module": "^0.2.1",
-    "@endorphinjs/template-compiler": "0.1.7",
+    "@endorphinjs/template-compiler": "0.1.8",
     "@endorphinjs/template-runtime": "0.1.8",
     "source-map": "^0.7.3"
   },
