@@ -81,5 +81,5 @@ export function setStore(component, value) {
  * @param {string} name
  */
 export function getSlot(component, name) {
-	return component.componentModel.input.slots[name];
+	return component.componentModel && component.componentModel.input.slots[name];
 }
