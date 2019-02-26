@@ -74,3 +74,12 @@ export function setStore(component, value) {
 		component.store.set(value);
 	}
 }
+
+/**
+ * Returns slot container with given name
+ * @param {Component} component
+ * @param {string} name
+ */
+export function getSlot(component, name) {
+	return component.componentModel.input.slots[name];
+}
