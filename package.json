@@ -1,6 +1,6 @@
 {
   "name": "endorphin",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "description": "Component-based UI rendering library",
   "main": "index.js",
   "module": "index.js",
