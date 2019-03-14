@@ -7,7 +7,7 @@
   "dependencies": {
     "@endorphinjs/css-module": "^0.2.3",
     "@endorphinjs/template-compiler": "0.1.18",
-    "@endorphinjs/template-runtime": "0.1.14",
+    "@endorphinjs/template-runtime": "0.1.15",
     "source-map": "^0.7.3"
   },
   "devDependencies": {},
