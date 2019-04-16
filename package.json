@@ -5,9 +5,9 @@
   "main": "index.js",
   "module": "index.js",
   "dependencies": {
-    "@endorphinjs/css-module": "^0.2.4",
-    "@endorphinjs/template-compiler": "0.1.25",
-    "@endorphinjs/template-runtime": "0.1.25",
+    "@endorphinjs/css-module": "^0.2.5",
+    "@endorphinjs/template-compiler": "0.1.26",
+    "@endorphinjs/template-runtime": "0.1.26",
     "source-map": "^0.7.3"
   },
   "devDependencies": {},
