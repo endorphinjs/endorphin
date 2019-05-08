@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Animation sample</title>
+	<style>
+		.block {
+			padding: 20px;
+			background: red;
+			color: #ffffff;
+			font-size: 30px;
+		}
+
+		sub-component {
+			display: block;
+			padding: 20px;
+			background: blue;
+			color: #ffffff;
+			font-size: 30px;
+		}
+
+		sub-component sub-component {
+			border: 2px solid yellow;
+		}
+
+		@keyframes show {
+			from {
+				transform: scale(0);
+				opacity: 0;
+			}
+		}
+
+		@keyframes hide {
+			to {
+				transform: scale(0);
+				opacity: 0;
+			}
+		}
+	</style>
+</head>
+<body>
+<script type="module">
+import * as Animate from './animate2.js';
+import { createComponent, mountComponent } from '../../../dist/runtime.es.js';
+
+const component = createComponent('animation-sample', Animate);
+document.body.appendChild(component);
+mountComponent(component);
+</script>
+</body>
+</html>

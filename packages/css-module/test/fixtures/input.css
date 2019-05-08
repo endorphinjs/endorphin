@@ -1,0 +1,134 @@
+:host {
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+:host([size=small]) {
+    width: 15px;
+    height: 15px;
+}
+
+:host-context(.foo) {
+    width: 40px;
+}
+
+:host-context(.foo > .bar) {
+    width: 50px;
+}
+
+::slotted(div) {
+    color: red;
+}
+
+::slotted(foo bar) {
+    color: blue;
+}
+
+* {
+    font-size: 12px;
+}
+
+a.foo.bar#baz {
+    margin: 10px;
+}
+
+a .foo .bar #baz {
+    position: relative;
+}
+
+main:not(.selected) {
+	padding: 10px;
+}
+
+.icon,
+.label {
+    position: relative;
+    animation: bounce 0.5s;
+    animation-name: bounce;
+}
+
+:host([size=small]) .icon {
+    position: relative;
+}
+
+a {
+    color: #ffcc00;
+}
+
+[foo=bar] {
+    color: #000000;
+}
+
+span>a {
+    font-weight: bold;
+}
+
+::global(p) {
+	color: red;
+}
+
+::global(div) .foo {
+	padding: 10px;
+}
+
+::local(.item) {
+	font-size: 12px;
+}
+
+::local(.foo,.bar) {
+	font-size: 20px;
+}
+
+@media global {
+	.foo-global, .bar-global {
+		padding: 10px;
+	}
+
+	p.global {
+		color: #000;
+	}
+
+	@keyframes pop-in {
+		from {
+			transform: scale(0);
+		}
+	}
+}
+
+@media local {
+	.foo-local, .bar-local {
+		padding: 10px;
+	}
+
+	p.local {
+		color: #000;
+	}
+}
+
+/* Result of combined SCSS import */
+@media local and (-webkit-min-device-pixel-ratio: 2), local and (min-resolution:192dpi) {
+	.foo { padding: 10px; }
+}
+
+@keyframes bounce {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@-webkit-keyframes bounce {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(100%);
+    }
+}

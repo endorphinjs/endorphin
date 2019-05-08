@@ -1,0 +1,8 @@
+<template>
+    <main>
+        <e:if test={#foo === 'bar'}>
+            <e:attribute style={#css} />
+            <e:add-class e:if={#customBg && #customBg !== 'default' && !@pro-mode}>__bg __{#customBg}</e:add-class>
+        </e:if>
+    </main>
+</template>

@@ -1,0 +1,120 @@
+import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, addDisposeCallback, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, updateComponent, unmountComponent, finalizeAttributes, finalizeEvents, animateIn, animateOut, finalizeRefs } from "endorphin";
+import * as InnerComponent from "./inner-component.html";
+
+export const partials = {
+	test: {
+		body: partialTest$0,
+		defaults: {}
+	}
+};
+
+function attrValue$0(host) {
+	return "left: " + (host.props.left) + "px";
+}
+
+function attrValue$1(host) {
+	return "left: " + (host.props.left) + "px";
+}
+
+function ifBody$1(host, injector) {
+	insert(injector, text("\n            bar\n        "));
+}
+
+function ifEntry$1(host) {
+	if (host.props.foo) {
+		return ifBody$1;
+	}
+}
+
+function html$0(host) {
+	return host.props.html;
+}
+
+function forSelect$0(host) {
+	return host.props.items;
+}
+
+function forContent$0(host, injector, scope) {
+	scope.partial$0 = mountPartial(host, injector, host.props['partial:test'] || partials.test, {});
+	addDisposeCallback(host, forContent$0Unmount);
+	return forContent$0Update;
+}
+
+function forContent$0Update(host, injector, scope) {
+	updatePartial(scope.partial$0, host.props['partial:test'] || partials.test, {});
+}
+
+function forContent$0Unmount(scope) {
+	scope.partial$0 = unmountPartial(scope.partial$0);
+}
+
+function animateOut$0(host, scope) {
+	scope.if$1 = unmountBlock(scope.if$1);
+	scope.html$0 = unmountInnerHTML(scope.html$0);
+	scope.for$0 = unmountIterator(scope.for$0);
+	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
+	
+}
+
+function ifBody$0(host, injector, scope) {
+	const div$0 = scope.div$0 = insert(injector, elem("div"));
+	const inj$1 = scope.inj$1 = createInjector(div$0);
+	setAttribute(inj$1, "class", "overlay");
+	setAttribute(inj$1, "style", attrValue$0(host, scope));
+	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
+	scope.html$0 = mountInnerHTML(host, inj$1, html$0);
+	scope.for$0 = mountIterator(host, inj$1, forSelect$0, forContent$0);
+	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host));
+	mountComponent(innerComponent$0);
+	finalizeAttributes(inj$1);
+	finalizeEvents(inj$1);
+	animateIn(div$0, "show");
+	addDisposeCallback(host, ifBody$0Unmount);
+	return ifBody$0Update;
+}
+
+function ifBody$0Update(host, injector, scope) {
+	const { inj$1 } = scope;
+	setAttribute(inj$1, "class", "overlay");
+	setAttribute(inj$1, "style", attrValue$1(host, scope));
+	updateBlock(scope.if$1);
+	updateInnerHTML(scope.html$0);
+	updateIterator(scope.for$0);
+	updateComponent(scope.innerComponent$0);
+	finalizeAttributes(inj$1);
+	finalizeEvents(inj$1);
+}
+
+function ifBody$0Unmount(scope) {
+	animateOut(scope.div$0, "hide", scope, animateOut$0);
+	scope.inj$1 = scope.if$1 = scope.html$0 = scope.for$0 = scope.innerComponent$0 = null;
+}
+
+function ifEntry$0(host) {
+	if (host.props.enabled) {
+		return ifBody$0;
+	}
+}
+
+export default function template$0(host, scope) {
+	const target$0 = host.componentView;
+	const inj$0 = createInjector(target$0);
+	insert(inj$0, elemWithText("p", "test"));
+	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
+	finalizeRefs(host);
+	addDisposeCallback(host, template$0Unmount);
+	return template$0Update;
+}
+
+function template$0Update(host, scope) {
+	updateBlock(scope.if$0);
+	finalizeRefs(host);
+}
+
+function template$0Unmount(scope) {
+	scope.if$0 = unmountBlock(scope.if$0);
+}
+
+function partialTest$0(host, injector) {
+	insert(injector, elemWithText("p", "partial"));
+}

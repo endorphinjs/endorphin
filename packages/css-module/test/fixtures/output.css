@@ -1,0 +1,130 @@
+[abc123-host] {
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%
+}
+
+[abc123-host][size=small] {
+    width: 15px;
+    height: 15px
+}
+
+.foo [abc123-host] {
+    width: 40px
+}
+
+.foo > .bar [abc123-host] {
+    width: 50px
+}
+
+slot[slotted][abc123] > div {
+    color: red
+}
+
+slot[slotted][abc123] > foo bar {
+    color: blue
+}
+
+*[abc123] {
+    font-size: 12px
+}
+
+a[abc123].foo.bar#baz {
+    margin: 10px
+}
+
+a[abc123] .foo .bar [abc123]#baz {
+    position: relative
+}
+
+main[abc123]:not(.selected) {
+    padding: 10px
+}
+
+[abc123].icon, [abc123].label {
+    position: relative;
+    animation: bounce-abc123 0.5s;
+    animation-name: bounce-abc123
+}
+
+[abc123-host][size=small] [abc123].icon {
+    position: relative
+}
+
+a[abc123] {
+    color: #ffcc00
+}
+
+[abc123][foo=bar] {
+    color: #000000
+}
+
+span[abc123]>a[abc123] {
+    font-weight: bold
+}
+
+p {
+    color: red
+}
+
+div [abc123].foo {
+    padding: 10px
+}
+
+[abc123-host] .item {
+    font-size: 12px
+}
+
+[abc123-host] .foo, .bar {
+    font-size: 20px
+}
+
+.foo-global, .bar-global {
+    padding: 10px
+}
+
+p.global {
+    color: #000
+}
+
+@keyframes pop-in {
+    from {
+        transform: scale(0)
+    }
+}
+
+[abc123-host] .foo-local, [abc123-host] .bar-local {
+    padding: 10px
+}
+
+[abc123-host] p.local {
+    color: #000
+}
+
+@media  (-webkit-min-device-pixel-ratio:2),  (min-resolution:192dpi) {
+    [abc123-host] .foo {
+        padding: 10px
+    }
+}
+
+@keyframes bounce-abc123 {
+    from {
+        transform: translateX(0)
+    }
+
+    to {
+        transform: translateX(100%)
+    }
+}
+
+@-webkit-keyframes bounce-abc123 {
+    from {
+        transform: translateX(0)
+    }
+
+    to {
+        transform: translateX(100%)
+    }
+}

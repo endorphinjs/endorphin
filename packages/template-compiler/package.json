@@ -1,0 +1,55 @@
+{
+  "name": "@endorphinjs/template-compiler",
+  "description": "EndorphinJS Template compiler",
+  "version": "0.3.0",
+  "main": "./dist/template-compiler.cjs.js",
+  "module": "./dist/template-compiler.es.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "mocha",
+    "lint": "tslint ./src/**/*.ts",
+    "build": "rollup -c && npm run types",
+    "types": "tsc -p ./tsconfig.declaration.json",
+    "clean": "rm -rf ./dist",
+    "prepare": "npm run lint && npm test && npm run clean && npm run build"
+  },
+  "keywords": [
+    "template",
+    "front-end",
+    "endorphin",
+    "endorphinjs"
+  ],
+  "author": "Sergey Chikuyonok <serge.che@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^10.12.12",
+    "eslint": "^5.16.0",
+    "mocha": "^6.1.4",
+    "rollup": "^1.11.3",
+    "rollup-plugin-node-resolve": "^4.2.3",
+    "rollup-plugin-typescript": "^1.0.1",
+    "ts-node": "^8.1.0",
+    "tslint": "^5.16.0",
+    "typescript": "^3.4.5"
+  },
+  "dependencies": {
+    "@endorphinjs/template-parser": "^0.3.0",
+    "source-map": "^0.7.3"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/endorphinjs/template-compiler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/endorphinjs/template-compiler/issues"
+  },
+  "homepage": "https://github.com/endorphinjs/template-compiler#readme",
+  "mocha": {
+    "require": "ts-node/register",
+    "spec": "./test/*.ts"
+  }
+}

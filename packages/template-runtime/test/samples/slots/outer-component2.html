@@ -1,0 +1,11 @@
+<link rel="import" href="./inner-component.js" />
+
+<template>
+	<header>{ header }</header>
+	<inner-component>
+		<div>{ content }</div>
+		<e:if test={enabled}>
+			<p>{ content2 }</p>
+		</e:if>
+	</inner-component>
+</template>

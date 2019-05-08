@@ -1,0 +1,12 @@
+<template>
+    <div>
+        <e:choose>
+            <e:when test={item.link}>
+                <e:self item={link}/>
+            </e:when>
+            <e:otherwise>
+                <div>Content</div>
+            </e:otherwise>
+        </e:choose>
+    </div>
+</template>

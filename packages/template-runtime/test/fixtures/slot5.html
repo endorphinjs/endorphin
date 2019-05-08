@@ -1,0 +1,19 @@
+<h1>Hello world</h1>
+<sub-component id="foo" show-footer="">
+	<div class="container">
+		<slot name="header" slotted="">
+			<p slot="header">bar</p>
+		</slot>
+		<p>content</p>
+		<slot slotted="">
+			<div>foo</div>
+			<p>bar</p>
+			<div>item</div>
+			<div>item</div>
+		</slot>
+		<slot name="footer" slotted="">
+			<div slot="footer">item footer</div>
+			<div slot="footer">item footer</div>
+		</slot>
+	</div>
+</sub-component>

@@ -1,0 +1,13 @@
+<h1>Hello world</h1>
+<sub-component id="foo">
+	<div class="container">
+		<slot name="header">
+			<h2>Default header</h2>
+		</slot>
+		<p>content</p>
+		<slot slotted="">
+			<div>foo</div>
+			<p>bar</p>
+		</slot>
+	</div>
+</sub-component>

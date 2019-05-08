@@ -1,0 +1,16 @@
+<!-- Sample template with basic iteration -->
+<h1>Hello world</h1>
+
+<t-if test="items">
+	<p>will iterate</p>
+	<ul>
+		<t-for-each select="items" key="id">
+			<li id="{id}">
+				item
+				<t-if test="$value.marked">
+					<strong>*</strong>
+				</t-if>
+			</li>
+		</t-for-each>
+	</ul>
+</t-if>

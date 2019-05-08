@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const compile = require('@endorphinjs/template-compiler').default;
+
+const filePath = process.argv[2];
+const runtimeBasePath = path.dirname(__dirname);
+
+if (!filePath) {
+	console.log('Usage: compile <filePath>\n\nCompiles given Endorphin template and stores it as .js file');
+	process.exit(0);
+}
+
+const absPath = path.resolve(process.cwd(), filePath);
+const destPath = absPath.replace(/\.\w+$/, '.js');
+const content = fs.readFileSync(absPath, 'utf8');
+const baseModulePath = path.relative(path.dirname(absPath), runtimeBasePath);
+const result = compile(content, absPath, {
+	module: path.join(baseModulePath, 'dist/runtime.es.js'),
+	warn: msg => console.warn(msg)
+});
+fs.writeFileSync(destPath,  result.code);
+console.log('Done! Saved result in ', destPath);

@@ -1,0 +1,10 @@
+<link rel="import" href="./unmount-beacon.js" />
+<link rel="import" href="./unmount-slot-inner.js" />
+
+<template>
+	<unmount-slot-inner inner={inner}>
+		<e:if test={outer}>
+			<unmount-beacon slot="footer" id="outer"/>
+		</e:if>
+	</unmount-slot-inner>
+</template>

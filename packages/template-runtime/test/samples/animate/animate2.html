@@ -1,0 +1,26 @@
+<link rel="import" href="./sub-component.js" />
+
+<template>
+	<h1>Animation sample</h1>
+	<button on:click={toggle}>Toggle div</button>
+	<button on:click={toggle2}>Toggle component</button>
+	<div class="block" animate:in="show 1s ease-out" animate:out="hide 0.5s ease-in" e:if={#active}>
+		Block!
+	</div>
+
+	<sub-component animate:in="show 1s ease-out" animate:out="hide 0.5s ease-in" e:if={#active2}>
+		<sub-component>
+			My content
+		</sub-component>
+	</sub-component>
+</template>
+
+<script>
+export function toggle(component) {
+	component.setState({ active: !component.state.active });
+}
+
+export function toggle2(component) {
+	component.setState({ active2: !component.state.active2 });
+}
+</script>

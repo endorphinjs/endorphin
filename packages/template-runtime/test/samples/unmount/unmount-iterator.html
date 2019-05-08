@@ -1,0 +1,10 @@
+<link rel="import" href="./unmount-beacon.js" />
+
+<template>
+	<p>Unmount iterator</p>
+	<e:for-each select={items}>
+		<div>
+			<unmount-beacon id={@value}/>
+		</div>
+	</e:for-each>
+</template>

@@ -1,0 +1,11 @@
+<link rel="import" href="sub-component1.html" />
+<link rel="import" href="sub-component2.html" />
+<template>
+	<sub-component1></sub-component1>
+	<e:if test={enabled1}>
+		<sub-component2></sub-component2>
+		<e:if test={enabled2}>
+			<sub-component2></sub-component2>
+		</e:if>
+	</e:if>
+</template>

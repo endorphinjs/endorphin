@@ -1,0 +1,371 @@
+{
+  "type": "ENDProgram",
+  "body": [
+    {
+      "type": "ENDTemplate",
+      "body": [
+        {
+          "type": "ENDElement",
+          "name": {
+            "type": "Identifier",
+            "name": "h1",
+            "start": 16,
+            "end": 18,
+            "loc": {
+              "start": {
+                "offset": 16,
+                "line": 2,
+                "column": 5
+              },
+              "end": {
+                "offset": 18,
+                "line": 2,
+                "column": 7
+              },
+              "source": "samples/template1.html"
+            }
+          },
+          "component": false,
+          "attributes": [],
+          "directives": [],
+          "body": [
+            {
+              "type": "Literal",
+              "value": "Hello world",
+              "start": 19,
+              "end": 30,
+              "loc": {
+                "start": {
+                  "offset": 19,
+                  "line": 2,
+                  "column": 8
+                },
+                "end": {
+                  "offset": 30,
+                  "line": 2,
+                  "column": 19
+                },
+                "source": "samples/template1.html"
+              }
+            }
+          ],
+          "start": 15,
+          "end": 35,
+          "loc": {
+            "start": {
+              "offset": 15,
+              "line": 2,
+              "column": 4
+            },
+            "end": {
+              "offset": 35,
+              "line": 2,
+              "column": 24
+            },
+            "source": "samples/template1.html"
+          }
+        },
+        {
+          "type": "ENDIfStatement",
+          "test": {
+            "type": "Program",
+            "start": 52,
+            "end": 60,
+            "loc": {
+              "start": {
+                "line": 3,
+                "column": 16
+              },
+              "end": {
+                "line": 3,
+                "column": 24
+              },
+              "source": "samples/template1.html"
+            },
+            "body": [
+              {
+                "type": "ExpressionStatement",
+                "start": 52,
+                "end": 60,
+                "loc": {
+                  "start": {
+                    "line": 7,
+                    "column": 16
+                  },
+                  "end": {
+                    "line": 7,
+                    "column": 24
+                  },
+                  "source": "samples/template1.html"
+                },
+                "expression": {
+                  "type": "BinaryExpression",
+                  "start": 52,
+                  "end": 60,
+                  "loc": {
+                    "start": {
+                      "line": 7,
+                      "column": 16
+                    },
+                    "end": {
+                      "line": 7,
+                      "column": 24
+                    },
+                    "source": "samples/template1.html"
+                  },
+                  "left": {
+                    "type": "Identifier",
+                    "start": 52,
+                    "end": 55,
+                    "loc": {
+                      "start": {
+                        "line": 7,
+                        "column": 16
+                      },
+                      "end": {
+                        "line": 3,
+                        "column": 19
+                      },
+                      "source": "samples/template1.html"
+                    },
+                    "name": "foo",
+                    "context": "property"
+                  },
+                  "operator": "==",
+                  "right": {
+                    "type": "Literal",
+                    "start": 59,
+                    "end": 60,
+                    "loc": {
+                      "start": {
+                        "line": 3,
+                        "column": 23
+                      },
+                      "end": {
+                        "line": 7,
+                        "column": 24
+                      },
+                      "source": "samples/template1.html"
+                    },
+                    "value": 1,
+                    "raw": "1"
+                  }
+                }
+              }
+            ],
+            "sourceType": "module"
+          },
+          "consequent": [
+            {
+              "type": "ENDElement",
+              "name": {
+                "type": "Identifier",
+                "name": "div",
+                "start": 72,
+                "end": 75,
+                "loc": {
+                  "start": {
+                    "offset": 72,
+                    "line": 4,
+                    "column": 9
+                  },
+                  "end": {
+                    "offset": 75,
+                    "line": 4,
+                    "column": 12
+                  },
+                  "source": "samples/template1.html"
+                }
+              },
+              "component": false,
+              "attributes": [
+                {
+                  "type": "ENDAttribute",
+                  "name": {
+                    "type": "Identifier",
+                    "name": "class",
+                    "start": 76,
+                    "end": 81,
+                    "loc": {
+                      "start": {
+                        "offset": 76,
+                        "line": 4,
+                        "column": 13
+                      },
+                      "end": {
+                        "offset": 81,
+                        "line": 4,
+                        "column": 18
+                      },
+                      "source": "samples/template1.html"
+                    }
+                  },
+                  "value": {
+                    "type": "Literal",
+                    "value": "sample",
+                    "raw": "\"sample\"",
+                    "start": 82,
+                    "end": 90,
+                    "loc": {
+                      "start": {
+                        "offset": 82,
+                        "line": 4,
+                        "column": 19
+                      },
+                      "end": {
+                        "offset": 90,
+                        "line": 4,
+                        "column": 27
+                      },
+                      "source": "samples/template1.html"
+                    }
+                  },
+                  "start": 81,
+                  "end": 90,
+                  "loc": {
+                    "start": {
+                      "offset": 81,
+                      "line": 4,
+                      "column": 18
+                    },
+                    "end": {
+                      "offset": 90,
+                      "line": 4,
+                      "column": 27
+                    },
+                    "source": "samples/template1.html"
+                  }
+                }
+              ],
+              "directives": [],
+              "body": [
+                {
+                  "type": "Literal",
+                  "value": "Foo is ",
+                  "start": 91,
+                  "end": 98,
+                  "loc": {
+                    "start": {
+                      "offset": 91,
+                      "line": 4,
+                      "column": 28
+                    },
+                    "end": {
+                      "offset": 98,
+                      "line": 4,
+                      "column": 35
+                    },
+                    "source": "samples/template1.html"
+                  }
+                },
+                {
+                  "type": "Program",
+                  "start": 99,
+                  "end": 104,
+                  "loc": {
+                    "start": {
+                      "line": 4,
+                      "column": 36
+                    },
+                    "end": {
+                      "line": 4,
+                      "column": 41
+                    },
+                    "source": "samples/template1.html"
+                  },
+                  "body": [
+                    {
+                      "type": "ExpressionStatement",
+                      "start": 100,
+                      "end": 103,
+                      "loc": {
+                        "start": {
+                          "line": 7,
+                          "column": 37
+                        },
+                        "end": {
+                          "line": 7,
+                          "column": 40
+                        },
+                        "source": "samples/template1.html"
+                      },
+                      "expression": {
+                        "type": "Identifier",
+                        "start": 100,
+                        "end": 103,
+                        "loc": {
+                          "start": {
+                            "line": 7,
+                            "column": 37
+                          },
+                          "end": {
+                            "line": 7,
+                            "column": 40
+                          },
+                          "source": "samples/template1.html"
+                        },
+                        "name": "foo",
+                        "context": "property"
+                      }
+                    }
+                  ],
+                  "sourceType": "module"
+                }
+              ],
+              "start": 71,
+              "end": 111,
+              "loc": {
+                "start": {
+                  "offset": 71,
+                  "line": 4,
+                  "column": 8
+                },
+                "end": {
+                  "offset": 111,
+                  "line": 4,
+                  "column": 48
+                },
+                "source": "samples/template1.html"
+              }
+            }
+          ],
+          "start": 40,
+          "end": 123,
+          "loc": {
+            "start": {
+              "offset": 40,
+              "line": 3,
+              "column": 4
+            },
+            "end": {
+              "offset": 123,
+              "line": 5,
+              "column": 11
+            },
+            "source": "samples/template1.html"
+          }
+        }
+      ],
+      "start": 0,
+      "end": 135,
+      "loc": {
+        "start": {
+          "offset": 0,
+          "line": 1,
+          "column": 0
+        },
+        "end": {
+          "offset": 135,
+          "line": 6,
+          "column": 11
+        },
+        "source": "samples/template1.html"
+      }
+    }
+  ],
+  "filename": "samples/template1.html",
+  "stylesheets": [],
+  "scripts": [],
+  "start": 0,
+  "end": 136
+}

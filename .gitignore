@@ -59,3 +59,13 @@ typings/
 
 # next.js build output
 .next
+
+/runtime
+
+/helpers/*.js
+/helpers/*.js.map
+/helpers/*.d.ts
+
+/compiler/*.js
+/compiler/*.js.map
+/compiler/*.d.ts

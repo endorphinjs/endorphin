@@ -1,0 +1,29 @@
+<!-- Sample template with basic branching -->
+<template>
+	<h1>Hello world</h1>
+	<e:if test={expr1}>
+		<p><strong>top 1</strong></p>
+		<e:if test={expr2}>
+			<div>top 2</div>
+		</e:if>
+		<e:if test={expr3}>
+			<div>top 3</div>
+			top 3.1
+		</e:if>
+	</e:if>
+	<blockquote>
+		<p>Lorem ipsum 1</p>
+		<e:choose>
+			<e:when test={expr1 === 1}>
+				<div>sub 1</div>
+			</e:when>
+			<e:when test={expr1 === 2}>
+				<div>sub 2</div>
+			</e:when>
+			<e:otherwise>
+				<div>sub 3</div>
+			</e:otherwise>
+		</e:choose>
+		<p>Lorem ipsum 2</p>
+	</blockquote>
+</template>

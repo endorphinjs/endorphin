@@ -1,0 +1,11 @@
+<!-- Template with dynamic attributes -->
+<template>
+    <main a1={id} a2="0" class="foo">
+        <e:attribute a2="1" e:if={c1} />
+        <e:add-class e:if={c2}>foo bar</e:add-class>
+        <e:if test={c3}>
+            <e:attribute class={'bam' + id}></e:attribute>
+        </e:if>
+        <e:add-class>baz</e:add-class>
+    </main>
+</template>

@@ -1,0 +1,52 @@
+{
+  "name": "@endorphinjs/template-parser",
+  "version": "0.3.0",
+  "description": "Parses EndorphinJS templates to ESTree-compatible AST",
+  "main": "./dist/template-parser.cjs.js",
+  "module": "./dist/template-parser.es.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "rollup -c && npm run types",
+    "lint": "tslint ./src/**/*.ts",
+    "test": "mocha",
+    "types": "tsc -p ./tsconfig.declaration.json",
+    "clean": "rm -rf ./dist",
+    "prepare": "npm run lint && npm run test && npm run clean && npm run build"
+  },
+  "keywords": [
+    "endorphin",
+    "endorphinjs",
+    "parser",
+    "ast",
+    "estree"
+  ],
+  "author": "Sergey Chikuyonok <serge.che@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^11.13.6",
+    "astring": "^1.4.0",
+    "mocha": "^6.1.4",
+    "rollup": "^1.10.1",
+    "rollup-plugin-typescript": "^1.0.1",
+    "ts-node": "^8.1.0",
+    "tslint": "^5.16.0",
+    "typescript": "^3.4.4"
+  },
+  "dependencies": {
+    "acorn": "^6.1.1",
+    "acorn-walk": "^6.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergeche/template-parser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sergeche/template-parser/issues"
+  },
+  "homepage": "https://github.com/sergeche/template-parser#readme",
+  "mocha": {
+    "require": "ts-node/register",
+    "spec": "./test/*.ts"
+  }
+}

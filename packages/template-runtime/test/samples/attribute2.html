@@ -1,0 +1,9 @@
+<!-- Template with dynamic attributes -->
+<main a1="{id}" a2="0" class="foo">
+	<t-attribute name="a2" if="c1">1</t-attribute>
+	<t-add-class if="c2">foo bar</t-add-class>
+	<t-if test="c3">
+		<t-attribute name="class">{'bam' + id}</t-attribute>
+	</t-if>
+	<t-add-class>baz</t-add-class>
+</main>

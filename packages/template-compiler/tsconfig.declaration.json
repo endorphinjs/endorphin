@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "diagnostics": false,
+    "sourceMap": false,
+    "module": "commonjs",
+    "outDir": "./dist",
+    "declaration": true,
+    "emitDeclarationOnly": true
+  },
+  "files": ["src/index.ts"]
+}

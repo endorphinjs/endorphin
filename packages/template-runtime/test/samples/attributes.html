@@ -1,0 +1,22 @@
+<!-- Template with dynamic attributes -->
+<main>
+	<section id="{id}" title="default" class="foo {myClass}">
+		<t-add-class>cl2</t-add-class>
+		<t-choose>
+			<t-when test="enabled">
+				<t-attribute name="title">on</t-attribute>
+				<t-attribute name="title">on2</t-attribute>
+				<t-add-class>enabled</t-add-class>
+				<p>Enabled :)</p>
+			</t-when>
+			<t-otherwise>
+				<t-attribute name="title">off {id}</t-attribute>
+				<t-attribute name="disabled">1</t-attribute>
+				<t-add-class>disabled</t-add-class>
+				<div>Disabled :(</div>
+				<t-attribute name="disabled">false</t-attribute>
+			</t-otherwise>
+		</t-choose>
+		<t-add-class>cl2</t-add-class>
+	</section>
+</main>

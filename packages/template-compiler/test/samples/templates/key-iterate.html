@@ -1,0 +1,18 @@
+<!-- Sample template with keyed iteration -->
+<template>
+    <h1>Hello world</h1>
+
+    <e:if test={items}>
+        <p>will iterate</p>
+        <ul>
+            <e:for-each select={items} key={id}>
+                <li id={id}>
+                    item
+                    <e:if test={@value.marked}>
+                        <strong>*</strong>
+                    </e:if>
+                </li>
+            </e:for-each>
+        </ul>
+    </e:if>
+</template>

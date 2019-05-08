@@ -1,0 +1,17 @@
+<link rel="import" href="./unmount-beacon.js" />
+
+<template>
+	<p>Unmount test</p>
+	<unmount-beacon id={1}/>
+	<e:if test={enabled}>
+		<unmount-beacon id={2}/>
+		<e:choose>
+			<e:when test={alt}>
+				<unmount-beacon id={3}/>
+			</e:when>
+			<e:otherwise>
+				<unmount-beacon id={4}/>
+			</e:otherwise>
+		</e:choose>
+	</e:if>
+</template>

@@ -1,0 +1,23 @@
+<!-- Root component -->
+<link rel="import" href="./slot-inner.html" as="sub-component" />
+<template>
+    <h1>Hello world</h1>
+
+    <sub-component id={id}>
+        <e:variable foo={bar}/>
+        <div>foo</div>
+        <e:if test={c1}>
+            <p>bar</p>
+        </e:if>
+        <e:if test={c2}>
+            <p slot="header">bar</p>
+        </e:if>
+        <e:for-each select={items}>
+            <div>item</div>
+            <div slot="footer">item footer</div>
+        </e:for-each>
+        <e:if test={error}>
+            <div slot="error">Got error</div>
+        </e:if>
+    </sub-component>
+</template>

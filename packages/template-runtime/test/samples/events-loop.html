@@ -1,0 +1,9 @@
+<!-- Pass local variables in event listeners -->
+<ul>
+	<t-variable foo={1} />
+	<t-for-each select="items">
+		<t-variable bar={$foo} />
+		<li on:click="handleClick($index, $foo, $bar)">item</li>
+	</t-for-each>
+	<t-variable foo={2} />
+</ul>

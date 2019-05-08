@@ -1,0 +1,52 @@
+{
+  "name": "@endorphinjs/template-runtime",
+  "version": "0.3.0",
+  "description": "EndorphinJS template runtime, embedded with template bundles",
+  "main": "./dist/runtime.cjs.js",
+  "module": "./dist/runtime.es.js",
+  "types": "./dist/runtime.d.ts",
+  "scripts": {
+    "test": "mocha",
+    "lint": "tslint ./src/**/*.ts",
+    "build": "rollup -c && npm run types",
+    "types": "tsc -p ./tsconfig.declaration.json",
+    "clean": "rm -rf ./dist",
+    "prepare": "npm run lint && npm test && npm run clean && npm run build"
+  },
+  "keywords": [
+    "template",
+    "front-end",
+    "endorphin",
+    "endorphinjs"
+  ],
+  "author": "Sergey Chikuyonok <serge.che@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@endorphinjs/template-compiler": "^0.3.0",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^11.13.10",
+    "mocha": "^6.1.4",
+    "rollup": "^1.11.3",
+    "rollup-plugin-typescript": "^1.0.1",
+    "ts-node": "^8.1.0",
+    "tslint": "^5.16.0",
+    "typescript": "^3.4.5"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/endorphinjs/template-runtime.git"
+  },
+  "bugs": {
+    "url": "https://github.com/endorphinjs/template-runtime/issues"
+  },
+  "homepage": "https://github.com/endorphinjs/template-runtime#readme",
+  "mocha": {
+    "require": "./test/register",
+    "spec": "./test/*.ts"
+  }
+}

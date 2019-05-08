@@ -9,3 +9,8 @@ jspm_packages
 /src
 /lib
 /coverage
+/packages
+/compiler/*.ts
+/compiler/*.json
+/helpers/*.ts
+/helpers/*.json

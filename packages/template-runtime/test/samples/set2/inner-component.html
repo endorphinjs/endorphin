@@ -1,0 +1,12 @@
+<template>
+	<h3>Inner component</h3>
+	<ul>
+		<e:for-each select={items}>
+			<partial:item item={@value} pos={@index} />
+		</e:for-each>
+	</ul>
+</template>
+
+<template partial:item item pos={0}>
+	<li pos={@pos}>{ @item }</li>
+</template>

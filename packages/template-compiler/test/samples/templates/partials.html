@@ -1,0 +1,12 @@
+<!-- Template with partials -->
+<template>
+	<ul>
+		<e:for-each select={items}>
+			<partial:button item={@item} enabled={@index !== 1} dashed-name="bar" />
+		</e:for-each>
+	</ul>
+</template>
+
+<template partial:button item enabled={true} dashed-name="foo" pos={0}>
+	<li class:enabled={@enabled}>{ @item }</li>
+</template>
