@@ -1,6 +1,6 @@
 {
   "name": "@endorphinjs/template-runtime",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "EndorphinJS template runtime, embedded with template bundles",
   "main": "./dist/runtime.cjs.js",
   "module": "./dist/runtime.es.js",
@@ -22,7 +22,7 @@
   "author": "Sergey Chikuyonok <serge.che@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@endorphinjs/template-compiler": "^0.3.0",
+    "@endorphinjs/template-compiler": "^0.3.1",
     "@types/mocha": "^5.2.6",
     "@types/node": "^11.13.10",
     "mocha": "^6.1.4",
@@ -36,7 +36,6 @@
     "lib": "lib",
     "test": "test"
   },
-  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/endorphinjs/template-runtime.git"
