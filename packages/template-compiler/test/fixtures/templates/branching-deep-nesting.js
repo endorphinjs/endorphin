@@ -12,7 +12,7 @@ function ifEntry$2(host) {
 
 function ifBody$1(host, injector, scope) {
 	scope.if$2 = mountBlock(host, injector, ifEntry$2);
-	addDisposeCallback(host, ifBody$1Unmount);
+	addDisposeCallback(injector, ifBody$1Unmount);
 	return ifBody$1Update;
 }
 
@@ -32,7 +32,7 @@ function ifEntry$1(host) {
 
 function ifBody$0(host, injector, scope) {
 	scope.if$1 = mountBlock(host, injector, ifEntry$1);
-	addDisposeCallback(host, ifBody$0Unmount);
+	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
 

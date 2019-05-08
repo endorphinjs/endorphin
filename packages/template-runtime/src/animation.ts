@@ -1,11 +1,13 @@
-import { unmountComponent, Component } from './component';
 import { domRemove } from './dom';
 import { animatingKey, assign, obj } from './utils';
+import { Scope } from './types';
+
+type AnimationCallback = (elem: Element, scope?: Scope) => void;
 
 /**
  * Animates element appearance
  */
-export function animateIn(elem: HTMLElement | Component, animation: string, cssScope?: string): void {
+export function animateIn(elem: HTMLElement, animation: string, cssScope?: string): void {
 	if (animation = createAnimation(animation, cssScope)) {
 		elem.style.animation = animation;
 	}
@@ -14,9 +16,9 @@ export function animateIn(elem: HTMLElement | Component, animation: string, cssS
 /**
  * Animates element disappearance
  */
-export function animateOut(elem: HTMLElement | Component, animation: string, cssScope: string): void;
-export function animateOut<T>(elem: HTMLElement | Component, animation: string, scope: T, callback: (scope: T) => void, cssScope: string): void;
-export function animateOut<T>(elem: HTMLElement | Component, animation: string, scope: T | string | undefined, callback?: (scope: T) => void, cssScope?: string): void {
+export function animateOut(elem: HTMLElement, animation: string, cssScope: string): void;
+export function animateOut(elem: HTMLElement, animation: string, scope: Scope, callback: AnimationCallback, cssScope: string): void;
+export function animateOut(elem: HTMLElement, animation: string, scope: Scope | string | undefined, callback?: AnimationCallback, cssScope?: string): void {
 	if (typeof scope === 'string') {
 		cssScope = scope;
 		scope = callback = undefined;
@@ -36,7 +38,7 @@ export function animateOut<T>(elem: HTMLElement | Component, animation: string, 
 				elem[animatingKey] = false;
 				elem.removeEventListener('animationend', handler);
 				elem.removeEventListener('animationcancel', handler);
-				dispose(elem, () => callback && callback(scope as T));
+				dispose(elem, scope as Scope, callback);
 			}
 		};
 
@@ -45,7 +47,7 @@ export function animateOut<T>(elem: HTMLElement | Component, animation: string, 
 		elem.addEventListener('animationcancel', handler);
 		elem.style.animation = animation;
 	} else {
-		dispose(elem, () => callback && callback(scope as T));
+		dispose(elem, scope as Scope, callback);
 	}
 }
 
@@ -81,14 +83,7 @@ function concat(name: string, suffix: string) {
 	return name + sep + suffix;
 }
 
-function dispose(elem: HTMLElement | Component, callback?: () => void) {
-	if ('componentModel' in elem) {
-		unmountComponent(elem);
-	}
-
-	if (callback) {
-		callback();
-	}
-
+function dispose(elem: HTMLElement, scope?: Scope, callback?: AnimationCallback) {
+	callback && callback(elem, scope);
 	domRemove(elem);
 }

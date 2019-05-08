@@ -20,7 +20,7 @@ function forContent$0(host, injector, scope) {
 	setVars$1(host, scope);
 	const li$0 = insert(injector, elemWithText("li", "item"));
 	scope.click$0 = addStaticEvent(li$0, "click", onClick$0, host, scope);
-	addDisposeCallback(host, forContent$0Unmount);
+	addDisposeCallback(injector, forContent$0Unmount);
 	return forContent$0Update;
 }
 

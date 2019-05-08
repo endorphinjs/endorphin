@@ -23,7 +23,7 @@ export default {
             return state.helper(node.name);
         }
 
-        if (node.context) {
+        if (node.context && node.context !== 'argument') {
             const prefix = next({
                 type: 'ENDGetterPrefix',
                 context: node.context

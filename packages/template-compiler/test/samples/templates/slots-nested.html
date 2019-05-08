@@ -1,0 +1,11 @@
+<link rel="import" href="./my-component1.html" />
+<link rel="import" href="./my-component2.html" />
+<link rel="import" href="./inner-component.html" />
+
+<template>
+    <my-component1>
+        <my-component2 slot="header">
+            <inner-component/>
+        </my-component2>
+    </my-component1>
+</template>

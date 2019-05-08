@@ -89,8 +89,8 @@ export default class Entity {
         if (symbolUsage[ctx] === 1) {
             // First time access to non-mount context: use symbol from component scope
             symbols[ctx] = sn(`${this.state.scope}.${name}`);
-        } else if (symbolUsage[ctx] === 2) {
-            // If we use symbol more than once in non-mount context, it’s more
+        } else if (symbolUsage[ctx] === 2 && ctx === 'update') {
+            // If we use symbol more than once in update context, it’s more
             // optimal to use local variable.
             // NB: local variable should be created by block generator
             symbols[ctx].children.length = 0;

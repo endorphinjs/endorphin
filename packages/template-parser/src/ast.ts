@@ -54,7 +54,7 @@ export interface Literal extends JSNode {
     raw?: string;
 }
 
-export type IdentifierContext = 'property' | 'state' | 'variable' | 'store' | 'helper' | 'definition';
+export type IdentifierContext = 'property' | 'state' | 'variable' | 'store' | 'helper' | 'definition' | 'argument';
 
 export interface Identifier extends JSNode {
     type: 'Identifier';

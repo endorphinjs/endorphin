@@ -1,4 +1,9 @@
-import * as Ast from '@endorphinjs/template-parser';
+import {
+    ENDTemplate, ENDElement, ENDAttributeStatement, ENDAttribute, ENDDirective,
+    ENDAddClassStatement, Literal, Program, ENDIfStatement, ENDChooseStatement,
+    ENDForEachStatement, ENDInnerHTML, ENDVariableStatement, ENDPartial, ENDPartialStatement,
+    ENDStatement, Identifier
+} from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import { ChunkList, Chunk, AstVisitorMap, TemplateOutput, AstVisitorContinue } from '../types';
 import generateExpression from '../expression';
@@ -14,7 +19,7 @@ import EventEntity from '../entities/EventEntity';
 import { sn, qStr, isLiteral, toObjectLiteral, getAttrValue, nameToJS, propGetter, propSetter, isExpression } from '../lib/utils';
 
 export default {
-    ENDTemplate(node: Ast.ENDTemplate, state, next) {
+    ENDTemplate(node: ENDTemplate, state, next) {
         state.runBlock('template', block => {
             block.exports = 'default';
 
@@ -37,7 +42,7 @@ export default {
         });
     },
 
-    ENDElement(node: Ast.ENDElement, state, next) {
+    ENDElement(node: ENDElement, state, next) {
         return state.runElement(node, element => {
             if (node.ref) {
                 element.setRef(node.ref);
@@ -93,23 +98,23 @@ export default {
         });
     },
 
-    ENDAttributeStatement(node: Ast.ENDAttributeStatement, state, next) {
+    ENDAttributeStatement(node: ENDAttributeStatement, state, next) {
         return entity('block', state)
             .setContent(node.attributes, next)
             .setContent(node.directives, next);
     },
 
-    ENDAttribute(attr: Ast.ENDAttribute, state) {
+    ENDAttribute(attr: ENDAttribute, state) {
         return new AttributeEntity(attr, state);
     },
 
-    ENDDirective(dir: Ast.ENDDirective, state) {
+    ENDDirective(dir: ENDDirective, state) {
         if (dir.prefix === 'on') {
             return new EventEntity(dir, state);
         }
     },
 
-    ENDAddClassStatement(node: Ast.ENDAddClassStatement, state, next) {
+    ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
         const block = entity('block', state);
 
         block.setMount(() => mountAddClass(node, state));
@@ -121,18 +126,18 @@ export default {
         return block;
     },
 
-    Literal(node: Ast.Literal, state) {
+    Literal(node: Literal, state) {
         if (node.value != null) {
             return new TextEntity(node, state);
         }
     },
 
     // NB `Program` is used as expression for text node
-    Program(node: Ast.Program, state) {
+    Program(node: Program, state) {
         return new TextEntity(node, state);
     },
 
-    ENDIfStatement(node: Ast.ENDIfStatement, state, next) {
+    ENDIfStatement(node: ENDIfStatement, state, next) {
         const ent = new ConditionEntity(node, state);
         if (node.consequent.every(isSimpleConditionContent)) {
             ent.setSimple(node.test, node.consequent, next);
@@ -142,25 +147,25 @@ export default {
         return ent;
     },
 
-    ENDChooseStatement(node: Ast.ENDChooseStatement, state, next) {
+    ENDChooseStatement(node: ENDChooseStatement, state, next) {
         return new ConditionEntity(node, state)
             .setContent(node.cases, next);
     },
 
-    ENDForEachStatement(node: Ast.ENDForEachStatement, state, next) {
+    ENDForEachStatement(node: ENDForEachStatement, state, next) {
         return new IteratorEntity(node, state)
             .setContent(node.body, next);
     },
 
-    ENDInnerHTML(node: Ast.ENDInnerHTML, state) {
+    ENDInnerHTML(node: ENDInnerHTML, state) {
         return new InnerHTMLEntity(node, state);
     },
 
-    ENDVariableStatement(node: Ast.ENDVariableStatement, state) {
+    ENDVariableStatement(node: ENDVariableStatement, state) {
         return new VariableEntity(node, state);
     },
 
-    ENDPartial(node: Ast.ENDPartial, state, next) {
+    ENDPartial(node: ENDPartial, state, next) {
         const name = state.runChildBlock(`partial${nameToJS(node.id, true)}`, (block, elem) => {
             elem.setContent(node.body, next);
         });
@@ -171,7 +176,7 @@ export default {
         });
     },
 
-    ENDPartialStatement(node: Ast.ENDPartialStatement, state) {
+    ENDPartialStatement(node: ENDPartialStatement, state) {
         const getter = `${state.host}.props['partial:${node.id}'] || ${state.partials}${propGetter(node.id)}`;
 
         return entity('partial', state, {
@@ -197,7 +202,7 @@ function subscribeStore(state: CompileState): Entity {
     });
 }
 
-function isSimpleConditionContent(node: Ast.ENDStatement): boolean {
+function isSimpleConditionContent(node: ENDStatement): boolean {
     if (node.type === 'ENDAttributeStatement') {
         return node.directives.filter(dir => dir.prefix === 'on').length === 0;
     }
@@ -209,7 +214,7 @@ function isSimpleConditionContent(node: Ast.ENDStatement): boolean {
  * Generates function with default content of given slot. If slot is empty,
  * no function is generated
  */
-function defaultSlot(node: Ast.ENDElement, state: CompileState, next: AstVisitorContinue<TemplateOutput>): string | null {
+function defaultSlot(node: ENDElement, state: CompileState, next: AstVisitorContinue<TemplateOutput>): string | null {
     const slotName = String(getAttrValue(node, 'name') || '');
     return node.body.length
         ? state.runChildBlock(`defaultSlot${nameToJS(slotName, true)}`,
@@ -217,7 +222,7 @@ function defaultSlot(node: Ast.ENDElement, state: CompileState, next: AstVisitor
         : null;
 }
 
-function mountAddClass(node: Ast.ENDAddClassStatement, state: CompileState): SourceNode {
+function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceNode {
     const chunks: ChunkList = node.tokens.map(token => {
         return isLiteral(token)
             ? qStr(token.value as string)
@@ -229,7 +234,7 @@ function mountAddClass(node: Ast.ENDAddClassStatement, state: CompileState): Sou
 /**
  * Generates object literal from given attributes
  */
-function generateObject(params: Ast.ENDAttribute[], state: CompileState, level: number = 0): SourceNode {
+function generateObject(params: ENDAttribute[], state: CompileState, level: number = 0): SourceNode {
     const map: Map<Chunk, Chunk> = new Map();
     params.forEach(param => {
         map.set(objectKey(param.name, state), compileAttributeValue(param.value, state, 'params'));
@@ -238,6 +243,6 @@ function generateObject(params: Ast.ENDAttribute[], state: CompileState, level: 
     return toObjectLiteral(map, state.indent, level);
 }
 
-function objectKey(node: Ast.Identifier | Ast.Program, state: CompileState) {
+function objectKey(node: Identifier | Program, state: CompileState) {
     return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
 }

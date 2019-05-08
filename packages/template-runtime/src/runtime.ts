@@ -18,7 +18,7 @@ export * from './store';
 export * from './animation';
 export { addDisposeCallback, assign } from './utils';
 
-type FilterCallback<T> = (host: Component, value: T, key: string | number) => boolean;
+type FilterCallback<T> = (value: T, key: string | number) => boolean;
 
 interface ComponentOptions {
 	/** Parent element where created component should be mounted */
@@ -86,11 +86,11 @@ export function call(ctx: any, methodName: string, args?: any[]): any {
  * Filter items from given collection that matches `fn` criteria and returns
  * matched items
  */
-export function filter<T>(host: Component, collection: T[], fn: FilterCallback<T>): T[] {
+export function filter<T>(collection: T[], fn: FilterCallback<T>): T[] {
 	const result: T[] = [];
 	if (collection && collection.forEach) {
 		collection.forEach((value, key) => {
-			if (fn(host, value, key)) {
+			if (fn(value, key)) {
 				result.push(value);
 			}
 		});
@@ -102,12 +102,12 @@ export function filter<T>(host: Component, collection: T[], fn: FilterCallback<T
 /**
  * Finds first item in given `collection` that matches truth test of `fn`
  */
-export function find<T>(host: Component, collection: T[] | Map<any, T> | Set<T>, fn: FilterCallback<T>): T | null | undefined {
+export function find<T>(collection: T[] | Map<any, T> | Set<T>, fn: FilterCallback<T>): T | null | undefined {
 	if (Array.isArray(collection)) {
 		// Fast path: find item in array
 		for (let i = 0, item: T; i < collection.length; i++) {
 			item = collection[i];
-			if (fn(host, item, i)) {
+			if (fn(item, i)) {
 				return item;
 			}
 		}
@@ -116,7 +116,7 @@ export function find<T>(host: Component, collection: T[] | Map<any, T> | Set<T>,
 		let found = false;
 		let result: T | null = null;
 		collection.forEach((value: T, key: any) => {
-			if (!found && fn(host, value, key)) {
+			if (!found && fn(value, key)) {
 				found = true;
 				result = value;
 			}

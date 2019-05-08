@@ -66,6 +66,6 @@ describe('New compiler', () => {
     });
 
     // it.only('debug', () => {
-    //     compare('templates/bug1.html', null);
+    //     compare('templates/animate.html', null, true);
     // });
 });

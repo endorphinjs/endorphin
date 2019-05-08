@@ -1,4 +1,4 @@
-import { elemWithText, setAttribute, createComponent, markSlotUpdate, mountComponent, updateComponent, unmountComponent, assign, subscribeStore, addDisposeCallback, elem, createInjector, text, updateText, finalizeAttributes, insert } from "endorphin";
+import { elemWithText, setAttribute, createComponent, mountComponent, updateComponent, unmountComponent, assign, subscribeStore, addDisposeCallback, elem, createInjector, text, updateText, finalizeAttributes, insert } from "endorphin";
 import * as InnerComponent from "./inner-component.js";
 
 export const partials = {
@@ -31,15 +31,10 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
-	let su$0 = 0, su$1 = 0;
-	const { innerComponent$0, innerComponent$1 } = scope;
-	su$0 |= setAttribute(scope.inj$0, "items", host.store.data.items1);
-	markSlotUpdate(innerComponent$0, "", su$0);
-	updateComponent(innerComponent$0);
-	su$1 |= setAttribute(scope.inj$1, "items", host.store.data.items2);
-	markSlotUpdate(innerComponent$1, "", su$1);
-	updateComponent(innerComponent$1);
-	return su$0 | su$1;
+	setAttribute(scope.inj$0, "items", host.store.data.items1);
+	updateComponent(scope.innerComponent$0);
+	setAttribute(scope.inj$1, "items", host.store.data.items2);
+	updateComponent(scope.innerComponent$1);
 }
 
 function template$0Unmount(scope) {
@@ -55,7 +50,7 @@ function partialMyItem$0(host, injector, scope) {
 	setAttribute(inj$2, "value", host.store.data.pos);
 	scope.text$0 = span$0.appendChild(text(host.store.data.item));
 	finalizeAttributes(inj$2);
-	addDisposeCallback(host, partialMyItem$0Unmount);
+	addDisposeCallback(injector, partialMyItem$0Unmount);
 	return partialMyItem$0Update;
 }
 

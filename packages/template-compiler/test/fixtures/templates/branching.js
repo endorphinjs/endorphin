@@ -26,7 +26,7 @@ function ifBody$0(host, injector, scope) {
 	p$0.appendChild(elemWithText("strong", "top 1"));
 	scope.if$1 = mountBlock(host, injector, ifEntry$1);
 	scope.if$2 = mountBlock(host, injector, ifEntry$2);
-	addDisposeCallback(host, ifBody$0Unmount);
+	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
 

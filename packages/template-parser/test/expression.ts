@@ -8,7 +8,7 @@ interface IdContextMap {
 }
 
 function js(code: string): string {
-    return generateJS(parseJS(code, { helpers: ['emit'] })).trim();
+    return generateJS(parseJS(code, { helpers: ['emit', 'count'] })).trim();
 }
 
 function collectIdContext(ast: Program): IdContextMap {
@@ -30,20 +30,20 @@ describe('JS Parser', () => {
     it('should detect identifier context', () => {
         deepEqual(getContext('foo[bar => bar > baz]'), {
             foo: 'property',
-            bar: undefined,
+            bar: 'argument',
             baz: 'property'
         });
 
         deepEqual(getContext('foo[({ bar }) => bar > baz]'), {
             foo: 'property',
-            bar: undefined,
+            bar: 'argument',
             baz: 'property'
         });
 
         deepEqual(getContext('foo[([bar, baz]) => bar > baz]'), {
             foo: 'property',
-            bar: undefined,
-            baz: undefined
+            bar: 'argument',
+            baz: 'argument'
         });
     });
 
@@ -59,6 +59,7 @@ describe('JS Parser', () => {
         equal(js('foo.bar + baz()'), '$get($host.props.foo, "bar") + $call($host.props, "baz");');
         equal(js('Math.round(foo)'), 'Math.round($host.props.foo);', 'Keep globals as-is');
         equal(js('foo.bar[a => a > b]'), '$find($get($host.props.foo, "bar"), a => a > $host.props.b);', 'Rewrite filters');
+        equal(js('foo.bar[a => a.b.c]'), '$find($get($host.props.foo, "bar"), a => $get(a, "b", "c"));', 'Rewrite filters with deep getters');
         equal(js('foo.bar[[a => a > #c]]'), '$filter($get($host.props.foo, "bar"), a => a > $host.state.c);', 'Rewrite filters (multiple)');
         equal(js('`foo ${bar}`'), '`foo ${$host.props.bar}`;');
     });
@@ -68,11 +69,13 @@ describe('JS Parser', () => {
         equal(js('foo.bar()'), '$call($host.props.foo, "bar");');
         equal(js('foo()'), '$call($host.props, "foo");');
         equal(js('foo(bar)'), '$call($host.props, "foo", [$host.props.bar]);');
+        equal(js('count(#foo.bar)'), 'count(this, $get($host.state.foo, "bar"));');
+        equal(js('!count(#foo.bar)'), '!count(this, $get($host.state.foo, "bar"));');
     });
 
     it('should upgrade nodes in function', () => {
         // Detect `emit` is a helper and add reference to component
         equal(js('e => emit(foo)'), '(e => emit(this, $host.props.foo));');
-        equal(js('e => foo(e.pageX)'), '(e => $call($host.props, "foo", [e.pageX]));');
+        equal(js('e => foo(e.pageX)'), '(e => $call($host.props, "foo", [$get(e, "pageX")]));');
     });
 });

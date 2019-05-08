@@ -221,7 +221,7 @@ function needSemicolon(chunk: Chunk): boolean {
     return needSemicolon(chunk.children[chunk.children.length - 1]);
 }
 
-function isValidChunk(chunk: Chunk): boolean {
+export function isValidChunk(chunk: Chunk | null): boolean {
     return chunk instanceof SourceNode
         ? chunk.children.length !== 0
         : chunk && chunk.length !== 0;

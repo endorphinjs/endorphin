@@ -4,7 +4,7 @@ import * as SlotInner from "./slot-inner.html";
 function ifBody$0(host, injector, scope) {
 	const span$0 = scope.span$0 = insert(injector, elem("span"));
 	setRef(host, "header", span$0);
-	addDisposeCallback(host, ifBody$0Unmount);
+	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
 

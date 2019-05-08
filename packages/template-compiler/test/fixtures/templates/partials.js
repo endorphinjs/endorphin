@@ -22,7 +22,7 @@ function forContent$0(host, injector, scope) {
 		enabled: (scope.index !== 1),
 		"dashed-name": "bar"
 	});
-	addDisposeCallback(host, forContent$0Unmount);
+	addDisposeCallback(injector, forContent$0Unmount);
 	return forContent$0Update;
 }
 
@@ -76,7 +76,7 @@ function partialButton$0(host, injector, scope) {
 	ifAttr$0(host, inj$1, scope);
 	scope.text$0 = insert(inj$1, text(scope.item));
 	finalizeAttributes(inj$1);
-	addDisposeCallback(host, partialButton$0Unmount);
+	addDisposeCallback(injector, partialButton$0Unmount);
 	return partialButton$0Update;
 }
 

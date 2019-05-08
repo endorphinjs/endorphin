@@ -8,7 +8,7 @@ function ifBody$0(host, injector, scope) {
 	const slot$4 = insert(injector, elem("slot"));
 	slot$4.setAttribute("name", "error");
 	scope.slot$5 = mountSlot(host, "error", slot$4);
-	addDisposeCallback(host, ifBody$0Unmount);
+	addDisposeCallback(injector, ifBody$0Unmount);
 }
 
 function ifBody$0Unmount(scope) {
@@ -29,7 +29,7 @@ function ifBody$1(host, injector, scope) {
 	const slot$6 = insert(injector, elem("slot"));
 	slot$6.setAttribute("name", "footer");
 	scope.slot$7 = mountSlot(host, "footer", slot$6, defaultSlotFooter$0);
-	addDisposeCallback(host, ifBody$1Unmount);
+	addDisposeCallback(injector, ifBody$1Unmount);
 }
 
 function ifBody$1Unmount(scope) {

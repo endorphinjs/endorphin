@@ -47,7 +47,7 @@ const generator = Object.assign({}, baseGenerator, {
         state.write(')');
     },
     Identifier(node: Identifier, state: AstringState) {
-        if (node.context && node.context !== 'helper') {
+        if (node.context && node.context !== 'helper' && node.context !== 'argument') {
             state.write(getPrefix(node.context));
             state.write('.');
         }

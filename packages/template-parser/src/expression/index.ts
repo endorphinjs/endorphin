@@ -89,6 +89,8 @@ export function parseJS(code: string, options: JSParserOptions = {}): Program {
                 node.context = prefixes[prefix];
                 node.raw = node.name;
                 node.name = node.name.slice(prefix.length);
+            } else if (ancestors.some(expr => isFunctionArgument(node, expr))) {
+                node.context = 'argument';
             } else {
                 node.context = options.helpers && options.helpers.includes(node.name)
                     ? 'helper' : 'property';
@@ -108,9 +110,7 @@ function isReserved(id: Identifier, ancestors: Expression[]): boolean {
     const last = ancestors[ancestors.length - 1];
 
     if (last) {
-        return isProperty(id, last)
-            || isAssignment(id, last)
-            || ancestors.some(expr => isFunctionArgument(id, expr));
+        return isProperty(id, last) || isAssignment(id, last);
     }
 
     return false;
@@ -133,6 +133,7 @@ function upgradeContent(node: Expression | Statement): void {
             break;
         case 'SpreadElement':
         case 'UpdateExpression':
+        case 'UnaryExpression':
             node.argument = convert(node.argument);
             break;
         case 'ObjectExpression':
@@ -158,6 +159,9 @@ function upgradeContent(node: Expression | Statement): void {
             if (node.expression) {
                 node.body = convert(node.body as Expression);
             }
+            break;
+        case 'CallExpression':
+            node.arguments = node.arguments.map(convert);
             break;
     }
 }

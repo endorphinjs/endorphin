@@ -183,7 +183,7 @@ function createVisitors(eventArg: string): ExpressionVisitorMap {
             return baseVisitors.CallExpression(node, state, next);
         },
         ENDGetterPrefix(node: ENDGetterPrefix, state) {
-            if (node.context !== 'helper') {
+            if (node.context !== 'helper' && node.context !== 'argument') {
                 return sn(`this.${state.prefix(node.context)}`);
             }
 

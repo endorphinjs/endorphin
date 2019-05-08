@@ -67,7 +67,7 @@ export default function template$0(host, scope) {
 function template$0Update(host, scope) {
 	let su$0 = 0;
 	const { subComponent$0 } = scope;
-	su$0 |= setAttribute(scope.inj$0, "id", host.props.id);
+	setAttribute(scope.inj$0, "id", host.props.id);
 	setVars$0(host, scope);
 	su$0 |= updateBlock(scope.if$0);
 	su$0 |= updateBlock(scope.if$1);

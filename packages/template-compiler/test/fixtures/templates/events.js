@@ -1,4 +1,4 @@
-import { createInjector, addEvent, addStaticEvent, removeStaticEvent, elem, mountBlock, updateBlock, unmountBlock, finalizeEvents, addDisposeCallback } from "endorphin";
+import { createInjector, addEvent, addStaticEvent, removeStaticEvent, get, elem, mountBlock, updateBlock, unmountBlock, finalizeEvents, addDisposeCallback } from "endorphin";
 import { emit } from "endorphin/helpers";
 
 function onClick$0(evt) {
@@ -19,7 +19,7 @@ function onKeypress$0(evt) {
 
 function onMousedown$0(e) {
 	e.preventDefault();
-	emit(this.host, "down", e.pageX, e.pageY);
+	emit(this.host, "down", get(e, "pageX"), get(e, "pageY"));
 }
 
 function onClick$1(evt) {

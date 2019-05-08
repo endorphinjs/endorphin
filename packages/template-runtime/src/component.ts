@@ -314,7 +314,7 @@ export function mountComponent(component: Component, initialProps?: object) {
 /**
  * Updates given mounted component
  */
-export function updateComponent(component: Component) {
+export function updateComponent(component: Component): number {
 	const { input } = component.componentModel;
 	const changes = setPropsInternal(component, input.attributes.prev, input.attributes.cur);
 	finalizeEvents(input);
@@ -323,6 +323,8 @@ export function updateComponent(component: Component) {
 	if (changes || component.componentModel.queued) {
 		renderNext(component, changes!);
 	}
+
+	return changes ? 1 : 0;
 }
 
 /**

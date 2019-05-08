@@ -19,7 +19,7 @@ function forContent$0(host, injector, scope) {
 	const inj$1 = createInjector(li$0);
 	insert(inj$1, text("\n                    item\n                    "));
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
-	addDisposeCallback(host, forContent$0Unmount);
+	addDisposeCallback(injector, forContent$0Unmount);
 	return forContent$0Update;
 }
 
@@ -36,7 +36,7 @@ function ifBody$0(host, injector, scope) {
 	const ul$0 = insert(injector, elem("ul"));
 	const inj$2 = createInjector(ul$0);
 	scope.for$0 = mountIterator(host, inj$2, forSelect$0, forContent$0);
-	addDisposeCallback(host, ifBody$0Unmount);
+	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
 

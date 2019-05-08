@@ -126,7 +126,7 @@ export default class BlockContext {
         }
 
         if (unmountChunks.length) {
-            mountChunks.push(state.runtime('addDisposeCallback', [state.host, `${name}Unmount`]));
+            mountChunks.push(state.runtime('addDisposeCallback', [this.injector ? this.injector.name : state.host, `${name}Unmount`]));
         }
 
         if (updateChunks.length) {

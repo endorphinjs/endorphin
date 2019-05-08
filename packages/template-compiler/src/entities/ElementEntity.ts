@@ -5,12 +5,15 @@ import {
 import { SourceNode } from 'source-map';
 import Entity from './Entity';
 import { compileAttributeValue } from './AttributeEntity';
-import TextEntity from './TextEntity';
-import VariableEntity from './VariableEntity';
+import ComponentMountEntity from './ComponentMountEntity';
+import ConditionEntity from './ConditionEntity';
 import InjectorEntity from './InjectorEntity';
+import InnerHTMLEntity from './InnerHTMLEntity';
+import IteratorEntity from './IteratorEntity';
+import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, isExpression, isLiteral, toObjectLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
+import { isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter, isValidChunk } from '../lib/utils';
 import { Chunk, ChunkList } from '../types';
 import { ENDCompileError } from '../lib/error';
 import generateExpression from '../expression';
@@ -111,7 +114,7 @@ export default class ElementEntity extends Entity {
     add(item: Entity) {
         if ((item instanceof ElementEntity || item instanceof TextEntity) && item.code.mount) {
             item.setMount(() =>
-                this.isStaticContent ? this.addDOM(item) : this.addInjector(item));
+                this.isStaticContent && !this.isComponent ? this.addDOM(item) : this.addInjector(item));
         }
 
         super.add(item);
@@ -170,17 +173,7 @@ export default class ElementEntity extends Entity {
      * as a separate entity after element content
      */
     mountComponent() {
-        const { state } = this;
-        this.add(state.entity({
-            mount: () => {
-                const staticProps = this.getStaticProps();
-                const staticPropsArg = staticProps.size
-                    ? toObjectLiteral(staticProps, state.indent, 1) : null;
-                return state.runtime('mountComponent', [this.getSymbol(), staticPropsArg]);
-            },
-            update: () => state.runtime('updateComponent', [this.getSymbol()]),
-            unmount: () => this.unmount('unmountComponent')
-        }));
+        this.add(new ComponentMountEntity(this, this.state));
 
         // Add empty source node to skip automatic symbol nulling
         // in unmount function
@@ -244,6 +237,7 @@ export default class ElementEntity extends Entity {
         if (this.animateIn || this.animateOut) {
             const { state } = this;
             const anim = state.entity();
+
             if (this.animateIn) {
                 anim.setMount(() => state.runtime('animateIn', [this.getSymbol(), compileAttributeValue(this.animateIn, state), cssScopeArg(state)]));
             }
@@ -252,13 +246,16 @@ export default class ElementEntity extends Entity {
                 // We need to create a callback function to properly unmount
                 // contents of current element
                 const entities: Entity[] = [];
+                const empty = sn();
                 const callback = state.runBlock('animateOut', block => {
                     const transfer = (item: Entity) => {
                         item.children.forEach(transfer);
-                        if (item.code.unmount) {
+                        if (isValidChunk(item.code.unmount)) {
                             const unmountEntity = state.entity();
                             unmountEntity.code.mount = item.code.unmount;
-                            item.code.unmount = null;
+                            // NB: use empty source node to skip auto-null check
+                            // in block unmount
+                            item.code.unmount = empty;
                             block.scopeUsage.use('mount');
                             entities.push(unmountEntity);
                         }
@@ -267,6 +264,7 @@ export default class ElementEntity extends Entity {
                     transfer(this);
                     return entities;
                 });
+
                 if (entities.length) {
                     anim.setUnmount(() =>
                         state.runtime('animateOut', [
@@ -321,14 +319,30 @@ export default class ElementEntity extends Entity {
     }
 
     private markSlotUpdate(entity: Entity) {
-        if (!(entity instanceof VariableEntity) && entity.code.update) {
-            const slotName = getDestSlotName(entity);
-            entity.setUpdate(() => sn([this.getSlotMark(slotName), ' |= ', entity.getUpdate()]));
-        }
+        if (entity instanceof ElementEntity) {
+            // For component entity, we should mark inner mount entity only
+            if (entity.isComponent) {
+                entity.children.forEach(child => {
+                    if (child instanceof ComponentMountEntity) {
+                        this.addSlotMark(child);
+                    }
+                });
+            }
+        } else if (entity.code.update) {
+            const isSupported = entity instanceof ConditionEntity
+                || entity instanceof InnerHTMLEntity
+                || entity instanceof IteratorEntity
+                || entity instanceof TextEntity;
 
-        for (let i = 0; i < entity.children.length; i++) {
-            this.markSlotUpdate(entity.children[i]);
+            if (isSupported) {
+                this.addSlotMark(entity);
+            }
         }
+    }
+
+    private addSlotMark(entity: Entity) {
+        const slotName = getDestSlotName(entity);
+        entity.setUpdate(() => sn([this.getSlotMark(slotName), ' |= ', entity.getUpdate()]));
     }
 
     private getSlotMark(slotName: string): string {
@@ -466,6 +480,10 @@ export function getNodeName(localName: string): { ns?: string, name: string } {
  * Returns destination slot name from given entity
  */
 function getDestSlotName(entity: Entity): string {
+    if (entity instanceof ComponentMountEntity) {
+        entity = entity.element;
+    }
+
     if (entity instanceof ElementEntity && entity.node.type === 'ENDElement') {
         return getAttrValue(entity.node, 'slot') as string || '';
     }
