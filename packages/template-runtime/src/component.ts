@@ -54,13 +54,13 @@ export interface Component<P = Data, S = Data, T = Store> extends HTMLElement {
 	 * Updates props with data from `value`
 	 * @param value Updated props
 	 */
-	setProps(value: object): void;
+	setProps(value: Partial<P>): void;
 
 	/**
 	 * Updates state with data from `value`
 	 * @param value Updated values
 	 */
-	setState(value: object): void;
+	setState(value: Partial<S>): void;
 }
 
 /**

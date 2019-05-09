@@ -31,7 +31,7 @@ export class Store<T = Data> {
 	/**
 	 * Updates data in store
 	 */
-	set(data: T): void {
+	set(data: Partial<T>): void {
 		const updated = changed(data, this.data, prefix);
 		const render = this.sync ? renderComponent : scheduleRender;
 
