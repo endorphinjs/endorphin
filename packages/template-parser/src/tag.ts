@@ -1,4 +1,4 @@
-import expression, { EXPRESSION_START } from './expression';
+import expression, { EXPRESSION_START, JSParserOptions } from './expression';
 import {
     Identifier, Literal, Program, LiteralValue, ENDAttribute,
     ENDAttributeValue, ParsedTag, ENDAttributeName, ENDAttributeValueExpression,
@@ -145,7 +145,13 @@ function attribute(scanner: Scanner): ENDAttribute {
         let value: ENDAttributeValue = null;
 
         if (scanner.eat(ATTR_DELIMITER)) {
-            value = scanner.expect(attributeValue, 'Expecting attribute value');
+            const opt: JSParserOptions = {};
+            // Allow assignments in event handlers
+            if (isIdentifier(name) && name.name.startsWith('on:')) {
+                opt.assignment = true;
+            }
+
+            value = scanner.expect(() => attributeValue(scanner, opt), 'Expecting attribute value');
         }
 
         return {
@@ -162,8 +168,8 @@ function attribute(scanner: Scanner): ENDAttribute {
  * @param {StreamReader} scanner
  * @return {Token}
  */
-function attributeValue(scanner: Scanner): ENDAttributeValue {
-    const expr = expression(scanner);
+function attributeValue(scanner: Scanner, options?: JSParserOptions): ENDAttributeValue {
+    const expr = expression(scanner, options);
     if (expr) {
         return expandExpression(expr);
     }
@@ -174,7 +180,7 @@ function attributeValue(scanner: Scanner): ENDAttributeValue {
         // Check if it’s interpolated value, e.g. "foo {bar}"
         const raw = scanner.current();
         if (raw.includes(exprStart)) {
-            const attrExpression = attributeValueExpression(scanner.limit(scanner.start + 1, scanner.pos - 1));
+            const attrExpression = attributeValueExpression(scanner.limit(scanner.start + 1, scanner.pos - 1), options);
             if (attrExpression.elements.length === 1) {
                 return attrExpression.elements[0];
             }
@@ -198,7 +204,7 @@ function attributeValue(scanner: Scanner): ENDAttributeValue {
 /**
  * Parses interpolated attribute value from current scanner context
  */
-function attributeValueExpression(scanner: Scanner): ENDAttributeValueExpression {
+function attributeValueExpression(scanner: Scanner, options?: JSParserOptions): ENDAttributeValueExpression {
     let start = scanner.start;
     let pos = scanner.start;
     let expr: Program;
@@ -206,7 +212,7 @@ function attributeValueExpression(scanner: Scanner): ENDAttributeValueExpression
 
     while (!scanner.eof()) {
         pos = scanner.pos;
-        if (expr = expression(scanner)) {
+        if (expr = expression(scanner, options)) {
             if (pos !== start) {
                 const txt = scanner.substring(start, pos);
                 elements.push(literal(txt, txt, scanner.loc(start)));

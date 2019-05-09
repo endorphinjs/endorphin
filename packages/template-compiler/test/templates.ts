@@ -4,7 +4,7 @@ import { equal } from 'assert';
 import { Linter } from 'eslint';
 import compile, { CompileOptions } from '../src/index';
 
-describe('New compiler', () => {
+describe('Template compiler', () => {
     const baseInput = path.resolve(__dirname, './samples');
     const baseOutput = path.resolve(__dirname, './fixtures');
     const linterConfig = require('./fixtures/.eslintrc.js');
@@ -66,6 +66,6 @@ describe('New compiler', () => {
     });
 
     // it.only('debug', () => {
-    //     compare('templates/animate.html', null, true);
+    //     compare('templates/events-assignment.html', null, true);
     // });
 });

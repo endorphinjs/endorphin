@@ -1,10 +1,10 @@
 import { Parser, Position } from 'acorn';
 import endorphinParser from './acorn-plugin';
-import { Program, Identifier, Expression, Node, JSNode, Statement } from '../ast';
+import { Program, Identifier, Expression, Node, JSNode, Statement, AssignmentExpression, UpdateExpression } from '../ast';
 import Scanner from '../scanner';
 import { walkFullAncestor as walk } from '../walk';
 import { eatPair, isIdentifier, isFunction } from '../utils';
-import { ENDSyntaxError } from '../syntax-error';
+import { ENDSyntaxError, ENDCompileError } from '../syntax-error';
 import { convert } from './getter';
 import { ParserOptions } from '../parse';
 
@@ -13,6 +13,7 @@ export const jsGlobals = new Set(['Math', 'String', 'Boolean', 'Object']);
 export interface JSParserOptions extends ParserOptions {
     offset?: Position;
     url?: string;
+    assignment?: boolean;
 }
 
 // @ts-ignore
@@ -30,7 +31,7 @@ const prefixes = {
 /**
  * Consumes expression from current stream location
  */
-export default function expression(scanner: Scanner): Program {
+export default function expression(scanner: Scanner, options: JSParserOptions = {}): Program {
     if (eatPair(scanner, EXPRESSION_START, EXPRESSION_END)) {
         scanner.start++;
         const begin = scanner.start;
@@ -39,7 +40,8 @@ export default function expression(scanner: Scanner): Program {
         return parseJS(scanner.substring(begin, end), {
             ...scanner.options,
             url: scanner.url,
-            offset: scanner.sourceLocation(begin)
+            offset: scanner.sourceLocation(begin),
+            ...options
         });
     }
 }
@@ -79,21 +81,27 @@ export function parseJS(code: string, options: JSParserOptions = {}): Program {
             }
         }
 
-        if (isIdentifier(node)) {
-            if (jsGlobals.has(node.name) || isReserved(node, ancestors)) {
-                return;
+        if (isAssignment(node) || isUpdate(node)) {
+            if (!options.assignment) {
+                throw new ENDCompileError(`Assignment expressions are not allowed in current expression`, node);
             }
 
-            const prefix = node.name[0];
-            if (prefix in prefixes) {
-                node.context = prefixes[prefix];
-                node.raw = node.name;
-                node.name = node.name.slice(prefix.length);
-            } else if (ancestors.some(expr => isFunctionArgument(node, expr))) {
-                node.context = 'argument';
-            } else {
-                node.context = options.helpers && options.helpers.includes(node.name)
-                    ? 'helper' : 'property';
+            const operand = isAssignment(node) ? node.left : node.argument;
+
+            // Assignment is allowed for state and store identifiers
+            if (isIdentifier(operand)) {
+                if (!operand.context) {
+                    updateIdContext(operand, ancestors, options);
+                }
+
+                if (operand.context === 'state' || operand.context === 'store') {
+                    return;
+                }
+            }
+            throw new ENDCompileError(`Assignment is allowed for state and store variables only`, node);
+        } else if (isIdentifier(node)) {
+            if (!node.context && !jsGlobals.has(node.name) && !isReserved(node, ancestors)) {
+                updateIdContext(node, ancestors, options);
             }
         } else if (!options.disableGetters) {
             upgradeContent(node as Expression);
@@ -110,7 +118,7 @@ function isReserved(id: Identifier, ancestors: Expression[]): boolean {
     const last = ancestors[ancestors.length - 1];
 
     if (last) {
-        return isProperty(id, last) || isAssignment(id, last);
+        return isProperty(id, last) || isLeftAssignment(id, last);
     }
 
     return false;
@@ -208,6 +216,28 @@ function isProperty(id: Identifier, expr: Expression): boolean {
 /**
  * Check if given identifier is a left part of assignment expression
  */
-function isAssignment(id: Identifier, expr: Expression): boolean {
+function isLeftAssignment(id: Identifier, expr: Expression): boolean {
     return 'left' in expr && expr.left === id;
+}
+
+function isAssignment(node: JSNode): node is AssignmentExpression {
+    return node.type === 'AssignmentExpression';
+}
+
+function isUpdate(node: JSNode): node is UpdateExpression {
+    return node.type === 'UpdateExpression';
+}
+
+function updateIdContext(node: Identifier, ancestors: Expression[], options: JSParserOptions) {
+    const prefix = node.name[0];
+    if (prefix in prefixes) {
+        node.context = prefixes[prefix];
+        node.raw = node.name;
+        node.name = node.name.slice(prefix.length);
+    } else if (ancestors.some(expr => isFunctionArgument(node, expr))) {
+        node.context = 'argument';
+    } else {
+        node.context = options.helpers && options.helpers.includes(node.name)
+            ? 'helper' : 'property';
+    }
 }

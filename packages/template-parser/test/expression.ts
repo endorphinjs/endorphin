@@ -1,14 +1,15 @@
-import { deepEqual, equal } from 'assert';
+import { deepEqual, equal, throws } from 'assert';
 import { parseJS, walk } from '../src/index';
 import { Identifier, Program, IdentifierContext } from '../src/ast';
 import generateJS from './assets/generate';
+import { JSParserOptions } from '../src/expression';
 
 interface IdContextMap {
     [id: string]: IdentifierContext | void;
 }
 
-function js(code: string): string {
-    return generateJS(parseJS(code, { helpers: ['emit', 'count'] })).trim();
+function js(code: string, opt: JSParserOptions = {}): string {
+    return generateJS(parseJS(code, { helpers: ['emit', 'count'], ...opt })).trim();
 }
 
 function collectIdContext(ast: Program): IdContextMap {
@@ -77,5 +78,13 @@ describe('JS Parser', () => {
         // Detect `emit` is a helper and add reference to component
         equal(js('e => emit(foo)'), '(e => emit(this, $host.props.foo));');
         equal(js('e => foo(e.pageX)'), '(e => $call($host.props, "foo", [$get(e, "pageX")]));');
+    });
+
+    it('should handle assignment expressions', () => {
+        const opt: JSParserOptions = { assignment: true };
+        throws(() => js('#foo += 1'), /Assignment expressions are not allowed/);
+        throws(() => js('foo += 1', opt), /Assignment is allowed for state and store/);
+        equal(js('#foo += 1', opt), '$host.state.foo += 1;');
+        equal(js('#foo++', opt), '$host.state.foo++;');
     });
 });

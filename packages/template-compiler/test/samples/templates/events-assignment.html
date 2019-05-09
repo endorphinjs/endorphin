@@ -1,0 +1,8 @@
+<template>
+    <div
+        on:evt1={#count++}
+        on:evt2={#count += 2}
+        on:evt3={$s = !#enabled}
+        on:evt4={e => { #a += e.pageX; #b += e.pageY; }}
+    />
+</template>

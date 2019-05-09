@@ -4,11 +4,11 @@ import {
     Property, RegExpLiteral, SequenceExpression, UnaryExpression, CallExpression,
     EmptyStatement, ThisExpression, MemberExpression, ReturnStatement,
     ArrowFunctionExpression, BlockStatement, ObjectPattern, TemplateLiteral,
-    TaggedTemplateExpression, ENDCaller, ENDGetter, ENDGetterPrefix, ENDFilter, ArrayPattern
+    TaggedTemplateExpression, ENDCaller, ENDGetter, ENDGetterPrefix, ENDFilter, ArrayPattern, AssignmentExpression, UpdateExpression
 } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import { Chunk, ChunkList, AstVisitorMap, ExpressionOutput, AstVisitorContinue } from '../types';
-import { sn, propGetter, qStr, isIdentifier } from '../lib/utils';
+import { sn, propGetter, qStr, isIdentifier, propSetter } from '../lib/utils';
 
 export default {
     Program(node: Program, state, next) {
@@ -89,6 +89,33 @@ export default {
     },
     ThisExpression(node: ThisExpression, state) {
         return sn(state.host, node);
+    },
+    AssignmentExpression(node: AssignmentExpression, state, next) {
+        // Assignments are allowed for state and store variables only
+        const dest = node.left as Identifier;
+        const prefix = dest.context === 'state'
+            ? `.setState`
+            : `.store.set`;
+
+        const { operator } = node;
+        const expr = next(node.right);
+        if (operator !== '=') {
+            expr.prepend([next(dest), ` ${operator.slice(0, -1)} `]);
+        }
+
+        return sn([next({ type: 'ThisExpression' }), `${prefix}({ ${propSetter(dest.name)}: `, expr, ' })']);
+    },
+    UpdateExpression(node: UpdateExpression, state, next) {
+        return next({
+            type: 'AssignmentExpression',
+            left: node.argument,
+            operator: node.operator[0] + '=',
+            right: {
+                type: 'Literal',
+                value: 1,
+                raw: '1'
+            }
+        } as AssignmentExpression);
     },
     ArrowFunctionExpression(node: ArrowFunctionExpression, state, next) {
         const params = node.params.length === 1 && isIdentifier(node.params[0])
