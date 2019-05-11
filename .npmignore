@@ -10,7 +10,5 @@ jspm_packages
 /lib
 /coverage
 /packages
-/compiler/*.ts
-/compiler/*.json
-/helpers/*.ts
-/helpers/*.json
+/compiler/tsconfig.json
+/helpers/tsconfig.json

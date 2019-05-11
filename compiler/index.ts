@@ -34,6 +34,7 @@ module.exports.scopeCSS = scopeCSS;
 async function scopeCSS(code: string, scope: string, options: ScopeCSSOptions = {}): Promise<string | CodeWithMap> {
 	const scoped = cssModule(code, scope, {
 		filename: options.filename,
+		positions: !!options.map,
 		sourceMap: !!options.map
 	});
 
