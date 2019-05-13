@@ -300,7 +300,7 @@ export default class ElementEntity extends Entity {
 
             attributes.forEach(attr => {
                 if (!this.isDynamicAttribute(attr)) {
-                    props.set(objectKey(attr.name, this.state), compileAttributeValue(attr.value, state, 'params'));
+                    props.set(objectKey(attr.name, this.state), compileAttributeValue(attr.value, state, 'component'));
                 }
             });
 

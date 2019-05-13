@@ -18,6 +18,10 @@ export default function template$0(host, scope) {
 	mountComponent(subComponent$0, {
 		p1: "1"
 	});
+	const subComponent$1 = scope.subComponent$1 = target$0.appendChild(createComponent("sub-component", SubComponent, host));
+	mountComponent(subComponent$1, {
+		enabled: true
+	});
 	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
@@ -30,10 +34,12 @@ function template$0Update(host, scope) {
 	setAttribute(inj$0, "p3", 3);
 	markSlotUpdate(subComponent$0, "", su$0);
 	updateComponent(subComponent$0);
+	updateComponent(scope.subComponent$1);
 	return su$0;
 }
 
 function template$0Unmount(scope) {
 	scope.subComponent$0 = unmountComponent(scope.subComponent$0);
+	scope.subComponent$1 = unmountComponent(scope.subComponent$1);
 	scope.inj$0 = null;
 }
