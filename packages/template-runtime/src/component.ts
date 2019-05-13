@@ -199,6 +199,9 @@ export interface ComponentDefinition {
 	/** Component was removed */
 	didUnmount?(component: Component): void;
 
+	/** Contents of `slotName` slot were updated */
+	didSlotUpdate?(component: Component, slotName: string, slotContainer: Element | DocumentFragment): void;
+
 	[key: string]: any;
 }
 
