@@ -61,5 +61,5 @@ export function setStore(component: Component, value: {}) {
  * Returns slot container with given name
  */
 export function getSlot(component: Component, name: string): Element | DocumentFragment | void {
-	return component.componentModel && component.componentModel.input.slots[name];
+	return component.componentModel && component.componentModel.input.slots![name];
 }
