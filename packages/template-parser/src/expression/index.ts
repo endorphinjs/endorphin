@@ -1,6 +1,6 @@
 import { Parser, Position } from 'acorn';
 import endorphinParser from './acorn-plugin';
-import { Program, Identifier, Expression, Node, JSNode, Statement, AssignmentExpression, UpdateExpression } from '../ast';
+import { Program, Identifier, Expression, Node, JSNode, Statement, AssignmentExpression, UpdateExpression, CallExpression } from '../ast';
 import Scanner from '../scanner';
 import { walkFullAncestor as walk } from '../walk';
 import { eatPair, isIdentifier, isFunction } from '../utils';
@@ -237,7 +237,22 @@ function updateIdContext(node: Identifier, ancestors: Expression[], options: JSP
     } else if (ancestors.some(expr => isFunctionArgument(node, expr))) {
         node.context = 'argument';
     } else {
-        node.context = options.helpers && options.helpers.includes(node.name)
-            ? 'helper' : 'property';
+        if (options.helpers) {
+            // Check if given identifier is a helper function call
+            let call: CallExpression;
+            for (let i = ancestors.length - 1; i >= 0; i--) {
+                if (ancestors[i].type === 'CallExpression') {
+                    call = ancestors[i] as CallExpression;
+                    break;
+                }
+            }
+
+            if (call && call.callee === node && options.helpers.includes(node.name)) {
+                node.context = 'helper';
+                return;
+            }
+        }
+
+        node.context = 'property';
     }
 }

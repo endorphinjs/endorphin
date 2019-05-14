@@ -78,6 +78,9 @@ describe('JS Parser', () => {
         // Detect `emit` is a helper and add reference to component
         equal(js('e => emit(foo)'), '(e => emit(this, $host.props.foo));');
         equal(js('e => foo(e.pageX)'), '(e => $call($host.props, "foo", [$get(e, "pageX")]));');
+
+        // `emit` is a helper but not a caller: must use it as prop
+        equal(js('emit'), '$host.props.emit;');
     });
 
     it('should handle assignment expressions', () => {

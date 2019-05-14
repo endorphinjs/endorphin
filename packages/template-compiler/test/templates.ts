@@ -42,9 +42,12 @@ describe('Template compiler', () => {
     it('should generate JS templates', () => {
         const templatesDir = 'templates';
         const files = fs.readdirSync(path.join(baseInput, templatesDir));
+        const opt: CompileOptions = {
+            helpers: { main: ['count'] }
+        };
 
         files.forEach(file => {
-            compare(path.join(templatesDir, file));
+            compare(path.join(templatesDir, file), opt);
         });
     });
 

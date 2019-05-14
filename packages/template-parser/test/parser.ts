@@ -81,7 +81,7 @@ describe('Template parser', () => {
     });
 
     it('should handle assignments in event handlers', () => {
-        let elem = parseTag('<div on:click={ #count++ } />');
+        const elem = parseTag('<div on:click={ #count++ } />');
         const onClick = elem.directives[0];
         const expr = (onClick.value as Program).body[0] as ExpressionStatement;
         equal(onClick.value.type, 'Program');
