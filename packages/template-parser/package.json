@@ -1,6 +1,6 @@
 {
   "name": "@endorphinjs/template-parser",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Parses EndorphinJS templates to ESTree-compatible AST",
   "main": "./dist/template-parser.cjs.js",
   "module": "./dist/template-parser.es.js",
