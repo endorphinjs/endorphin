@@ -115,15 +115,8 @@ export default {
     },
 
     ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
-        const block = entity('block', state);
-
-        block.setMount(() => mountAddClass(node, state));
-        if (state.element && state.element.node) {
-            // Running inside element
-            block.setUpdate(() => mountAddClass(node, state));
-        }
-
-        return block;
+        return entity('block', state)
+            .setShared(() => mountAddClass(node, state));
     },
 
     Literal(node: Literal, state) {
