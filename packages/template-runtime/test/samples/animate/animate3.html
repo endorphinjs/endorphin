@@ -1,0 +1,30 @@
+<link rel="import" href="./sub-component.js" />
+
+<template>
+	<h1>Nested animation sample</h1>
+	<button on:click={#outer = !#outer}>Toggle outer</button>
+	<button on:click={#inner = !#inner}>Toggle inner</button>
+
+	<div class="block"
+		animate:in="show 1s ease-out"
+		animate:out="hide 0.5s ease-in"
+		e:if={#outer}>
+		<sub-component a=1>Outer block</sub-component>
+
+		<div class="block"
+			animate:in="show 1s ease-out"
+			animate:out="hide 0.5s ease-in"
+			e:if={#inner}>
+			<sub-component a=2>Inner block</sub-component>
+		</div>
+	</div>
+</template>
+
+<script>
+export function state() {
+	return {
+		outer: false,
+		inner: false
+	}
+}
+</script>

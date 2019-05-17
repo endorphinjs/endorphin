@@ -13,7 +13,10 @@ import IteratorEntity from './IteratorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter, isValidChunk } from '../lib/utils';
+import {
+    isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName,
+    getAttrValue, propSetter, isValidChunk, createFunction
+} from '../lib/utils';
 import { Chunk, ChunkList } from '../types';
 import { ENDCompileError } from '../lib/error';
 import generateExpression from '../expression';
@@ -245,43 +248,18 @@ export default class ElementEntity extends Entity {
             if (this.animateOut) {
                 // We need to create a callback function to properly unmount
                 // contents of current element
-                const entities: Entity[] = [];
-                const empty = sn();
-                const callback = state.runBlock('animateOut', block => {
-                    const transfer = (item: Entity) => {
-                        item.children.forEach(transfer);
-                        if (isValidChunk(item.code.unmount)) {
-                            const unmountEntity = state.entity();
-                            unmountEntity.code.mount = item.code.unmount;
-                            // NB: use empty source node to skip auto-null check
-                            // in block unmount
-                            item.code.unmount = empty;
-                            block.scopeUsage.use('mount');
-                            entities.push(unmountEntity);
-                        }
-                    };
+                anim.setUnmount(() => {
+                    const callback = animateOutCallback(this, state);
+                    const args: ChunkList = [this.getSymbol(), compileAttributeValue(this.animateOut, state)];
 
-                    transfer(this);
-                    return entities;
+                    if (callback) {
+                        args.push(state.scope, callback);
+                    }
+
+                    args.push(cssScopeArg(state));
+
+                    return state.runtime('animateOut', args);
                 });
-
-                if (entities.length) {
-                    anim.setUnmount(() =>
-                        state.runtime('animateOut', [
-                            this.getSymbol(),
-                            compileAttributeValue(this.animateOut, state),
-                            state.scope,
-                            callback,
-                            cssScopeArg(state)
-                        ]));
-                } else {
-                    anim.setUnmount(() =>
-                        state.runtime('animateOut', [
-                            this.getSymbol(),
-                            compileAttributeValue(this.animateOut, state),
-                            cssScopeArg(state)
-                        ]));
-                }
             }
 
             this.add(anim);
@@ -497,4 +475,32 @@ function objectKey(node: Identifier | Program, state: CompileState) {
 
 function cssScopeArg(state: CompileState): string {
     return state.options.cssScope ? state.cssScopeSymbol : '';
+}
+
+/**
+ * Generates animation out callback
+ */
+function animateOutCallback(elem: Entity, state: CompileState): string | null {
+    const empty = sn();
+    const callback = state.globalSymbol('animateOut');
+    const code: ChunkList = [];
+
+    const transfer = (item: Entity) => {
+        item.children.forEach(transfer);
+        if (isValidChunk(item.code.unmount)) {
+            code.push(item.code.unmount);
+            // NB: use empty source node to skip auto-null check
+            // in block unmount
+            item.code.unmount = empty;
+        }
+    };
+
+    transfer(elem);
+
+    if (code.length) {
+        state.pushOutput(createFunction(callback, [state.scope], code));
+        return callback;
+    }
+
+    return null;
 }

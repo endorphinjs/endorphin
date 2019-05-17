@@ -49,7 +49,7 @@ function forContent$0Unmount(scope) {
 	scope.partial$0 = unmountPartial(scope.partial$0);
 }
 
-function animateOut$0(host, scope) {
+function animateOut$0(scope) {
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.html$0 = unmountInnerHTML(scope.html$0);
 	scope.for$0 = unmountIterator(scope.for$0);
@@ -96,7 +96,7 @@ function ifEntry$0(host) {
 	}
 }
 
-function animateOut$1(host, scope) {
+function animateOut$1(scope) {
 	scope.innerComponent$1 = unmountComponent(scope.innerComponent$1);
 	scope.outerComponent$0 = unmountComponent(scope.outerComponent$0);
 }

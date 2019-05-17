@@ -185,6 +185,19 @@ export function prepareHelpers(...helpers: HelpersMap[]): PlainObject {
     return result;
 }
 
+/**
+ * Generates function from given fragments
+ */
+export function createFunction(name: string, args: string[], chunks: ChunkList, indent: string = '\t'): SourceNode {
+    if (chunks && chunks.length) {
+        return sn([
+            `function ${name}(${args.filter(Boolean).join(', ')}) {\n${indent}`,
+            ...format(chunks, indent),
+            '\n}\n'
+        ]);
+    }
+}
+
 export function format(chunks: ChunkList, pfx: string = '', suffix: string = '\n'): ChunkList {
     const result: ChunkList = [];
 
