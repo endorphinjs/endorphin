@@ -2,7 +2,11 @@
 	<slot>Sub component</slot>
 </template>
 <script>
+export function props() {
+	return { a: 0 };
+}
+
 export function willUnmount(component) {
-	console.log('component unmounted');
+	console.log('component %d will unmount', component.props.a);
 }
 </script>

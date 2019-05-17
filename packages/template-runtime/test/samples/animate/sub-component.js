@@ -1,22 +1,26 @@
-import { elem, insert, text, mountSlot, unmountSlot, addDisposeCallback } from "../../../dist/runtime.es.js";
+import { elem, text, insert, mountSlot, unmountSlot, addDisposeCallback } from "../../../dist/runtime.es.js";
 
-export default function $$template0(host, scope) {
-	const target0 = host.componentView;
-	const slot0 = target0.appendChild(elem("slot"));
-	scope.$_slot0 = mountSlot(host, "", slot0, $$slotDefaultContent0);
-	addDisposeCallback(host, $$template0Unmount);
+export function props() {
+	return { a: 0 };
 }
 
-function $$template0Unmount(scope) {
-	scope.$_slot0 = unmountSlot(scope.$_slot0);
+export function willUnmount(component) {
+	console.log('component %d will unmount', component.props.a);
 }
 
-function $$slotDefaultContent0(host, injector) {
+
+function defaultSlot$0(host, injector) {
 	insert(injector, text("Sub component"));
 }
 
+export default function template$0(host, scope) {
+	const target$0 = host.componentView;
+	const slot$0 = target$0.appendChild(elem("slot"));
+	scope.slot$1 = mountSlot(host, "", slot$0, defaultSlot$0);
+	addDisposeCallback(host, template$0Unmount);
+}
 
-export function willUnmount(component) {
-	console.log('component unmounted');
+function template$0Unmount(scope) {
+	scope.slot$1 = unmountSlot(scope.slot$1);
 }
 

@@ -7,7 +7,7 @@ export type MountTemplate = (host: Component, scope: Scope) => UpdateTemplate | 
 export type UpdateTemplate = (host: Component, scope: Scope) => number | void;
 export type MountBlock<D = Scope> = (host: Component, injector: Injector, data: D) => UpdateBlock | void;
 export type UpdateBlock<D = Scope> = (host: Component, injector: Injector, data: D) => number | void;
-export type UnmountBlock = (scope: Scope) => void;
+export type UnmountBlock = (scope: Scope, forced?: boolean) => void;
 
 export interface Scope {
 	[key: string]: any;

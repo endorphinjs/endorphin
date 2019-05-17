@@ -49,7 +49,7 @@ function forContent$0Unmount(scope) {
 	scope.partial$0 = unmountPartial(scope.partial$0);
 }
 
-function animateOut$0(host, scope) {
+function animateOut$0(scope) {
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.html$0 = unmountInnerHTML(scope.html$0);
 	scope.for$0 = unmountIterator(scope.for$0);
@@ -85,8 +85,8 @@ function ifBody$0Update(host, injector, scope) {
 	finalizeEvents(inj$1);
 }
 
-function ifBody$0Unmount(scope) {
-	animateOut(scope.div$0, "hide", scope, animateOut$0);
+function ifBody$0Unmount(scope, forced) {
+	forced ? animateOut$0(scope) : animateOut(scope.div$0, "hide", scope, animateOut$0);
 	scope.inj$1 = null;
 }
 
@@ -96,7 +96,7 @@ function ifEntry$0(host) {
 	}
 }
 
-function animateOut$1(host, scope) {
+function animateOut$1(scope) {
 	scope.innerComponent$1 = unmountComponent(scope.innerComponent$1);
 	scope.outerComponent$0 = unmountComponent(scope.outerComponent$0);
 }
@@ -120,8 +120,8 @@ function ifBody$2Update(host, injector, scope) {
 	return su$0;
 }
 
-function ifBody$2Unmount(scope) {
-	animateOut(scope.outerComponent$0, "fade-out", scope, animateOut$1);
+function ifBody$2Unmount(scope, forced) {
+	forced ? animateOut$1(scope) : animateOut(scope.outerComponent$0, "fade-out", scope, animateOut$1);
 }
 
 function ifEntry$2(host) {

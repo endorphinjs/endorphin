@@ -1,10 +1,9 @@
-import { SourceNode } from 'source-map';
 import { ChunkList, Chunk, UsageContext, RenderContext } from '../types';
 import CompileState from './CompileState';
 import Entity from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import UsageStats from './UsageStats';
-import { sn, format } from './utils';
+import { createFunction } from './utils';
 import InjectorEntity from '../entities/InjectorEntity';
 
 interface VariableMap {
@@ -23,6 +22,8 @@ export default class BlockContext {
 
     /** Should block mount function export itself? */
     exports?: boolean | 'default';
+
+    private forcedUnmount = '';
 
     /**
      * @param name Name of the block, will be used as suffix in generated function
@@ -46,6 +47,18 @@ export default class BlockContext {
     }
 
     /**
+     * Returns argument for unmount function indicating that unmount might be forced,
+     * e.g. skip any async handlers like animations and unmount contents
+     */
+    get forcedUnmountArg(): string {
+        if (!this.forcedUnmount) {
+            this.forcedUnmount = 'forced';
+        }
+
+        return this.forcedUnmount;
+    }
+
+    /**
      * Declares variable with given default value
      */
     declareVar(name: string, value?: string): string {
@@ -64,7 +77,6 @@ export default class BlockContext {
      */
     generate(entities: Entity[]): ChunkList {
         const { state, name, scopeUsage, rawScope: scope } = this;
-        const scopeArg = (count: number, first?: boolean): string => count ? `${first ? '' : ', '}${scope}` : '';
 
         const mountChunks: ChunkList = [];
         const updateChunks: ChunkList = [];
@@ -136,8 +148,9 @@ export default class BlockContext {
         this.pushVars(updateChunks, 'update');
 
         const { indent } = state;
-        const injectorArg = this.injector ? `, ${this.injector.name}` : '';
-        const mountFn = createFunction(name, `${state.host}${injectorArg}${scopeArg(scopeUsage.mount)}`, mountChunks, indent);
+        const injectorArg = this.injector ? this.injector.name : '';
+        const scopeArg = (count: number): string => count ? scope : '';
+        const mountFn = createFunction(name, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
 
         if (this.exports) {
             mountFn.prepend([`export `, this.exports === 'default' ? 'default ' : '']);
@@ -145,8 +158,8 @@ export default class BlockContext {
 
         return [
             mountFn,
-            createFunction(`${name}Update`, `${state.host}${injectorArg}${scopeArg(scopeUsage.update)}`, updateChunks, indent),
-            createFunction(`${name}Unmount`, scopeArg(scopeUsage.unmount, true), unmountChunks, indent)
+            createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent),
+            createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount), this.forcedUnmount], unmountChunks, indent)
         ];
     }
 
@@ -163,18 +176,5 @@ export default class BlockContext {
                 chunks.push(`return ${varNames.join(' | ')}`);
             }
         }
-    }
-}
-
-/**
- * Generates function from given fragments
- */
-function createFunction(name: string, args: string, chunks: ChunkList, indent: string = '\t'): SourceNode {
-    if (chunks && chunks.length) {
-        return sn([
-            `function ${name}(${args}) {\n${indent}`,
-            ...format(chunks, indent),
-            '\n}\n'
-        ]);
     }
 }
