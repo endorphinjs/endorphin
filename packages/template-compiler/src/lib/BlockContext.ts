@@ -23,8 +23,6 @@ export default class BlockContext {
     /** Should block mount function export itself? */
     exports?: boolean | 'default';
 
-    private forcedUnmount = '';
-
     /**
      * @param name Name of the block, will be used as suffix in generated function
      * so it must be unique in its scope
@@ -44,18 +42,6 @@ export default class BlockContext {
      */
     get rawScope(): string {
         return this.state.options.scope;
-    }
-
-    /**
-     * Returns argument for unmount function indicating that unmount might be forced,
-     * e.g. skip any async handlers like animations and unmount contents
-     */
-    get forcedUnmountArg(): string {
-        if (!this.forcedUnmount) {
-            this.forcedUnmount = 'forced';
-        }
-
-        return this.forcedUnmount;
     }
 
     /**
@@ -159,7 +145,7 @@ export default class BlockContext {
         return [
             mountFn,
             createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent),
-            createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount), this.forcedUnmount], unmountChunks, indent)
+            createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount)], unmountChunks, indent)
         ];
     }
 

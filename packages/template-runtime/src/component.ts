@@ -351,7 +351,7 @@ export function unmountComponent(component: Component): void {
 		component.store.unwatch(component);
 	}
 
-	safeCall(dispose, scope, true);
+	safeCall(dispose, scope);
 
 	for (const slotName in slots) {
 		disposeBlock(slots[slotName]);

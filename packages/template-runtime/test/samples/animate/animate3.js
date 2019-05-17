@@ -39,8 +39,8 @@ function ifBody$1Update(host, injector, scope) {
 	updateComponent(scope.subComponent$1);
 }
 
-function ifBody$1Unmount(scope, forced) {
-	forced ? animateOut$0(scope) : animateOut(scope.div$1, "hide 0.5s ease-in", scope, animateOut$0);
+function ifBody$1Unmount(scope) {
+	animateOut(scope.div$1, "hide 0.5s ease-in", scope, animateOut$0);
 }
 
 function ifEntry$1(host) {
@@ -75,8 +75,8 @@ function ifBody$0Update(host, injector, scope) {
 	updateBlock(scope.if$1);
 }
 
-function ifBody$0Unmount(scope, forced) {
-	forced ? animateOut$1(scope) : animateOut(scope.div$0, "hide 0.5s ease-in", scope, animateOut$1);
+function ifBody$0Unmount(scope) {
+	animateOut(scope.div$0, "hide 0.5s ease-in", scope, animateOut$1);
 }
 
 function ifEntry$0(host) {

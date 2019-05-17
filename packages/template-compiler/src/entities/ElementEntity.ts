@@ -255,18 +255,10 @@ export default class ElementEntity extends Entity {
                     if (callback) {
                         args.push(state.scope, callback);
                     }
+
                     args.push(cssScopeArg(state));
 
-                    const code = state.runtime('animateOut', args);
-                    const forced = state.blockContext.forcedUnmountArg;
-
-                    if (callback) {
-                        code.prepend(`${forced} ? ${callback}(${state.scope}) : `);
-                    } else {
-                        code.prepend(`!${forced} && `);
-                    }
-
-                    return code;
+                    return state.runtime('animateOut', args);
                 });
             }
 

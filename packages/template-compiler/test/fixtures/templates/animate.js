@@ -85,8 +85,8 @@ function ifBody$0Update(host, injector, scope) {
 	finalizeEvents(inj$1);
 }
 
-function ifBody$0Unmount(scope, forced) {
-	forced ? animateOut$0(scope) : animateOut(scope.div$0, "hide", scope, animateOut$0);
+function ifBody$0Unmount(scope) {
+	animateOut(scope.div$0, "hide", scope, animateOut$0);
 	scope.inj$1 = null;
 }
 
@@ -120,8 +120,8 @@ function ifBody$2Update(host, injector, scope) {
 	return su$0;
 }
 
-function ifBody$2Unmount(scope, forced) {
-	forced ? animateOut$1(scope) : animateOut(scope.outerComponent$0, "fade-out", scope, animateOut$1);
+function ifBody$2Unmount(scope) {
+	animateOut(scope.outerComponent$0, "fade-out", scope, animateOut$1);
 }
 
 function ifEntry$2(host) {

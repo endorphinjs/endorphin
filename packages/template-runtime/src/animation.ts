@@ -2,7 +2,7 @@ import { domRemove } from './dom';
 import { animatingKey, assign, obj } from './utils';
 import { Scope } from './types';
 
-type AnimationCallback = (elem: Element, scope?: Scope) => void;
+type AnimationCallback = (scope?: Scope) => void;
 
 /**
  * Animates element appearance
@@ -24,7 +24,7 @@ export function animateOut(elem: HTMLElement, animation: string, scope: Scope | 
 		scope = callback = undefined;
 	}
 
-	if (animation = createAnimation(animation, cssScope)) {
+	if (isAttached(elem) && (animation = createAnimation(animation, cssScope))) {
 		// Create a copy of scope and pass it to callback function.
 		// It’s required for proper clean-up in case if the same element
 		// (with the same scope references) will be created during animation
@@ -84,6 +84,14 @@ function concat(name: string, suffix: string) {
 }
 
 function dispose(elem: HTMLElement, scope?: Scope, callback?: AnimationCallback) {
-	callback && callback(elem, scope);
 	domRemove(elem);
+	callback && callback(scope);
+}
+
+/**
+ * Check if given DOM element is still attached to document
+ */
+function isAttached(elem: HTMLElement): boolean {
+	const root = elem.ownerDocument && elem.ownerDocument.documentElement;
+	return root ? root.contains(elem) : false;
 }
