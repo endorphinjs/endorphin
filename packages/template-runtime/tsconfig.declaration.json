@@ -8,5 +8,5 @@
     "declaration": true,
     "emitDeclarationOnly": true
   },
-  "files": ["src/runtime.ts"]
+  "files": ["src/runtime-types.ts"]
 }

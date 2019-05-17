@@ -22,12 +22,12 @@ export interface ChangeSet<T = any> {
 	cur: { [name: string]: T | null };
 }
 
-export interface Changes {
-	[key: string]: {
-		current: any,
-		prev: any
-	};
-}
+export type Changes<T = any> = {
+	[P in keyof T]?: {
+		current: T[P] | null,
+		prev: T[P] | null
+	}
+};
 
 export interface EventBinding extends EventListenerObject {
 	host: Component;
