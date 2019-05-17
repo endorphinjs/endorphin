@@ -4,7 +4,7 @@
   "description": "Component-based UI rendering library",
   "main": "./runtime/runtime.cjs.js",
   "module": "./runtime/runtime.es.js",
-  "types": "./runtime/runtime.d.ts",
+  "types": "./runtime/runtime-types.d.ts",
   "scripts": {
     "build": "npm run build:runtime && npm run build:helpers && npm run build:compiler",
     "build:runtime": "mkdir -p runtime && cp ./node_modules/@endorphinjs/template-runtime/dist/*.* ./runtime",
