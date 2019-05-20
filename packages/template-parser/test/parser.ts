@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { equal, deepEqual, throws } from 'assert';
 import parse from '../src/index';
-import { ENDElement, Program, ExpressionStatement } from '../src/ast';
+import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement } from '../src/ast';
 
 describe('Template parser', () => {
     function read(fileName: string): string {
@@ -10,6 +10,7 @@ describe('Template parser', () => {
     }
 
     const parseTag = (code: string) => parse(code).body[0] as ENDElement;
+    const parseTemplate = (code: string) => parse(code).body[0] as ENDTemplate;
 
     it('should parse simple template', () => {
         const file = 'samples/template1.html';
@@ -88,6 +89,11 @@ describe('Template parser', () => {
         equal(expr.expression.type, 'UpdateExpression');
 
         throws(() => parseTag('<div a={ #count++ } />'), /Assignment expressions are not allowed/);
+    });
 
+    it('should convert single interpolated expression into expression', () => {
+        const template = parseTemplate(`<template><e:if test="{test}" /></template>`);
+        const stmt = template.body[0] as ENDIfStatement;
+        equal(stmt.test.type, 'Program');
     });
 });
