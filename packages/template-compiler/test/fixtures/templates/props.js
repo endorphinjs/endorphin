@@ -35,7 +35,6 @@ function template$0Update(host, scope) {
 	markSlotUpdate(subComponent$0, "", su$0);
 	updateComponent(subComponent$0);
 	updateComponent(scope.subComponent$1);
-	return su$0;
 }
 
 function template$0Unmount(scope) {

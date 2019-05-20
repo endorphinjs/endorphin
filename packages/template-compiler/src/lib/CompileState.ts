@@ -4,7 +4,8 @@ import BlockContext from './BlockContext';
 import Entity, { RenderOptions, entity } from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
-import { nameToJS, propGetter, isIdentifier, isLiteral, isElement, sn, prepareHelpers } from './utils';
+import ComponentState from './ComponentState';
+import { nameToJS, propGetter, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue } from './utils';
 import { Chunk, RenderContext, ComponentImport, RuntimeSymbols, ChunkList } from '../types';
 import { CompileOptions } from '..';
 
@@ -56,13 +57,6 @@ export default class CompileState {
             && this.blockContext.element;
     }
 
-    /**
-     * Check if we’re currently rendering inside component
-     */
-    get inComponent(): boolean {
-        return this._inComponent;
-    }
-
     get hasPartials(): boolean {
         return this.partialsMap.size > 0;
     }
@@ -76,6 +70,13 @@ export default class CompileState {
     get renderContext(): RenderContext {
         return this._renderContext;
     }
+
+    /** Current component rendering context */
+    get component(): ComponentState | null {
+        const size = this.componentStack.length;
+        return size ? this.componentStack[size - 1] : null;
+    }
+
     /** Symbol for referencing CSS isolation scope */
     readonly cssScopeSymbol = 'cssScope';
 
@@ -121,8 +122,10 @@ export default class CompileState {
 
     /** Current namespaces */
     private namespaceMap: NamespaceMap = {};
+
+    /** Stack of currently rendered components */
+    private componentStack: ComponentState[] = [];
     private _renderContext?: RenderContext;
-    private _inComponent = false;
     private _warned: Set<string> = new Set();
 
     constructor(options?: CompileOptions) {
@@ -220,7 +223,7 @@ export default class CompileState {
      * Runs given `fn` function in context of `node` element
      */
     runElement(node: ENDTemplate | ENDElement | null, fn: (entity: ElementEntity) => void): ElementEntity {
-        const { blockContext, inComponent, namespaceMap } = this;
+        const { blockContext, namespaceMap, component } = this;
 
         if (!blockContext) {
             throw new Error('Unable to run in element context: parent block is absent');
@@ -228,18 +231,36 @@ export default class CompileState {
 
         const prevElem = blockContext.element;
         const ent = blockContext.element = new ElementEntity(node, this);
+        const prevSlot = component ? component.slot : null;
 
         if (node && isElement(node)) {
             this.namespaceMap = {
                 ...namespaceMap,
                 ...collectNamespaces(node)
             };
-            this._inComponent = ent.isComponent;
+            if (component) {
+                // Enter named slot context
+                const slotName = getAttrValue(node, 'slot');
+                if (slotName) {
+                    component.slot = String(slotName);
+                }
+            }
+        }
+
+        if (ent.isComponent) {
+            this.componentStack.push(new ComponentState(ent, this));
         }
 
         fn(ent);
 
-        this._inComponent = inComponent;
+        if (ent.isComponent) {
+            this.componentStack.pop();
+        }
+
+        if (component) {
+            component.slot = prevSlot;
+        }
+
         this.namespaceMap = namespaceMap;
         blockContext.element = prevElem;
         return ent;

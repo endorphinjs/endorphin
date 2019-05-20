@@ -122,7 +122,7 @@ export default class ElementEntity extends Entity {
 
         super.add(item);
 
-        if (this.isComponent && item.name) {
+        if (this.state.component && item.name) {
             // Adding content entity into component: we should collect
             // slot update stats
             this.markSlotUpdate(item);
@@ -200,8 +200,9 @@ export default class ElementEntity extends Entity {
      */
     finalizeAttributes() {
         const { state } = this;
-        this.add(state.entity('attr', {
-            shared: () => state.runtime('finalizeAttributes', [this.injector])
+        const runtimeName = 'finalizeAttributes';
+        this.add(state.entity(runtimeName, {
+            shared: () => state.runtime(runtimeName, [this.injector])
         }));
     }
 
@@ -298,14 +299,33 @@ export default class ElementEntity extends Entity {
 
     private markSlotUpdate(entity: Entity) {
         if (entity instanceof ElementEntity) {
-            // For component entity, we should mark inner mount entity only
+            const { component } = this.state;
+            const prevSlot = component.slot;
+
+            // In case if given element entity has explicit slot name,
+            // swap it in current component context
+            if (entity.node.type === 'ENDElement') {
+                component.slot = getAttrValue(entity.node, 'slot') as string || prevSlot;
+            }
+
             if (entity.isComponent) {
+                // For component entity, we should mark inner mount entity only
                 entity.children.forEach(child => {
                     if (child instanceof ComponentMountEntity) {
                         this.addSlotMark(child);
                     }
                 });
+            } else {
+                // In regular DOM element, the only entity that affects layout
+                // is an attribute
+                entity.children.forEach(child => {
+                    if (child.rawName === 'finalizeAttributes') {
+                        this.addSlotMark(child);
+                    }
+                });
             }
+
+            component.slot = prevSlot;
         } else if (entity.code.update) {
             const isSupported = entity instanceof ConditionEntity
                 || entity instanceof InnerHTMLEntity
@@ -319,17 +339,7 @@ export default class ElementEntity extends Entity {
     }
 
     private addSlotMark(entity: Entity) {
-        const slotName = getDestSlotName(entity);
-        entity.setUpdate(() => sn([this.getSlotMark(slotName), ' |= ', entity.getUpdate()]));
-    }
-
-    private getSlotMark(slotName: string): string {
-        if (!(slotName in this.slotUpdate)) {
-            const varName = this.state.globalSymbol('su');
-            this.slotUpdate[slotName] = this.state.blockContext.declareVar(varName, '0');
-        }
-
-        return this.slotUpdate[slotName];
+        entity.setUpdate(() => sn([this.state.component.slotMark, ' |= ', entity.getUpdate()]));
     }
 
     /**
@@ -344,7 +354,7 @@ export default class ElementEntity extends Entity {
      */
     private addInjector(entity: Entity): SourceNode {
         const args: ChunkList = [this.injector, entity.code.mount];
-        if (this.state.inComponent) {
+        if (this.state.component) {
             let slotName = '';
             if (entity instanceof ElementEntity && isElement(entity.node)) {
                 slotName = getAttrValue(entity.node, 'slot') as string || '';
@@ -452,21 +462,6 @@ export function getNodeName(localName: string): { ns?: string, name: string } {
     }
 
     return { ns, name };
-}
-
-/**
- * Returns destination slot name from given entity
- */
-function getDestSlotName(entity: Entity): string {
-    if (entity instanceof ComponentMountEntity) {
-        entity = entity.element;
-    }
-
-    if (entity instanceof ElementEntity && entity.node.type === 'ENDElement') {
-        return getAttrValue(entity.node, 'slot') as string || '';
-    }
-
-    return '';
 }
 
 function objectKey(node: Identifier | Program, state: CompileState) {

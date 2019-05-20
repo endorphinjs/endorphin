@@ -27,7 +27,6 @@ function template$0Update(host, scope) {
 	su$1 |= updateComponent(myComponent2$0);
 	markSlotUpdate(myComponent1$0, "header", su$1);
 	updateComponent(myComponent1$0);
-	return su$0 | su$1;
 }
 
 function template$0Unmount(scope) {

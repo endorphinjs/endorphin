@@ -1,0 +1,19 @@
+<link rel="import" href="./slot-inner.js" />
+
+<template>
+	<header>{ header }</header>
+	<slot-inner>
+		<div>
+			{ content }
+			<e:if test={enabled}>
+				<p>{ content2 }</p>
+			</e:if>
+		</div>
+		<footer slot="footer">
+			{ footer }
+			<e:if test={active}>
+				<div>Branching footer</div>
+			</e:if>
+		</footer>
+	</slot-inner>
+</template>

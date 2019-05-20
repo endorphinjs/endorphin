@@ -45,14 +45,20 @@ export default class BlockContext {
     }
 
     /**
-     * Declares variable with given default value
+     * Declares variable with given default value if not defined yet
      */
     declareVar(name: string, value?: string): string {
         const { renderContext } = this.state;
-        if (this.variables[renderContext]) {
-            this.variables[renderContext][name] = value;
-        } else {
-            this.variables[renderContext] = { [name]: value };
+        const { variables } = this;
+
+        if (!variables[renderContext]) {
+            variables[renderContext] = {};
+        }
+
+        const ctx = variables[renderContext];
+
+        if (!(name in ctx)) {
+            ctx[name] = value;
         }
 
         return name;
@@ -159,7 +165,10 @@ export default class BlockContext {
                     .map(name => `${name}${vars[name] ? ` = ${vars[name]}` : ''}`)
                     .join(', ');
                 chunks.unshift(`let ${decl}`);
-                chunks.push(`return ${varNames.join(' | ')}`);
+
+                if (this.injector) {
+                    chunks.push(`return ${varNames.join(' | ')}`);
+                }
             }
         }
     }
