@@ -13,6 +13,8 @@ export const TAG_CLOSE = 47; // /
 export const ATTR_DELIMITER = 61; // =
 export const DOT = 46; // .
 
+type SourceDataAlike = { [P in keyof SourceData]?: SourceData[P] } & { [name: string]: any };
+
 /**
  * Check if given character can be used as a start of tag name or attribute
  */
@@ -30,15 +32,15 @@ export function nameChar(ch: number): boolean {
 /**
  * Factory function for creating `Identifier` AST node
  */
-export function identifier(name: string, loc: SourceData): Identifier {
-    return { type: 'Identifier', name, ...loc };
+export function identifier(name: string, loc: SourceDataAlike): Identifier {
+    return { type: 'Identifier', name, ...toSourceData(loc) };
 }
 
 /**
  * Factory function for creating `Literal` AST node
  */
-export function literal(value: LiteralValue, raw?: string, loc?: SourceData): Literal {
-    return { type: 'Literal', value, raw, ...loc };
+export function literal(value: LiteralValue, raw?: string, loc?: SourceDataAlike): Literal {
+    return { type: 'Literal', value, raw, ...toSourceData(loc) };
 }
 
 /**
@@ -60,6 +62,14 @@ export function isLiteral(node?: Node): node is Literal {
  */
 export function isFunction(node: Expression): node is FunctionDeclaration | ArrowFunctionExpression {
     return node.type === 'FunctionDeclaration' || node.type === 'ArrowFunctionExpression';
+}
+
+export function toSourceData(node: SourceDataAlike): SourceData {
+    return {
+        start: node.start,
+        end: node.end,
+        loc: node.loc
+    };
 }
 
 /**

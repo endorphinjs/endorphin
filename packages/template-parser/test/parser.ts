@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { equal, deepEqual, throws } from 'assert';
+import { equal, deepEqual, throws, ok } from 'assert';
 import parse from '../src/index';
-import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement } from '../src/ast';
+import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement, Identifier } from '../src/ast';
 
 describe('Template parser', () => {
     function read(fileName: string): string {
@@ -95,5 +95,19 @@ describe('Template parser', () => {
         const template = parseTemplate(`<template><e:if test="{test}" /></template>`);
         const stmt = template.body[0] as ENDIfStatement;
         equal(stmt.test.type, 'Program');
+    });
+
+    it('should handle shorthand attribute expressions', () => {
+        const elem = parseTag('<div {foo} {#bar} {$baz} />');
+        const attrs: { [name: string]: Program } = {};
+        elem.attributes.forEach(attr => {
+            attrs[(attr.name as Identifier).name] = attr.value as Program;
+        });
+        ok(attrs.foo);
+        ok(attrs.bar);
+        ok(attrs.baz);
+        equal(attrs.foo.type, 'Program');
+        equal(attrs.bar.type, 'Program');
+        equal(attrs.baz.type, 'Program');
     });
 });

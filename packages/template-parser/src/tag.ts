@@ -139,7 +139,7 @@ function consumeAttributes(scanner: Scanner): ENDAttribute[] {
  * Consumes attribute from current stream location
  */
 function attribute(scanner: Scanner): ENDAttribute {
-    const name: ENDAttributeName = ident(scanner) || expression(scanner);
+    let name: ENDAttributeName = ident(scanner) || expression(scanner);
     const start = scanner.pos;
     if (name) {
         let value: ENDAttributeValue = null;
@@ -152,6 +152,17 @@ function attribute(scanner: Scanner): ENDAttribute {
             }
 
             value = scanner.expect(() => attributeValue(scanner, opt), 'Expecting attribute value');
+        }
+
+        if (name.type === 'Program' && !value) {
+            // Looks like an attribute expression shorthand: `{#foo}` -> `foo={#foo}
+            const attrName = getShorthandName(name);
+            if (attrName) {
+                value = name;
+                name = identifier(attrName.name, attrName);
+            } else {
+                throw scanner.error(`Unexpected shorthand attribute`, name);
+            }
         }
 
         return {
@@ -501,4 +512,19 @@ function removeFormatting(statements: ENDStatement[]): ENDStatement[] {
 
 function isContentNode(node: Node): boolean {
     return isLiteral(node) || node.type === 'Program';
+}
+
+/**
+ * Returns attribute name from given shorthand expression, if possible
+ */
+function getShorthandName(expr: Program): Identifier | null {
+    if (expr.body.length === 1) {
+        const node = expr.body[0];
+
+        if (node.type === 'ExpressionStatement' && isIdentifier(node.expression)) {
+            return node.expression;
+        }
+    }
+
+    return null;
 }
