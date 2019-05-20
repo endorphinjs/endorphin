@@ -127,7 +127,7 @@ export function run<D, R>(block: BaseBlock, fn: RunCallback<D, R>, data?: D): R 
  */
 export function emptyBlockContent(block: BaseBlock): void {
 	if (block.dispose) {
-		block.dispose(block.scope);
+		block.dispose(block.scope, block.host);
 		block.dispose = null;
 	}
 

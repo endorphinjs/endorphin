@@ -37,13 +37,20 @@ export default class CompileState {
 
     /** Symbol for referencing host component */
     get host(): string {
+        const { blockContext, renderContext } = this;
+        if (blockContext && renderContext) {
+            blockContext.hostUsage.use(renderContext);
+        }
         return this.options.host;
     }
 
     /** Symbol for referencing runtime scope */
     get scope(): string {
-        const { blockContext } = this;
-        return blockContext ? blockContext.scope : this.options.scope;
+        const { blockContext, renderContext } = this;
+        if (blockContext && renderContext) {
+            blockContext.scopeUsage.use(renderContext);
+        }
+        return this.options.scope;
     }
 
     /** Symbol for referencing current element’s injector */

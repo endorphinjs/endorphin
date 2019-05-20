@@ -1,6 +1,6 @@
 import {
     ENDElement, ENDTemplate, ENDStatement, ENDAttribute, Literal, ENDAttributeValue,
-    ENDDirective, Identifier, Program
+    ENDDirective, Identifier, Program, IdentifierContext, Expression, ArrowFunctionExpression
 } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import Entity from './Entity';
@@ -243,7 +243,7 @@ export default class ElementEntity extends Entity {
             const anim = state.entity();
 
             if (this.animateIn) {
-                anim.setMount(() => state.runtime('animateIn', [this.getSymbol(), compileAttributeValue(this.animateIn, state), cssScopeArg(state)]));
+                anim.setMount(() => state.runtime('animateIn', [this.getSymbol(), animationAttribute(this.animateIn, state), cssScopeArg(state)]));
             }
 
             if (this.animateOut) {
@@ -251,7 +251,7 @@ export default class ElementEntity extends Entity {
                 // contents of current element
                 anim.setUnmount(() => {
                     const callback = animateOutCallback(this, state);
-                    const args: ChunkList = [this.getSymbol(), compileAttributeValue(this.animateOut, state)];
+                    const args: ChunkList = [this.getSymbol(), animationAttribute(this.animateOut, state)];
 
                     if (callback) {
                         args.push(state.scope, callback);
@@ -498,4 +498,61 @@ function animateOutCallback(elem: Entity, state: CompileState): string | null {
     }
 
     return null;
+}
+
+/**
+ * Compiles attribute for animation.
+ * Animations are allowed to be defined either as strings (CSS Animations) or
+ * functions (manual animation). Functions must be defined either as `{func}`
+ * or `{func(options)}` and exported by component definition.
+ * Animation function signature:
+ * `function animate(elem, 'in' | 'out', callback?, options?)`
+ */
+function animationAttribute(value: ENDAttributeValue, state: CompileState): Chunk {
+    if (isExpression(value) && value.body.length === 1) {
+        const expr = value.body[0];
+        if (expr.type === 'ExpressionStatement') {
+            const elem = identifier('elem');
+            const dir = identifier('dir');
+            const callback = identifier('callback');
+            const args: Expression[] = [elem, dir, callback];
+
+            if (isIdentifier(expr.expression)) {
+                // Pass given function as argument
+                const id = expr.expression;
+                return generateExpression({
+                    ...id,
+                    context: id.context === 'property' ? 'definition' : id.context
+                } as Identifier, state);
+            }
+
+            if (expr.expression.type === 'ENDCaller') {
+                // Upgrade callback with arguments
+                const caller = {
+                    ...expr.expression,
+                    arguments: args.concat(expr.expression.arguments)
+                };
+
+                if (caller.object.type === 'ENDGetterPrefix' && caller.object.context === 'property') {
+                    caller.object = {
+                        ...caller.object,
+                        context: 'definition'
+                    };
+                }
+
+                return generateExpression({
+                    type: 'ArrowFunctionExpression',
+                    params: args,
+                    expression: true,
+                    body: caller
+                } as ArrowFunctionExpression, state);
+            }
+        }
+    }
+
+    return compileAttributeValue(value, state);
+}
+
+function identifier(name: string, context?: IdentifierContext): Identifier {
+    return { type: 'Identifier', name, context };
 }

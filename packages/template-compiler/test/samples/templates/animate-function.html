@@ -1,0 +1,13 @@
+<link rel="import" href="./inner-component.html" />
+<link rel="import" href="./outer-component.html" />
+
+<template>
+    <p>test</p>
+    <outer-component
+        animate:in={expand}
+        animate:out={collapse({ #duration })}
+        e:if={enabled}>
+        <inner-component/>
+    </outer-component>
+</template>
+

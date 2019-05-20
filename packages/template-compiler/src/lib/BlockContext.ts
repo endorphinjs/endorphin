@@ -13,6 +13,7 @@ interface VariableMap {
 export default class BlockContext {
     element?: ElementEntity;
     scopeUsage = new UsageStats();
+    hostUsage = new UsageStats();
 
     /** Runtime variables used in block render */
     variables: { [K in UsageContext]?: VariableMap } = {};
@@ -28,21 +29,6 @@ export default class BlockContext {
      * so it must be unique in its scope
      */
     constructor(readonly name: string, readonly state: CompileState) {}
-
-    /**
-     * Variable reference to component scope
-     */
-    get scope(): string {
-        this.scopeUsage.use(this.state.renderContext);
-        return this.rawScope;
-    }
-
-    /**
-     * Variable reference to component scope without marking usage
-     */
-    get rawScope(): string {
-        return this.state.options.scope;
-    }
 
     /**
      * Declares variable with given default value if not defined yet
@@ -68,7 +54,8 @@ export default class BlockContext {
      * Generates mount, update and unmount functions from given entities
      */
     generate(entities: Entity[]): ChunkList {
-        const { state, name, scopeUsage, rawScope: scope } = this;
+        const { state, name, scopeUsage, hostUsage } = this;
+        const scope = this.state.options.scope;
 
         const mountChunks: ChunkList = [];
         const updateChunks: ChunkList = [];
@@ -151,7 +138,7 @@ export default class BlockContext {
         return [
             mountFn,
             createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent),
-            createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount)], unmountChunks, indent)
+            createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent)
         ];
     }
 
