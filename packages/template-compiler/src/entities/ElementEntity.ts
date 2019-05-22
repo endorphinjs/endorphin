@@ -6,10 +6,7 @@ import { SourceNode } from 'source-map';
 import Entity from './Entity';
 import { compileAttributeValue } from './AttributeEntity';
 import ComponentMountEntity from './ComponentMountEntity';
-import ConditionEntity from './ConditionEntity';
 import InjectorEntity from './InjectorEntity';
-import InnerHTMLEntity from './InnerHTMLEntity';
-import IteratorEntity from './IteratorEntity';
 import TextEntity from './TextEntity';
 import AnimationEntity from './AnimationEntity';
 import UsageStats from '../lib/UsageStats';
@@ -119,12 +116,6 @@ export default class ElementEntity extends Entity {
         }
 
         super.add(item);
-
-        if (this.state.component && item.name) {
-            // Adding content entity into component: we should collect
-            // slot update stats
-            this.markSlotUpdate(item);
-        }
     }
 
     /**
@@ -187,8 +178,9 @@ export default class ElementEntity extends Entity {
     markSlots() {
         const { state, slotUpdate } = this;
         Object.keys(slotUpdate).forEach(slotName => {
+            const mark = slotUpdate[slotName];
             this.add(state.entity({
-                update: () => state.runtime('markSlotUpdate', [this.getSymbol(), qStr(slotName), slotUpdate[slotName]])
+                update: () => state.runtime('markSlotUpdate', [this.getSymbol(), qStr(slotName), `${state.scope}.${mark}`])
             }));
         });
     }
@@ -198,10 +190,11 @@ export default class ElementEntity extends Entity {
      */
     finalizeAttributes() {
         const { state } = this;
-        const runtimeName = 'finalizeAttributes';
-        this.add(state.entity(runtimeName, {
-            shared: () => state.runtime(runtimeName, [this.injector])
-        }));
+        const ent = state.entity({
+            shared: () => state.runtime('finalizeAttributes', [this.injector])
+        });
+
+        this.add(state.markSlot(ent));
     }
 
     /**
@@ -269,51 +262,6 @@ export default class ElementEntity extends Entity {
         }
 
         return props;
-    }
-
-    private markSlotUpdate(entity: Entity) {
-        if (entity instanceof ElementEntity) {
-            const { component } = this.state;
-            const prevSlot = component.slot;
-
-            // In case if given element entity has explicit slot name,
-            // swap it in current component context
-            if (entity.node.type === 'ENDElement') {
-                component.slot = getAttrValue(entity.node, 'slot') as string || prevSlot;
-            }
-
-            if (entity.isComponent) {
-                // For component entity, we should mark inner mount entity only
-                entity.children.forEach(child => {
-                    if (child instanceof ComponentMountEntity) {
-                        this.addSlotMark(child);
-                    }
-                });
-            } else {
-                // In regular DOM element, the only entity that affects layout
-                // is an attribute
-                entity.children.forEach(child => {
-                    if (child.rawName === 'finalizeAttributes') {
-                        this.addSlotMark(child);
-                    }
-                });
-            }
-
-            component.slot = prevSlot;
-        } else if (entity.code.update) {
-            const isSupported = entity instanceof ConditionEntity
-                || entity instanceof InnerHTMLEntity
-                || entity instanceof IteratorEntity
-                || entity instanceof TextEntity;
-
-            if (isSupported) {
-                this.addSlotMark(entity);
-            }
-        }
-    }
-
-    private addSlotMark(entity: Entity) {
-        entity.setUpdate(() => sn([this.state.component.slotMark, ' |= ', entity.getUpdate()]));
     }
 
     /**

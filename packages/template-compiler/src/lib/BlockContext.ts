@@ -1,4 +1,4 @@
-import { ChunkList, Chunk, UsageContext, RenderContext } from '../types';
+import { ChunkList, Chunk } from '../types';
 import CompileState from './CompileState';
 import Entity from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
@@ -6,17 +6,10 @@ import UsageStats from './UsageStats';
 import { createFunction } from './utils';
 import InjectorEntity from '../entities/InjectorEntity';
 
-interface VariableMap {
-    [name: string]: string | void;
-}
-
 export default class BlockContext {
     element?: ElementEntity;
     scopeUsage = new UsageStats();
     hostUsage = new UsageStats();
-
-    /** Runtime variables used in block render */
-    variables: { [K in UsageContext]?: VariableMap } = {};
 
     /** Indicates that block uses given injector as argument */
     injector?: InjectorEntity;
@@ -24,31 +17,15 @@ export default class BlockContext {
     /** Should block mount function export itself? */
     exports?: boolean | 'default';
 
+    /** Slot symbols used in current block */
+    slotSymbols: Set<string> = new Set();
+
     /**
      * @param name Name of the block, will be used as suffix in generated function
      * so it must be unique in its scope
+     * @param topLevel Indicates this is a top-level block
      */
-    constructor(readonly name: string, readonly state: CompileState) {}
-
-    /**
-     * Declares variable with given default value if not defined yet
-     */
-    declareVar(name: string, value?: string): string {
-        const { renderContext } = this.state;
-        const { variables } = this;
-
-        if (!variables[renderContext]) {
-            variables[renderContext] = {};
-        }
-
-        const ctx = variables[renderContext];
-
-        if (!(name in ctx)) {
-            ctx[name] = value;
-        }
-
-        return name;
-    }
+    constructor(readonly name: string, readonly state: CompileState, readonly topLevel: boolean = false) {}
 
     /**
      * Generates mount, update and unmount functions from given entities
@@ -116,6 +93,11 @@ export default class BlockContext {
             });
         }
 
+        if (this.slotSymbols.size) {
+            // Mark used slot symbols as updated in mount context
+            mountChunks.push(`${Array.from(this.slotSymbols).join(' = ')} = 1`);
+        }
+
         if (unmountChunks.length) {
             mountChunks.push(state.runtime('addDisposeCallback', [this.injector ? this.injector.name : state.host, `${name}Unmount`]));
         }
@@ -123,8 +105,6 @@ export default class BlockContext {
         if (updateChunks.length) {
             mountChunks.push(`return ${name}Update`);
         }
-
-        this.pushVars(updateChunks, 'update');
 
         const { indent } = state;
         const injectorArg = this.injector ? this.injector.name : '';
@@ -140,23 +120,5 @@ export default class BlockContext {
             createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent),
             createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent)
         ];
-    }
-
-    private pushVars(chunks: ChunkList, context: RenderContext) {
-        const vars = this.variables[context];
-        if (vars) {
-            const varNames = Object.keys(vars);
-
-            if (varNames.length) {
-                const decl = varNames
-                    .map(name => `${name}${vars[name] ? ` = ${vars[name]}` : ''}`)
-                    .join(', ');
-                chunks.unshift(`let ${decl}`);
-
-                if (this.injector) {
-                    chunks.push(`return ${varNames.join(' | ')}`);
-                }
-            }
-        }
     }
 }

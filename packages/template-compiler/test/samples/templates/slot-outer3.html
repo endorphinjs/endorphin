@@ -1,0 +1,12 @@
+<link rel="import" href="./slot-inner.js" />
+
+<template>
+    <slot-inner>
+        <e:if test={cond}>
+            <slot-inner a=1 />
+            <div slot="inner">
+                <slot-inner a=2 />
+            </div>
+        </e:if>
+    </slot-inner>
+</template>

@@ -165,6 +165,13 @@ export default class Entity {
     }
 
     /**
+     * Adds given entity as the first child of current one
+     */
+    prepend(ent: Entity) {
+        this.children.unshift(ent);
+    }
+
+    /**
      * Sets current entity content by receiving entities from given AST nodes
      */
     setContent(nodes: Node[], next: TemplateContinue): this {

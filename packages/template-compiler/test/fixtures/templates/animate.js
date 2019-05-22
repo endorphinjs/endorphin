@@ -109,17 +109,16 @@ function ifBody$2(host, injector, scope) {
 	const innerComponent$1 = scope.innerComponent$1 = insert(inj$2, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$1);
 	mountComponent(outerComponent$0);
+	scope.su$0 = 1;
 	addDisposeCallback(injector, ifBody$2Unmount);
 	return ifBody$2Update;
 }
 
 function ifBody$2Update(host, injector, scope) {
-	let su$0 = 0;
 	const { outerComponent$0 } = scope;
-	su$0 |= updateComponent(scope.innerComponent$1);
-	markSlotUpdate(outerComponent$0, "", su$0);
+	scope.su$0 |= updateComponent(scope.innerComponent$1);
+	markSlotUpdate(outerComponent$0, "", scope.su$0);
 	updateComponent(outerComponent$0);
-	return su$0;
 }
 
 function ifBody$2Unmount(scope, host) {
@@ -144,6 +143,7 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
+	scope.su$0 = 0;
 	updateBlock(scope.if$0);
 	updateBlock(scope.if$2);
 	finalizeRefs(host);

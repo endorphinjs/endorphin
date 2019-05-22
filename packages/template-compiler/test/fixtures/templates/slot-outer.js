@@ -5,8 +5,9 @@ function setVars$0(host, scope) {
 	scope.foo = host.props.bar;
 }
 
-function ifBody$0(host, injector) {
+function ifBody$0(host, injector, scope) {
 	insert(injector, elemWithText("p", "bar"), "");
+	scope.su$0 = 1;
 }
 
 function ifEntry$0(host) {
@@ -15,9 +16,10 @@ function ifEntry$0(host) {
 	}
 }
 
-function ifBody$1(host, injector) {
+function ifBody$1(host, injector, scope) {
 	const p$1 = insert(injector, elemWithText("p", "bar"), "header");
 	p$1.setAttribute("slot", "header");
+	scope.su$1 = 1;
 }
 
 function ifEntry$1(host) {
@@ -30,15 +32,17 @@ function forSelect$0(host) {
 	return host.props.items;
 }
 
-function forContent$0(host, injector) {
+function forContent$0(host, injector, scope) {
 	insert(injector, elemWithText("div", "item"), "");
 	const div$2 = insert(injector, elemWithText("div", "item footer"), "footer");
 	div$2.setAttribute("slot", "footer");
+	scope.su$0 = scope.su$2 = 1;
 }
 
-function ifBody$2(host, injector) {
+function ifBody$2(host, injector, scope) {
 	const div$3 = insert(injector, elemWithText("div", "Got error"), "error");
 	div$3.setAttribute("slot", "error");
+	scope.su$3 = 1;
 }
 
 function ifEntry$2(host) {
@@ -65,15 +69,18 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
-	let su$0 = 0;
 	const { subComponent$0 } = scope;
+	scope.su$0 = scope.su$1 = scope.su$2 = scope.su$3 = 0;
 	setAttribute(scope.inj$0, "id", host.props.id);
 	setVars$0(host, scope);
-	su$0 |= updateBlock(scope.if$0);
-	su$0 |= updateBlock(scope.if$1);
-	su$0 |= updateIterator(scope.for$0);
-	su$0 |= updateBlock(scope.if$2);
-	markSlotUpdate(subComponent$0, "", su$0);
+	updateBlock(scope.if$0);
+	updateBlock(scope.if$1);
+	updateIterator(scope.for$0);
+	updateBlock(scope.if$2);
+	markSlotUpdate(subComponent$0, "", scope.su$0);
+	markSlotUpdate(subComponent$0, "header", scope.su$1);
+	markSlotUpdate(subComponent$0, "footer", scope.su$2);
+	markSlotUpdate(subComponent$0, "error", scope.su$3);
 	updateComponent(subComponent$0);
 }
 

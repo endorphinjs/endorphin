@@ -4,14 +4,13 @@ import * as SlotInner from "./slot-inner.js";
 function ifBody$0(host, injector, scope) {
 	const p$0 = insert(injector, elem("p"), "");
 	scope.text$2 = p$0.appendChild(text(host.props.content2));
+	scope.su$0 = 1;
 	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
 
 function ifBody$0Update(host, injector, scope) {
-	let su$0 = 0;
-	su$0 |= updateText(scope.text$2, host.props.content2);
-	return su$0;
+	scope.su$0 |= updateText(scope.text$2, host.props.content2);
 }
 
 function ifBody$0Unmount(scope) {
@@ -24,8 +23,9 @@ function ifEntry$0(host) {
 	}
 }
 
-function ifBody$1(host, injector) {
+function ifBody$1(host, injector, scope) {
 	insert(injector, elemWithText("div", "Branching footer"), "");
+	scope.su$1 = 1;
 }
 
 function ifEntry$1(host) {
@@ -55,15 +55,15 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
-	let su$0 = 0, su$1 = 0;
 	const { slotInner$0 } = scope;
+	scope.su$0 = scope.su$1 = 0;
 	updateText(scope.text$0, host.props.header);
-	su$0 |= updateText(scope.text$1, host.props.content);
-	su$0 |= updateBlock(scope.if$0);
-	su$1 |= updateText(scope.text$3, host.props.footer);
-	su$1 |= updateBlock(scope.if$1);
-	markSlotUpdate(slotInner$0, "", su$0);
-	markSlotUpdate(slotInner$0, "footer", su$1);
+	scope.su$0 |= updateText(scope.text$1, host.props.content);
+	updateBlock(scope.if$0);
+	scope.su$1 |= updateText(scope.text$3, host.props.footer);
+	updateBlock(scope.if$1);
+	markSlotUpdate(slotInner$0, "", scope.su$0);
+	markSlotUpdate(slotInner$0, "footer", scope.su$1);
 	updateComponent(slotInner$0);
 }
 

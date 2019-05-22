@@ -1,4 +1,4 @@
-import { setAttribute, createComponent, markSlotUpdate, mountComponent, updateComponent, unmountComponent, addDisposeCallback } from "endorphin";
+import { setAttribute, createComponent, mountComponent, updateComponent, unmountComponent, addDisposeCallback } from "endorphin";
 import * as SubComponent from "./sub-component.html";
 
 function ifAttr$0(host, injector) {
@@ -27,13 +27,11 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
-	let su$0 = 0;
-	const { subComponent$0, inj$0 } = scope;
+	const { inj$0 } = scope;
 	setAttribute(inj$0, "id", host.props.id);
-	su$0 |= ifAttr$0(host, inj$0);
+	ifAttr$0(host, inj$0);
 	setAttribute(inj$0, "p3", 3);
-	markSlotUpdate(subComponent$0, "", su$0);
-	updateComponent(subComponent$0);
+	updateComponent(scope.subComponent$0);
 	updateComponent(scope.subComponent$1);
 }
 

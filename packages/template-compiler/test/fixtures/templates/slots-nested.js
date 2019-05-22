@@ -20,12 +20,12 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
-	let su$0 = 0, su$1 = 0;
 	const { myComponent1$0, myComponent2$0 } = scope;
-	su$0 |= updateComponent(scope.innerComponent$0);
-	markSlotUpdate(myComponent2$0, "", su$0);
-	su$1 |= updateComponent(myComponent2$0);
-	markSlotUpdate(myComponent1$0, "header", su$1);
+	scope.su$0 = scope.su$1 = 0;
+	scope.su$1 |= updateComponent(scope.innerComponent$0);
+	markSlotUpdate(myComponent2$0, "", scope.su$1);
+	scope.su$0 |= updateComponent(myComponent2$0);
+	markSlotUpdate(myComponent1$0, "header", scope.su$0);
 	updateComponent(myComponent1$0);
 }
 

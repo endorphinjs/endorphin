@@ -17,6 +17,8 @@ import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
 import { sn, qStr, isLiteral, toObjectLiteral, getAttrValue, nameToJS, propGetter, propSetter, isExpression } from '../lib/utils';
+import ElementEntity from '../entities/ElementEntity';
+import ComponentState from '../lib/ComponentState';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
@@ -26,6 +28,13 @@ export default {
             return state.runElement(node, element => {
                 element.setMount(() => `${state.host}.componentView`);
                 element.setContent(node.body, next);
+
+                if (state.slotSymbols.length) {
+                    // Add entity to reset slot update symbols for each update
+                    element.prepend(state.entity({
+                        update: () => `${state.slotSymbols.map(s => `${state.scope}.${s}`).join(' = ')} = 0`
+                    }));
+                }
 
                 if (state.usedStore.size) {
                     element.add(subscribeStore(state));
@@ -48,43 +57,56 @@ export default {
                 element.setRef(node.ref);
             }
 
-            let attrs = node.attributes;
-            if (element.isComponent) {
-                // In component, static attributes/props (e.g. ones which won’t change
-                // in runtime) must be added during component mount. Thus, we should
-                // process dynamic attributes only
-                attrs = attrs.filter(attr => element.isDynamicAttribute(attr));
-            }
+            // In component, static attributes/props (e.g. ones which won’t change
+            // in runtime) must be added during component mount. Thus, we should
+            // process dynamic attributes only
+            const attrs = element.isComponent
+                ? node.attributes.filter(attr => element.isDynamicAttribute(attr))
+                : node.attributes;
 
             element.setContent(attrs, next);
             element.setContent(node.directives, next);
 
             const isSlot = node.name.name === 'slot';
-            const firstChild = node.body[0];
 
-            if (!element.isComponent && !isSlot && node.body.length === 1 && isLiteral(firstChild)) {
-                // Edge case: element with single text child
-                element.create(firstChild);
-            } else {
-                element.create();
-                if (isSlot) {
-                    // Default slot content must be generated as child block
-                    // to mount it only if there’s no incoming slot content
-                    const slotName = String(getAttrValue(node, 'name') || '');
-                    const contentArg = defaultSlot(node, state, next);
-                    element.add(state.entity('slot', {
-                        mount: () => state.runtime('mountSlot', [state.host, qStr(slotName), element.getSymbol(), contentArg]),
-                        unmount: slot => slot.unmount('unmountSlot')
-                    }));
-                } else {
-                    element.setContent(node.body, next);
+            // Edge case: element with single text child
+            const singleTextContent = !element.isComponent && !isSlot && node.body.length === 1 && isLiteral(node.body[0])
+                ? node.body[0] as Literal
+                : null;
+
+            // Set component context
+            const { component } = state;
+            const slot = component ? component.slot : null;
+
+            // Create element instance
+            element.create(singleTextContent);
+
+            if (component) {
+                // Enter named slot context
+                const slotName = (getAttrValue(node, 'slot') as string) || '';
+                if (slot == null) {
+                    component.slot = slotName;
+                } else if (slotName) {
+                    // tslint:disable-next-line:max-line-length
+                    state.warn(`Invalid slot nesting: unable to set "${slotName}" slot inside "${slot || 'default'}" slot`, node.loc.start.offset);
                 }
+
+                // If element is created inside component, mark parent slot as updated
+                state.markSlot();
             }
 
             if (element.isComponent) {
-                element.markSlots();
-                element.mountComponent();
-            } else {
+                // Enter new component context
+                state.component = new ComponentState(element, state);
+            }
+
+            if (isSlot) {
+                element.add(defaultSlotEntity(element, state, next));
+            } else if (!singleTextContent) {
+                element.setContent(node.body, next);
+            }
+
+            if (!element.isComponent) {
                 if (element.dynamicAttributes.size || element.hasPartials) {
                     element.finalizeAttributes();
                 }
@@ -92,6 +114,21 @@ export default {
                 if (element.dynamicEvents.size || element.hasPartials) {
                     element.finalizeEvents();
                 }
+            }
+
+            // Restore component context
+            if (element.isComponent) {
+                state.component = component;
+            }
+
+            if (element.isComponent) {
+                element.markSlots();
+                element.mountComponent();
+            }
+
+            // Restore slot context
+            if (component) {
+                component.slot = slot;
             }
 
             element.animate();
@@ -204,15 +241,22 @@ function isSimpleConditionContent(node: ENDStatement): boolean {
 }
 
 /**
- * Generates function with default content of given slot. If slot is empty,
- * no function is generated
+ * Generates entity with default slot content
  */
-function defaultSlot(node: ENDElement, state: CompileState, next: AstVisitorContinue<TemplateOutput>): string | null {
+function defaultSlotEntity(elem: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): Entity {
+    const node = elem.node as ENDElement;
     const slotName = String(getAttrValue(node, 'name') || '');
-    return node.body.length
+
+    // Generates function with default content of given slot
+    const contentArg = node.body.length
         ? state.runChildBlock(`defaultSlot${nameToJS(slotName, true)}`,
             (child, slot) => slot.setContent(node.body, next))
         : null;
+
+    return state.entity('slot', {
+        mount: () => state.runtime('mountSlot', [state.host, qStr(slotName), elem.getSymbol(), contentArg]),
+        unmount: slot => slot.unmount('unmountSlot')
+    });
 }
 
 function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceNode {

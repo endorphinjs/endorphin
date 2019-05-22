@@ -5,7 +5,7 @@ import Entity, { RenderOptions, entity } from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
 import ComponentState from './ComponentState';
-import { nameToJS, propGetter, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue } from './utils';
+import { nameToJS, propGetter, isIdentifier, isLiteral, isElement, sn, prepareHelpers } from './utils';
 import { Chunk, RenderContext, ComponentImport, RuntimeSymbols, ChunkList } from '../types';
 import { CompileOptions } from '..';
 
@@ -78,12 +78,6 @@ export default class CompileState {
         return this._renderContext;
     }
 
-    /** Current component rendering context */
-    get component(): ComponentState | null {
-        const size = this.componentStack.length;
-        return size ? this.componentStack[size - 1] : null;
-    }
-
     /**
      * Returns symbol for referencing CSS scope of current component or `null`
      * if component is unscoped
@@ -115,6 +109,9 @@ export default class CompileState {
     /** Generates unique symbol with given name for storing in component scope */
     scopeSymbol: SymbolGenerator;
 
+    /** Current component and slot context */
+    component?: ComponentState;
+
     /** List of child components */
     readonly componentsMap: Map<string, ComponentImport> = new Map();
 
@@ -132,14 +129,15 @@ export default class CompileState {
         [name: string]: string;
     };
 
+    /** List of all registered slot update symbols */
+    readonly slotSymbols: string[] = [];
+
     /** Symbol for referencing CSS isolation scope */
     private readonly cssScopeSymbol = 'cssScope';
 
     /** Current namespaces */
     private namespaceMap: NamespaceMap = {};
 
-    /** Stack of currently rendered components */
-    private componentStack: ComponentState[] = [];
     private _renderContext?: RenderContext;
     private _warned: Set<string> = new Set();
 
@@ -212,14 +210,34 @@ export default class CompileState {
     }
 
     /**
+     * Issues new slot update symbol
+     */
+    slotSymbol(): string {
+        const symbol = this.globalSymbol('su');
+        this.slotSymbols.push(symbol);
+        return symbol;
+    }
+
+    /**
+     * Accumulates slot update
+     */
+    markSlot<T extends Entity>(ent?: T): T {
+        if (this.component) {
+            this.component.mark(ent);
+        }
+
+        return ent;
+    }
+
+    /**
      * Creates new block with `name` and runs `fn` function in its context.
      * Block context, accumulated during `fn` run, will be generates and JS code
      * and added into final output
      * @returns Variable name for given block, generated from `name` argument
      */
     runBlock(name: string, fn: (block: BlockContext) => Entity | Entity[]): string {
-        const block = new BlockContext(this.globalSymbol(name), this);
         const prevBlock = this.blockContext;
+        const block = new BlockContext(this.globalSymbol(name), this, !prevBlock);
 
         this.blockContext = block;
         const result = this.mount(() => fn(block));
@@ -238,7 +256,7 @@ export default class CompileState {
      * Runs given `fn` function in context of `node` element
      */
     runElement(node: ENDTemplate | ENDElement | null, fn: (entity: ElementEntity) => void): ElementEntity {
-        const { blockContext, namespaceMap, component } = this;
+        const { blockContext, namespaceMap } = this;
 
         if (!blockContext) {
             throw new Error('Unable to run in element context: parent block is absent');
@@ -246,35 +264,15 @@ export default class CompileState {
 
         const prevElem = blockContext.element;
         const ent = blockContext.element = new ElementEntity(node, this);
-        const prevSlot = component ? component.slot : null;
 
         if (node && isElement(node)) {
             this.namespaceMap = {
                 ...namespaceMap,
                 ...collectNamespaces(node)
             };
-            if (component) {
-                // Enter named slot context
-                const slotName = getAttrValue(node, 'slot');
-                if (slotName) {
-                    component.slot = String(slotName);
-                }
-            }
-        }
-
-        if (ent.isComponent) {
-            this.componentStack.push(new ComponentState(ent, this));
         }
 
         fn(ent);
-
-        if (ent.isComponent) {
-            this.componentStack.pop();
-        }
-
-        if (component) {
-            component.slot = prevSlot;
-        }
 
         this.namespaceMap = namespaceMap;
         blockContext.element = prevElem;

@@ -14,5 +14,6 @@ export default class ComponentMountEntity extends Entity {
         });
         this.setUpdate(() => state.runtime('updateComponent', [element.getSymbol()]));
         this.setUnmount(() => element.unmount('unmountComponent'));
+        state.markSlot(this);
     }
 }

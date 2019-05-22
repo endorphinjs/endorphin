@@ -15,17 +15,16 @@ function ifBody$0(host, injector, scope) {
 	mountComponent(innerComponent$0);
 	mountComponent(outerComponent$0);
 	host.componentModel.definition.expand(outerComponent$0);
+	scope.su$0 = 1;
 	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
 
 function ifBody$0Update(host, injector, scope) {
-	let su$0 = 0;
 	const { outerComponent$0 } = scope;
-	su$0 |= updateComponent(scope.innerComponent$0);
-	markSlotUpdate(outerComponent$0, "", su$0);
+	scope.su$0 |= updateComponent(scope.innerComponent$0);
+	markSlotUpdate(outerComponent$0, "", scope.su$0);
 	updateComponent(outerComponent$0);
-	return su$0;
 }
 
 function ifBody$0Unmount(scope, host) {
@@ -48,6 +47,7 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
+	scope.su$0 = 0;
 	updateBlock(scope.if$0);
 }
 

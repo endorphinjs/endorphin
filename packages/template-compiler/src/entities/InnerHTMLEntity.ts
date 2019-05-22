@@ -9,5 +9,6 @@ export default class InnerHTMLEntity extends Entity {
         this.setMount(() => state.runtime('mountInnerHTML', [state.host, state.injector, fn('html', state, node.value)], node));
         this.setUpdate(() => state.runtime('updateInnerHTML', [this.getSymbol()], node));
         this.setUnmount(() => this.unmount('unmountInnerHTML'));
+        state.markSlot(this);
     }
 }

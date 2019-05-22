@@ -14,5 +14,7 @@ export default class TextEntity extends Entity {
         } else {
             this.setMount(() => state.runtime('text', [qStr(node.value as string)], node));
         }
+
+        state.markSlot(this);
     }
 }
