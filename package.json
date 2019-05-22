@@ -6,10 +6,11 @@
   "module": "./runtime/runtime.es.js",
   "types": "./runtime/runtime-types.d.ts",
   "scripts": {
-    "build": "npm run build:runtime && npm run build:helpers && npm run build:compiler",
+    "build": "npm run build:runtime && npm run build:helpers && npm run build:compiler && npm run build:transitions",
     "build:runtime": "mkdir -p runtime && cp ./node_modules/@endorphinjs/template-runtime/dist/*.* ./runtime",
     "build:helpers": "tsc -p ./helpers",
     "build:compiler": "tsc -p ./compiler",
+    "build:transitions": "tsc -p ./transitions",
     "test": "lerna run test",
     "prepare": "npm run build"
   },

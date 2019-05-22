@@ -1,5 +1,8 @@
 import { SourceNode } from 'source-map';
-import { Node, Identifier, Program, ENDElement, ENDAttributeStatement, LiteralValue, ENDAttribute, Literal } from '@endorphinjs/template-parser';
+import {
+    Node, Identifier, Program, ENDElement, ENDAttributeStatement, LiteralValue,
+    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix
+} from '@endorphinjs/template-parser';
 import { Chunk, ChunkList, HelpersMap, PlainObject } from '../types';
 
 /**
@@ -88,6 +91,18 @@ export function isExpression(node: Node): node is Program {
  */
 export function isElement(node: Node): node is ENDElement {
     return node.type === 'ENDElement';
+}
+
+export function isCallExpression(node: Node): node is CallExpression {
+    return node.type === 'CallExpression';
+}
+
+export function isArrowFunction(node: Node): node is ArrowFunctionExpression {
+    return node.type === 'ArrowFunctionExpression';
+}
+
+export function isPrefix(node: Node): node is ENDGetterPrefix {
+    return node.type === 'ENDGetterPrefix';
 }
 
 /**
@@ -196,6 +211,31 @@ export function createFunction(name: string, args: string[], chunks: ChunkList, 
             '\n}\n'
         ]);
     }
+}
+
+/**
+ * Generates comma-separated list of given chunks with optional `before` and `after`
+ * wrapper code
+ */
+export function commaChunks(items: Chunk[], before?: string, after?: string): ChunkList {
+    const chunks: ChunkList = [];
+
+    if (before != null) {
+        chunks.push(before);
+    }
+
+    items.forEach((node, i) => {
+        if (i !== 0) {
+            chunks.push(', ');
+        }
+        chunks.push(node);
+    });
+
+    if (after != null) {
+        chunks.push(after);
+    }
+
+    return chunks;
 }
 
 export function format(chunks: ChunkList, pfx: string = '', suffix: string = '\n'): ChunkList {

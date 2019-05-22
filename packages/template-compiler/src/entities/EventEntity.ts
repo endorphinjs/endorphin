@@ -1,15 +1,16 @@
 import {
-    ENDDirective, JSNode, Expression, ENDGetterPrefix, Identifier, ExpressionStatement,
-    ArrowFunctionExpression, ENDCaller, ThisExpression, MemberExpression, ENDAttributeValue,
+    ENDDirective, Expression, ENDGetterPrefix, Identifier, ExpressionStatement,
+    ENDCaller, ENDAttributeValue,
     CallExpression, IdentifierContext
 } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import CompileState from '../lib/CompileState';
 import generateExpression from '../expression';
 import baseVisitors from '../visitors/expression';
-import { sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr } from '../lib/utils';
+import { sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction, isCallExpression, isPrefix } from '../lib/utils';
 import { ENDCompileError } from '../lib/error';
 import { ExpressionVisitorMap } from '../types';
+import { thisExpr, identifier, member, callExpr } from '../lib/ast-constructor';
 
 export default class EventEntity extends Entity {
     constructor(readonly node: ENDDirective, readonly state: CompileState) {
@@ -86,18 +87,6 @@ function getHandler(node: ENDAttributeValue | null): Expression {
     }
 }
 
-function isCallExpression(node: JSNode): node is CallExpression {
-    return node.type === 'CallExpression';
-}
-
-function isArrowFunction(node: JSNode): node is ArrowFunctionExpression {
-    return node.type === 'ArrowFunctionExpression';
-}
-
-function isPrefix(node: JSNode): node is ENDGetterPrefix {
-    return node.type === 'ENDGetterPrefix';
-}
-
 function getEventArgName(handler: Expression | void): string {
     if (handler && isArrowFunction(handler) && handler.params.length && isIdentifier(handler.params[0])) {
         return (handler.params[0] as Identifier).name;
@@ -112,26 +101,9 @@ function getEventArgName(handler: Expression | void): string {
 function constructCall(node: Identifier, eventArg: string): CallExpression {
     const host = thisExpr();
     const evt = identifier(eventArg);
-    const target = member(evt, identifier('currentTarget'));
+    const target = member(evt, 'currentTarget');
 
-    return {
-        type: 'CallExpression',
-        callee: { ...node, context: 'definition' },
-        arguments: [host, evt, target],
-        loc: node.loc
-    } as CallExpression;
-}
-
-function thisExpr(): ThisExpression {
-    return { type: 'ThisExpression' };
-}
-
-function identifier(name: string, context?: IdentifierContext): Identifier {
-    return { type: 'Identifier', name, context };
-}
-
-function member(object: Expression, property: Expression): MemberExpression {
-    return { type: 'MemberExpression', object, property };
+    return callExpr({ ...node, context: 'definition' }, [host, evt, target], node);
 }
 
 function handlerUsesEvent(handler: Expression | void): boolean {
@@ -162,12 +134,9 @@ function createVisitors(eventArg: string): ExpressionVisitorMap {
                 // callee doesn’t exists
                 const context: IdentifierContext = node.object.context === 'property'
                     ? 'definition' : node.object.context;
-                return this.CallExpression({
-                    type: 'CallExpression',
-                    callee: identifier(node.property.value as string, context),
-                    arguments: node.arguments,
-                    loc: node.loc
-                } as CallExpression, state, next);
+
+                const callee = identifier(node.property.value as string, context);
+                return this.CallExpression(callExpr(callee, node.arguments, node), state, next);
             }
 
             return baseVisitors.ENDCaller(node, state, next);

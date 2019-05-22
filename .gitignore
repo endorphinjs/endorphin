@@ -69,3 +69,7 @@ typings/
 /compiler/*.js
 /compiler/*.js.map
 /compiler/*.d.ts
+
+/transitions/*.js
+/transitions/*.js.map
+/transitions/*.d.ts

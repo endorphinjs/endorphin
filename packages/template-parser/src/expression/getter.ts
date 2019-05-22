@@ -3,19 +3,22 @@ import {
     ENDGetterPathFragment, Expression, MemberExpression, ENDGetter, CallExpression,
     ENDCaller, ENDFilter, JSNode, ArrowFunctionExpression, ArrayExpression, ENDGetterPrefix, IdentifierContext, Identifier, Literal
 } from '../ast';
+import { JSParserOptions } from '.';
 
 /**
  * Tries to convert some JS nodes like `MemberExpression` or `CallExpression` into
  * special Endorphin-specific nodes for safe data access
  */
-export function convert(node: Expression): ENDGetterPathFragment {
+export function convert(node: Expression, options: JSParserOptions = {}): ENDGetterPathFragment {
     if (isMemberExpression(node)) {
-        return isFilter(node)
-            ? createFilter(node)
-            : createGetter(node);
-    }
+        if (isFilter(node)) {
+            return createFilter(node);
+        }
 
-    if (isCallExpression(node)) {
+        if (!options.disableGetters) {
+            return createGetter(node);
+        }
+    } else if (isCallExpression(node) && !options.disableCallers) {
         return createCaller(node);
     }
 

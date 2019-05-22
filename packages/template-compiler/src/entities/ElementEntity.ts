@@ -1,6 +1,6 @@
 import {
     ENDElement, ENDTemplate, ENDStatement, ENDAttribute, Literal, ENDAttributeValue,
-    ENDDirective, Identifier, Program, IdentifierContext, Expression, ArrowFunctionExpression
+    ENDDirective, Identifier, Program
 } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import Entity from './Entity';
@@ -11,12 +11,10 @@ import InjectorEntity from './InjectorEntity';
 import InnerHTMLEntity from './InnerHTMLEntity';
 import IteratorEntity from './IteratorEntity';
 import TextEntity from './TextEntity';
+import AnimationEntity from './AnimationEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import {
-    isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName,
-    getAttrValue, propSetter, isValidChunk, createFunction
-} from '../lib/utils';
+import { isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
 import { Chunk, ChunkList } from '../types';
 import { ENDCompileError } from '../lib/error';
 import generateExpression from '../expression';
@@ -151,7 +149,7 @@ export default class ElementEntity extends Entity {
                 }
 
                 // Create plain DOM element
-                const cssScope = state.options.cssScope ? state.cssScopeSymbol : null;
+                const cssScope = state.cssScope;
                 const nodeName = getNodeName(elemName);
                 const nsSymbol = state.namespace(nodeName.ns);
 
@@ -239,31 +237,7 @@ export default class ElementEntity extends Entity {
      */
     animate() {
         if (this.animateIn || this.animateOut) {
-            const { state } = this;
-            const anim = state.entity();
-
-            if (this.animateIn) {
-                anim.setMount(() => state.runtime('animateIn', [this.getSymbol(), animationAttribute(this.animateIn, state), cssScopeArg(state)]));
-            }
-
-            if (this.animateOut) {
-                // We need to create a callback function to properly unmount
-                // contents of current element
-                anim.setUnmount(() => {
-                    const callback = animateOutCallback(this, state);
-                    const args: ChunkList = [this.getSymbol(), animationAttribute(this.animateOut, state)];
-
-                    if (callback) {
-                        args.push(state.scope, callback);
-                    }
-
-                    args.push(cssScopeArg(state));
-
-                    return state.runtime('animateOut', args);
-                });
-            }
-
-            this.add(anim);
+            this.add(new AnimationEntity(this, this.state, this.animateIn, this.animateOut));
         }
     }
 
@@ -466,93 +440,4 @@ export function getNodeName(localName: string): { ns?: string, name: string } {
 
 function objectKey(node: Identifier | Program, state: CompileState) {
     return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
-}
-
-function cssScopeArg(state: CompileState): string {
-    return state.options.cssScope ? state.cssScopeSymbol : '';
-}
-
-/**
- * Generates animation out callback
- */
-function animateOutCallback(elem: Entity, state: CompileState): string | null {
-    const empty = sn();
-    const callback = state.globalSymbol('animateOut');
-    const code: ChunkList = [];
-
-    const transfer = (item: Entity) => {
-        item.children.forEach(transfer);
-        if (isValidChunk(item.code.unmount)) {
-            code.push(item.code.unmount);
-            // NB: use empty source node to skip auto-null check
-            // in block unmount
-            item.code.unmount = empty;
-        }
-    };
-
-    transfer(elem);
-
-    if (code.length) {
-        state.pushOutput(createFunction(callback, [state.scope], code));
-        return callback;
-    }
-
-    return null;
-}
-
-/**
- * Compiles attribute for animation.
- * Animations are allowed to be defined either as strings (CSS Animations) or
- * functions (manual animation). Functions must be defined either as `{func}`
- * or `{func(options)}` and exported by component definition.
- * Animation function signature:
- * `function animate(elem, 'in' | 'out', callback?, options?)`
- */
-function animationAttribute(value: ENDAttributeValue, state: CompileState): Chunk {
-    if (isExpression(value) && value.body.length === 1) {
-        const expr = value.body[0];
-        if (expr.type === 'ExpressionStatement') {
-            const elem = identifier('elem');
-            const dir = identifier('dir');
-            const callback = identifier('callback');
-            const args: Expression[] = [elem, dir, callback];
-
-            if (isIdentifier(expr.expression)) {
-                // Pass given function as argument
-                const id = expr.expression;
-                return generateExpression({
-                    ...id,
-                    context: id.context === 'property' ? 'definition' : id.context
-                } as Identifier, state);
-            }
-
-            if (expr.expression.type === 'ENDCaller') {
-                // Upgrade callback with arguments
-                const caller = {
-                    ...expr.expression,
-                    arguments: args.concat(expr.expression.arguments)
-                };
-
-                if (caller.object.type === 'ENDGetterPrefix' && caller.object.context === 'property') {
-                    caller.object = {
-                        ...caller.object,
-                        context: 'definition'
-                    };
-                }
-
-                return generateExpression({
-                    type: 'ArrowFunctionExpression',
-                    params: args,
-                    expression: true,
-                    body: caller
-                } as ArrowFunctionExpression, state);
-            }
-        }
-    }
-
-    return compileAttributeValue(value, state);
-}
-
-function identifier(name: string, context?: IdentifierContext): Identifier {
-    return { type: 'Identifier', name, context };
 }

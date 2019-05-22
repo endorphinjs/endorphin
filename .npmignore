@@ -12,3 +12,4 @@ jspm_packages
 /packages
 /compiler/tsconfig.json
 /helpers/tsconfig.json
+/transitions/tsconfig.json

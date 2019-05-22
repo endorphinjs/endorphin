@@ -1,8 +1,9 @@
-import { elemWithText, createInjector, createComponent, mountComponent, updateComponent, unmountComponent, insert, markSlotUpdate, animateIn, call, animateOut, addDisposeCallback, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { elemWithText, createInjector, createComponent, mountComponent, updateComponent, unmountComponent, insert, markSlotUpdate, domRemove, addDisposeCallback, mountBlock, updateBlock, unmountBlock } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
 function animateOut$0(scope) {
+	domRemove(scope.outerComponent$0);
 	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
 	scope.outerComponent$0 = unmountComponent(scope.outerComponent$0);
 }
@@ -13,7 +14,7 @@ function ifBody$0(host, injector, scope) {
 	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$0);
 	mountComponent(outerComponent$0);
-	animateIn(outerComponent$0, host.componentModel.definition.expand);
+	host.componentModel.definition.expand(outerComponent$0);
 	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
@@ -28,7 +29,7 @@ function ifBody$0Update(host, injector, scope) {
 }
 
 function ifBody$0Unmount(scope, host) {
-	animateOut(scope.outerComponent$0, (elem, dir, callback) => call(host.componentModel.definition, "collapse", [elem, dir, callback, { duration: host.state.duration }]), scope, animateOut$0);
+	host.componentModel.definition.collapse(scope.outerComponent$0, { duration: host.state.duration, next$: () => animateOut$0(scope, host) });
 }
 
 function ifEntry$0(host) {

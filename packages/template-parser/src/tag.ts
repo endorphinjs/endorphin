@@ -146,9 +146,17 @@ function attribute(scanner: Scanner): ENDAttribute {
 
         if (scanner.eat(ATTR_DELIMITER)) {
             const opt: JSParserOptions = {};
-            // Allow assignments in event handlers
-            if (isIdentifier(name) && name.name.startsWith('on:')) {
-                opt.assignment = true;
+            // Configure parser depending on parsed attribute
+            if (isIdentifier(name)) {
+                // Allow assignments in event handlers
+                if (name.name.startsWith('on:')) {
+                    opt.assignment = true;
+                } else if (name.name.startsWith('animate:')) {
+                    // Do not upgrade call expressions to safe callers in animation
+                    // handlers: if handler doesn’t exists, we must fail and notify
+                    // user. Otherwise, element will be kept in DOM and never disposed
+                    opt.disableCallers = true;
+                }
             }
 
             value = scanner.expect(() => attributeValue(scanner, opt), 'Expecting attribute value');

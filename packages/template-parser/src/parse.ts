@@ -21,6 +21,7 @@ import {
 export interface ParserOptions {
     helpers?: string[];
     disableGetters?: boolean;
+    disableCallers?: boolean;
 }
 
 interface StatementMap {

@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, addDisposeCallback, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, updateComponent, unmountComponent, finalizeAttributes, finalizeEvents, animateIn, animateOut, markSlotUpdate, finalizeRefs } from "endorphin";
+import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, addDisposeCallback, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, updateComponent, unmountComponent, finalizeAttributes, finalizeEvents, animate, domRemove, markSlotUpdate, finalizeRefs } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -50,6 +50,7 @@ function forContent$0Unmount(scope) {
 }
 
 function animateOut$0(scope) {
+	domRemove(scope.div$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.html$0 = unmountInnerHTML(scope.html$0);
 	scope.for$0 = unmountIterator(scope.for$0);
@@ -68,7 +69,7 @@ function ifBody$0(host, injector, scope) {
 	mountComponent(innerComponent$0);
 	finalizeAttributes(inj$1);
 	finalizeEvents(inj$1);
-	animateIn(div$0, "show");
+	animate(div$0, "show");
 	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
@@ -85,8 +86,8 @@ function ifBody$0Update(host, injector, scope) {
 	finalizeEvents(inj$1);
 }
 
-function ifBody$0Unmount(scope) {
-	animateOut(scope.div$0, "hide", scope, animateOut$0);
+function ifBody$0Unmount(scope, host) {
+	animate(scope.div$0, "hide", () => animateOut$0(scope, host));
 	scope.inj$1 = null;
 }
 
@@ -97,6 +98,7 @@ function ifEntry$0(host) {
 }
 
 function animateOut$1(scope) {
+	domRemove(scope.outerComponent$0);
 	scope.innerComponent$1 = unmountComponent(scope.innerComponent$1);
 	scope.outerComponent$0 = unmountComponent(scope.outerComponent$0);
 }
@@ -120,8 +122,8 @@ function ifBody$2Update(host, injector, scope) {
 	return su$0;
 }
 
-function ifBody$2Unmount(scope) {
-	animateOut(scope.outerComponent$0, "fade-out", scope, animateOut$1);
+function ifBody$2Unmount(scope, host) {
+	animate(scope.outerComponent$0, "fade-out", () => animateOut$1(scope, host));
 }
 
 function ifEntry$2(host) {

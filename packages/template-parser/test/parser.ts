@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { equal, deepEqual, throws, ok } from 'assert';
 import parse from '../src/index';
-import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement, Identifier } from '../src/ast';
+import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement, Identifier, CallExpression } from '../src/ast';
 
 describe('Template parser', () => {
     function read(fileName: string): string {
@@ -109,5 +109,14 @@ describe('Template parser', () => {
         equal(attrs.foo.type, 'Program');
         equal(attrs.bar.type, 'Program');
         equal(attrs.baz.type, 'Program');
+    });
+
+    it('should disable callers in animation handlers', () => {
+        const elem = parseTag('<div animate:out={slide({ a: #b.c })} />');
+        const anim = elem.directives[0];
+        const expr = ((anim.value as Program).body[0] as ExpressionStatement).expression as CallExpression;
+        equal(anim.prefix, 'animate');
+        equal(anim.name, 'out');
+        equal(expr.type, 'CallExpression');
     });
 });

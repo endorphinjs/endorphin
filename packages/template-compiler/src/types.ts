@@ -39,7 +39,7 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock'
     | 'setRef' | 'finalizeRefs' | 'createComponent' | 'updateText' | 'addDisposeCallback'
     | 'insert' | 'get' | 'call' | 'assign' | 'elem' | 'elemWithText' | 'elemNS'
     | 'elemNSWithText' | 'text' | 'filter' | 'find' | 'subscribeStore'
-    | 'animateIn' | 'animateOut';
+    | 'animate' | 'createAnimation' | 'domRemove';
 
 export interface ComponentImport {
     /** JS symbol for referencing imported module */

@@ -74,8 +74,11 @@ export interface FunctionDeclaration extends Function {
     id: Identifier;
 }
 
-export interface ArrowFunctionExpression extends Function {
+export interface ArrowFunctionExpression extends JSNode {
     type: 'ArrowFunctionExpression';
+    params: Pattern[];
+    body: Expression | BlockStatement;
+    generator?: boolean;
     expression?: boolean;
     async?: boolean;
 }

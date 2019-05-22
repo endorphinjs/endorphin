@@ -8,7 +8,7 @@ import {
 } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import { Chunk, ChunkList, AstVisitorMap, ExpressionOutput, AstVisitorContinue } from '../types';
-import { sn, propGetter, qStr, isIdentifier, propSetter } from '../lib/utils';
+import { sn, propGetter, qStr, isIdentifier, propSetter, commaChunks } from '../lib/utils';
 
 export default {
     Program(node: Program, state, next) {
@@ -195,29 +195,4 @@ function property(node: Property, isPattern: boolean, next: AstVisitorContinue<E
     }
 
     return sn([key, ': ', next(node.value)], node);
-}
-
-/**
- * Generates comma-separated list of given chunks with optional `before` and `after`
- * wrapper code
- */
-function commaChunks(items: Chunk[], before?: string, after?: string): ChunkList {
-    const chunks: ChunkList = [];
-
-    if (before != null) {
-        chunks.push(before);
-    }
-
-    items.forEach((node, i) => {
-        if (i !== 0) {
-            chunks.push(', ');
-        }
-        chunks.push(node);
-    });
-
-    if (after != null) {
-        chunks.push(after);
-    }
-
-    return chunks;
 }

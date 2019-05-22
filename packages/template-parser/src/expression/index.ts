@@ -103,8 +103,8 @@ export function parseJS(code: string, options: JSParserOptions = {}): Program {
             if (!node.context && !jsGlobals.has(node.name) && !isReserved(node, ancestors)) {
                 updateIdContext(node, ancestors, options);
             }
-        } else if (!options.disableGetters) {
-            upgradeContent(node as Expression);
+        } else {
+            upgradeContent(node as Expression, options);
         }
     });
 
@@ -128,48 +128,48 @@ function isReserved(id: Identifier, ancestors: Expression[]): boolean {
  * Upgrades contents of given node, if possible: converts `MemberExpression` and
  * `CallExpression` children with getters and callers
  */
-function upgradeContent(node: Expression | Statement): void {
+function upgradeContent(node: Expression | Statement, options: JSParserOptions = {}): void {
     switch (node.type) {
         case 'AssignmentPattern':
-            node.right = convert(node.right);
+            node.right = convert(node.right, options);
             break;
         case 'AssignmentExpression':
         case 'BinaryExpression':
         case 'LogicalExpression':
-            node.left = convert(node.left);
-            node.right = convert(node.right);
+            node.left = convert(node.left, options);
+            node.right = convert(node.right, options);
             break;
         case 'SpreadElement':
         case 'UpdateExpression':
         case 'UnaryExpression':
-            node.argument = convert(node.argument);
+            node.argument = convert(node.argument, options);
             break;
         case 'ObjectExpression':
-            node.properties.forEach(prop => prop.value = convert(prop.value));
+            node.properties.forEach(prop => prop.value = convert(prop.value, options));
             break;
         case 'ConditionalExpression':
-            node.test = convert(node.test);
-            node.consequent = convert(node.consequent);
-            node.alternate = convert(node.alternate);
+            node.test = convert(node.test, options);
+            node.consequent = convert(node.consequent, options);
+            node.alternate = convert(node.alternate, options);
             break;
         case 'SequenceExpression':
-            node.expressions = node.expressions.map(convert);
+            node.expressions = node.expressions.map(n => convert(n, options));
             break;
         case 'ExpressionStatement':
-            node.expression = convert(node.expression);
+            node.expression = convert(node.expression, options);
             break;
         case 'ReturnStatement':
             if (node.argument) {
-                node.argument = convert(node.argument);
+                node.argument = convert(node.argument, options);
             }
             break;
         case 'ArrowFunctionExpression':
             if (node.expression) {
-                node.body = convert(node.body as Expression);
+                node.body = convert(node.body as Expression, options);
             }
             break;
         case 'CallExpression':
-            node.arguments = node.arguments.map(convert);
+            node.arguments = node.arguments.map(n => convert(n, options));
             break;
     }
 }

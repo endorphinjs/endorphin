@@ -64,12 +64,12 @@ export function isFunction(node: Expression): node is FunctionDeclaration | Arro
     return node.type === 'FunctionDeclaration' || node.type === 'ArrowFunctionExpression';
 }
 
-export function toSourceData(node: SourceDataAlike): SourceData {
-    return {
+export function toSourceData(node?: SourceDataAlike): SourceData | object {
+    return node ? {
         start: node.start,
         end: node.end,
         loc: node.loc
-    };
+    } : {};
 }
 
 /**

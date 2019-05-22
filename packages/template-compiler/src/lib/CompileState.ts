@@ -84,8 +84,13 @@ export default class CompileState {
         return size ? this.componentStack[size - 1] : null;
     }
 
-    /** Symbol for referencing CSS isolation scope */
-    readonly cssScopeSymbol = 'cssScope';
+    /**
+     * Returns symbol for referencing CSS scope of current component or `null`
+     * if component is unscoped
+     */
+    get cssScope(): string | null {
+        return this.options.cssScope ? this.cssScopeSymbol : null;
+    }
 
     /** Endorphin runtime symbols required by compiled template */
     usedRuntime: Set<RuntimeSymbols> = new Set();
@@ -126,6 +131,9 @@ export default class CompileState {
     readonly helpers: {
         [name: string]: string;
     };
+
+    /** Symbol for referencing CSS isolation scope */
+    private readonly cssScopeSymbol = 'cssScope';
 
     /** Current namespaces */
     private namespaceMap: NamespaceMap = {};
