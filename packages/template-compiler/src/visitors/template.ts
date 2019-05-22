@@ -97,7 +97,7 @@ export default {
 
             if (element.isComponent) {
                 // Enter new component context
-                state.component = new ComponentState(element, state);
+                state.component = new ComponentState(element, state.blockContext);
             }
 
             if (isSlot) {
@@ -122,7 +122,7 @@ export default {
             }
 
             if (element.isComponent) {
-                element.markSlots();
+                element.markSlotUpdate();
                 element.mountComponent();
             }
 

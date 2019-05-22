@@ -1,4 +1,4 @@
-import { createComponent, mountComponent, updateComponent, unmountComponent, elem, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, markSlotUpdate } from "endorphin";
+import { createComponent, mountComponent, unmountComponent, elem, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, markSlotUpdate, updateComponent } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
 function ifBody$0(host, injector, scope) {
@@ -14,12 +14,6 @@ function ifBody$0(host, injector, scope) {
 	});
 	scope.su$0 = scope.su$1 = 1;
 	addDisposeCallback(injector, ifBody$0Unmount);
-	return ifBody$0Update;
-}
-
-function ifBody$0Update(host, injector, scope) {
-	scope.su$0 |= updateComponent(scope.slotInner$1);
-	scope.su$1 |= updateComponent(scope.slotInner$2);
 }
 
 function ifBody$0Unmount(scope) {

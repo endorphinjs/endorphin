@@ -12,8 +12,12 @@ export default class ComponentMountEntity extends Entity {
                 ? toObjectLiteral(staticProps, state.indent, 1) : null;
             return state.runtime('mountComponent', [element.getSymbol(), staticPropsArg]);
         });
-        this.setUpdate(() => state.runtime('updateComponent', [element.getSymbol()]));
+
         this.setUnmount(() => element.unmount('unmountComponent'));
-        state.markSlot(this);
+
+        if (!element.isStaticContent || element.dynamicAttributes.size || element.dynamicEvents.size) {
+            this.setUpdate(() => state.runtime('updateComponent', [element.getSymbol()]));
+            state.markSlot(this);
+        }
     }
 }

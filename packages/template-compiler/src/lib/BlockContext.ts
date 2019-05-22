@@ -25,7 +25,7 @@ export default class BlockContext {
      * so it must be unique in its scope
      * @param topLevel Indicates this is a top-level block
      */
-    constructor(readonly name: string, readonly state: CompileState, readonly topLevel: boolean = false) {}
+    constructor(readonly name: string, readonly state: CompileState) {}
 
     /**
      * Generates mount, update and unmount functions from given entities

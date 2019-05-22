@@ -1,4 +1,4 @@
-import { setAttribute, createComponent, mountComponent, updateComponent, unmountComponent, addDisposeCallback } from "endorphin";
+import { setAttribute, createComponent, mountComponent, unmountComponent, updateComponent, addDisposeCallback } from "endorphin";
 import * as SubComponent from "./sub-component.html";
 
 function ifAttr$0(host, injector) {
@@ -32,7 +32,6 @@ function template$0Update(host, scope) {
 	ifAttr$0(host, inj$0);
 	setAttribute(inj$0, "p3", 3);
 	updateComponent(scope.subComponent$0);
-	updateComponent(scope.subComponent$1);
 }
 
 function template$0Unmount(scope) {

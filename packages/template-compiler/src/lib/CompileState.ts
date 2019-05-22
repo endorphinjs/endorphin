@@ -223,7 +223,17 @@ export default class CompileState {
      */
     markSlot<T extends Entity>(ent?: T): T {
         if (this.component) {
-            this.component.mark(ent);
+            const { element, block, slot } = this.component;
+            if (slot != null) {
+                const { blockContext } = this;
+                if (blockContext && blockContext !== block) {
+                    blockContext.slotSymbols.add(element.slotMark(slot));
+                }
+
+                if (ent && ent.code.update) {
+                    ent.setUpdate(() => sn([element.slotMark(slot), ' |= ', ent.getUpdate()]));
+                }
+            }
         }
 
         return ent;
@@ -237,7 +247,7 @@ export default class CompileState {
      */
     runBlock(name: string, fn: (block: BlockContext) => Entity | Entity[]): string {
         const prevBlock = this.blockContext;
-        const block = new BlockContext(this.globalSymbol(name), this, !prevBlock);
+        const block = new BlockContext(this.globalSymbol(name), this);
 
         this.blockContext = block;
         const result = this.mount(() => fn(block));

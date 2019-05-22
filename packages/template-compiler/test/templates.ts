@@ -69,6 +69,6 @@ describe('Template compiler', () => {
     });
 
     // it.only('debug', () => {
-    //     compare('templates/events-assignment.html', null, true);
+    //     compare('templates/slots-nested.html', null, true);
     // });
 });

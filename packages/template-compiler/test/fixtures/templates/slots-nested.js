@@ -1,4 +1,4 @@
-import { createComponent, mountComponent, updateComponent, unmountComponent, insert, markSlotUpdate, addDisposeCallback } from "endorphin";
+import { createComponent, mountComponent, unmountComponent, insert, addDisposeCallback } from "endorphin";
 import * as MyComponent1 from "./my-component1.html";
 import * as MyComponent2 from "./my-component2.html";
 import * as InnerComponent from "./inner-component.html";
@@ -16,17 +16,6 @@ export default function template$0(host, scope) {
 	});
 	mountComponent(myComponent1$0);
 	addDisposeCallback(host, template$0Unmount);
-	return template$0Update;
-}
-
-function template$0Update(host, scope) {
-	const { myComponent1$0, myComponent2$0 } = scope;
-	scope.su$0 = scope.su$1 = 0;
-	scope.su$1 |= updateComponent(scope.innerComponent$0);
-	markSlotUpdate(myComponent2$0, "", scope.su$1);
-	scope.su$0 |= updateComponent(myComponent2$0);
-	markSlotUpdate(myComponent1$0, "header", scope.su$0);
-	updateComponent(myComponent1$0);
 }
 
 function template$0Unmount(scope) {

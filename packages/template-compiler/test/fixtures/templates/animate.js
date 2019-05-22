@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, addDisposeCallback, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, updateComponent, unmountComponent, finalizeAttributes, finalizeEvents, animate, domRemove, markSlotUpdate, finalizeRefs } from "endorphin";
+import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, addDisposeCallback, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, unmountComponent, finalizeAttributes, finalizeEvents, animate, domRemove, finalizeRefs } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -81,7 +81,6 @@ function ifBody$0Update(host, injector, scope) {
 	updateBlock(scope.if$1);
 	updateInnerHTML(scope.html$0);
 	updateIterator(scope.for$0);
-	updateComponent(scope.innerComponent$0);
 	finalizeAttributes(inj$1);
 	finalizeEvents(inj$1);
 }
@@ -109,16 +108,7 @@ function ifBody$2(host, injector, scope) {
 	const innerComponent$1 = scope.innerComponent$1 = insert(inj$2, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$1);
 	mountComponent(outerComponent$0);
-	scope.su$0 = 1;
 	addDisposeCallback(injector, ifBody$2Unmount);
-	return ifBody$2Update;
-}
-
-function ifBody$2Update(host, injector, scope) {
-	const { outerComponent$0 } = scope;
-	scope.su$0 |= updateComponent(scope.innerComponent$1);
-	markSlotUpdate(outerComponent$0, "", scope.su$0);
-	updateComponent(outerComponent$0);
 }
 
 function ifBody$2Unmount(scope, host) {
@@ -143,7 +133,6 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
-	scope.su$0 = 0;
 	updateBlock(scope.if$0);
 	updateBlock(scope.if$2);
 	finalizeRefs(host);

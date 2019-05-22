@@ -45,7 +45,8 @@ export default class ElementEntity extends Entity {
 
     animateIn?: ENDAttributeValue;
     animateOut?: ENDAttributeValue;
-    slotUpdate: { [slotName: string]: string } = {};
+
+    private slotMarks: { [slotName: string]: string } = {};
 
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
@@ -89,6 +90,17 @@ export default class ElementEntity extends Entity {
     /** Indicates that element context should use injector to operate */
     get usesInjector(): boolean {
         return this.injectorEntity != null;
+    }
+
+    /**
+     * Returns slot update symbol for given name
+     */
+    slotMark(slot: string): string {
+        if (!(slot in this.slotMarks)) {
+            this.slotMarks[slot] = this.state.slotSymbol();
+        }
+
+        return `${this.state.scope}.${this.slotMarks[slot]}`;
     }
 
     /**
@@ -175,12 +187,11 @@ export default class ElementEntity extends Entity {
     /**
      * Adds entity to mark slot updates
      */
-    markSlots() {
-        const { state, slotUpdate } = this;
-        Object.keys(slotUpdate).forEach(slotName => {
-            const mark = slotUpdate[slotName];
+    markSlotUpdate() {
+        const { state, slotMarks } = this;
+        Object.keys(slotMarks).forEach(slot => {
             this.add(state.entity({
-                update: () => state.runtime('markSlotUpdate', [this.getSymbol(), qStr(slotName), `${state.scope}.${mark}`])
+                update: () => state.runtime('markSlotUpdate', [this.getSymbol(), qStr(slot), this.slotMark(slot)])
             }));
         });
     }

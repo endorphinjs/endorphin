@@ -1,4 +1,4 @@
-import { elemWithText, setAttribute, createComponent, insert, mountBlock, updateBlock, unmountBlock, mountIterator, updateIterator, unmountIterator, markSlotUpdate, mountComponent, updateComponent, unmountComponent, addDisposeCallback } from "endorphin";
+import { elemWithText, setAttribute, createComponent, insert, mountBlock, updateBlock, unmountBlock, mountIterator, updateIterator, unmountIterator, markSlotUpdate, mountComponent, unmountComponent, updateComponent, addDisposeCallback } from "endorphin";
 import * as SubComponent from "./slot-inner.html";
 
 function setVars$0(host, scope) {

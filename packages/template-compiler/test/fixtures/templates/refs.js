@@ -1,4 +1,4 @@
-import { setRef, elem, createInjector, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, createComponent, mountComponent, updateComponent, unmountComponent, finalizeRefs } from "endorphin";
+import { setRef, elem, createInjector, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, createComponent, mountComponent, unmountComponent, finalizeRefs } from "endorphin";
 import * as SlotInner from "./slot-inner.html";
 
 function ifBody$0(host, injector, scope) {
@@ -39,12 +39,10 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
-	const { slotInner$0 } = scope;
 	setRef(host, "main", scope.main$0);
 	setRef(host, "header", scope.div$0);
 	updateBlock(scope.if$0);
-	setRef(host, "addon", slotInner$0);
-	updateComponent(slotInner$0);
+	setRef(host, "addon", scope.slotInner$0);
 	finalizeRefs(host);
 }
 

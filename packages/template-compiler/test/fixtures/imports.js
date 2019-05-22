@@ -1,4 +1,4 @@
-import { createComponent, mountComponent, updateComponent, unmountComponent, addDisposeCallback } from "endorphin";
+import { createComponent, mountComponent, unmountComponent, addDisposeCallback } from "endorphin";
 import * as MyComponent from "./my-component/";
 import * as MyComponent2 from "./my-component2/index.html";
 import * as OtherComponent from "./some-component.html";
@@ -15,14 +15,6 @@ export default function template$0(host, scope) {
 	const someComponent2$0 = scope.someComponent2$0 = target$0.appendChild(createComponent("some-component2", SomeComponent2, host));
 	mountComponent(someComponent2$0);
 	addDisposeCallback(host, template$0Unmount);
-	return template$0Update;
-}
-
-function template$0Update(host, scope) {
-	updateComponent(scope.myComponent$0);
-	updateComponent(scope.myComponent2$0);
-	updateComponent(scope.otherComponent$0);
-	updateComponent(scope.someComponent2$0);
 }
 
 function template$0Unmount(scope) {
