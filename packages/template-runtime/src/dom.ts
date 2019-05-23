@@ -5,9 +5,7 @@ type TextNode = Text & { $value: any };
  * @param cssScope Scope for CSS isolation
  */
 export function elem(tagName: string, cssScope?: string): Element {
-	const el = document.createElement(tagName);
-	cssScope && el.setAttribute(cssScope, '');
-	return el;
+	return isolateElement(document.createElement(tagName), cssScope);
 }
 
 /**
@@ -15,9 +13,7 @@ export function elem(tagName: string, cssScope?: string): Element {
  * @param cssScope Scope for CSS isolation
  */
 export function elemNS(tagName: string, ns: string, cssScope?: string): Element {
-	const el = document.createElementNS(ns, tagName);
-	cssScope && el.setAttribute(cssScope, '');
-	return el;
+	return isolateElement(document.createElementNS(ns, tagName), cssScope);
 }
 
 /**
@@ -61,6 +57,14 @@ export function updateText(node: TextNode, value: any): number {
 	}
 
 	return 0;
+}
+
+/**
+ * Isolates given element with CSS scope
+ */
+export function isolateElement<T extends Element>(el: T, cssScope?: string): T {
+	cssScope && el.setAttribute(cssScope, '');
+	return el;
 }
 
 /**

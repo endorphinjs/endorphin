@@ -3,6 +3,7 @@ import { changeSet, animatingKey } from './utils';
 import { domInsert, domRemove } from './dom';
 import { RunCallback, ChangeSet, EventBinding, Scope, UnmountBlock } from './types';
 import { Component } from './component';
+import { SlotContext } from './slot';
 
 export interface Injector {
 	/** Injector DOM target */
@@ -21,7 +22,7 @@ export interface Injector {
 	 * Slots container
 	 */
 	slots?: {
-		[name: string]: DocumentFragment | Element
+		[name: string]: SlotContext
 	} | null;
 
 	/** Pending attributes updates */
@@ -70,14 +71,10 @@ export function createInjector(target: Element): Injector {
  * Inserts given node into current context
  */
 export function insert<T extends Node>(injector: Injector, node: T, slotName = ''): T {
-	let target: Node;
 	const { items, slots, ptr } = injector;
-
-	if (slots) {
-		target = slots[slotName] || (slots[slotName] = document.createDocumentFragment());
-	} else {
-		target = injector.parentNode;
-	}
+	const target = slots
+		? getSlotContext(injector, slotName).element
+		: injector.parentNode;
 
 	domInsert(node, target, ptr ? getAnchorNode(ptr.next!, target) : void 0);
 	injector.ptr = ptr ? listInsertValueAfter(node, ptr) : listPrependValue(items, node);
@@ -120,6 +117,15 @@ export function run<D, R>(block: BaseBlock, fn: RunCallback<D, R>, data?: D): R 
 	injector.ctx = ctx;
 
 	return result;
+}
+
+/**
+ * Returns named slot context from given component input’s injector. If slot context
+ * doesn’t exists, it will be created
+ */
+export function getSlotContext(injector: Injector, name: string): SlotContext {
+	const slots = injector.slots!;
+	return slots[name] || (slots[name] = createSlotContext(name));
 }
 
 /**
@@ -212,4 +218,16 @@ function getAnchorNode(item: LinkedListItem<Node>, parent: Node): Node | undefin
 
 		item = item.next!;
 	}
+}
+
+/**
+ * Creates context for given slot
+ */
+function createSlotContext(name: string): SlotContext {
+	return {
+		name,
+		element: document.createElement('slot'),
+		isDefault: false,
+		defaultContent: null
+	};
 }

@@ -2,10 +2,9 @@ import { elem } from './dom';
 import { assign, obj, changeSet, representAttributeValue, safeCall, getObjectDescriptors } from './utils';
 import { finalizeEvents } from './event';
 import { normalizeClassName } from './attribute';
-import { createInjector, disposeBlock, Injector, BaseBlock } from './injector';
+import { createInjector, Injector } from './injector';
 import { runHook, reverseWalkDefinitions } from './hooks';
 import { getScope } from './scope';
-import { updateSlots } from './slot';
 import { Changes, Data, UpdateTemplate, ChangeSet, UnmountBlock, MountTemplate } from './types';
 import { Store } from './store';
 
@@ -43,9 +42,6 @@ export interface Component<P = Data, S = Data, T = Store> extends HTMLElement {
 
 	/** A store, bound to current component */
 	store?: T;
-
-	/** References to component slot containers. Default slot is available as `slot['']` */
-	slots: RefMap;
 
 	/** Reference to the root component of the current app */
 	root?: Component;
@@ -87,12 +83,6 @@ interface ComponentModel {
 
 	/** List of attached event handlers */
 	events?: AttachedStaticEvents;
-
-	/** Slot output for component */
-	slots: { [name: string]: BaseBlock };
-
-	/** Slots update status */
-	slotStatus?: { [name: string]: number };
 
 	/** Indicates that component was mounted */
 	mounted: boolean;
@@ -208,7 +198,7 @@ export interface ComponentDefinition {
 let renderQueue: Array<Component | Changes | undefined> | null = null;
 
 /**
- * Creates internal lightweight Endorphin component with given definition
+ * Creates Endorphin DOM component with given definition
  */
 export function createComponent(name: string, definition: ComponentDefinition, host?: HTMLElement | Component): Component {
 	let cssScope: string | undefined;
@@ -256,8 +246,6 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 		input,
 		vars: obj(),
 		refs: changeSet(),
-		slots: obj(),
-		slotStatus: obj(),
 		mounted: false,
 		rendering: false,
 		finalizing: false,
@@ -321,7 +309,6 @@ export function updateComponent(component: Component): number {
 	const { input } = component.componentModel;
 	const changes = setPropsInternal(component, input.attributes.prev, input.attributes.cur);
 	finalizeEvents(input);
-	updateSlots(component);
 
 	if (changes || component.componentModel.queued) {
 		renderNext(component, changes!);
@@ -337,7 +324,7 @@ export function updateComponent(component: Component): number {
  */
 export function unmountComponent(component: Component): void {
 	const { componentModel } = component;
-	const { slots, dispose, events } = componentModel;
+	const { dispose, events } = componentModel;
 	const scope = getScope(component);
 
 	runHook(component, 'willUnmount');
@@ -352,10 +339,6 @@ export function unmountComponent(component: Component): void {
 	}
 
 	safeCall(dispose, scope);
-
-	for (const slotName in slots) {
-		disposeBlock(slots[slotName]);
-	}
 
 	runHook(component, 'didUnmount');
 

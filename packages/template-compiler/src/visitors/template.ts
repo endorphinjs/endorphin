@@ -16,7 +16,7 @@ import IteratorEntity from '../entities/IteratorEntity';
 import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
-import { sn, qStr, isLiteral, toObjectLiteral, getAttrValue, nameToJS, propGetter, propSetter, isExpression } from '../lib/utils';
+import { sn, qStr, isLiteral, toObjectLiteral, getAttrValue, nameToJS, propGetter, propSetter, isExpression, isElement } from '../lib/utils';
 import ElementEntity from '../entities/ElementEntity';
 import ComponentState from '../lib/ComponentState';
 
@@ -74,62 +74,36 @@ export default {
                 ? node.body[0] as Literal
                 : null;
 
-            // Set component context
-            const { component } = state;
-            const slot = component ? component.slot : null;
-
             // Create element instance
             element.create(singleTextContent);
 
-            if (component) {
-                // Enter named slot context
-                const slotName = (getAttrValue(node, 'slot') as string) || '';
-                if (slot == null) {
-                    component.slot = slotName;
-                } else if (slotName) {
-                    // tslint:disable-next-line:max-line-length
-                    state.warn(`Invalid slot nesting: unable to set "${slotName}" slot inside "${slot || 'default'}" slot`, node.loc.start.offset);
-                }
-
+            runSlot(node, state, () => {
                 // If element is created inside component, mark parent slot as updated
                 state.markSlot();
-            }
 
-            if (element.isComponent) {
-                // Enter new component context
-                state.component = new ComponentState(element, state.blockContext);
-            }
+                runComponent(element, state, () => {
+                    if (isSlot) {
+                        element.add(mountSlot(element, state, next));
+                    } else if (!singleTextContent) {
+                        element.setContent(node.body, next);
+                    }
 
-            if (isSlot) {
-                element.add(defaultSlotEntity(element, state, next));
-            } else if (!singleTextContent) {
-                element.setContent(node.body, next);
-            }
+                    if (!element.isComponent) {
+                        if (element.dynamicAttributes.size || element.hasPartials) {
+                            element.finalizeAttributes();
+                        }
 
-            if (!element.isComponent) {
-                if (element.dynamicAttributes.size || element.hasPartials) {
-                    element.finalizeAttributes();
+                        if (element.dynamicEvents.size || element.hasPartials) {
+                            element.finalizeEvents();
+                        }
+                    }
+                });
+
+                if (element.isComponent) {
+                    element.markSlotUpdate();
+                    element.mountComponent();
                 }
-
-                if (element.dynamicEvents.size || element.hasPartials) {
-                    element.finalizeEvents();
-                }
-            }
-
-            // Restore component context
-            if (element.isComponent) {
-                state.component = component;
-            }
-
-            if (element.isComponent) {
-                element.markSlotUpdate();
-                element.mountComponent();
-            }
-
-            // Restore slot context
-            if (component) {
-                component.slot = slot;
-            }
+            });
 
             element.animate();
         });
@@ -158,13 +132,13 @@ export default {
 
     Literal(node: Literal, state) {
         if (node.value != null) {
-            return new TextEntity(node, state);
+            return runSlot(node, state, () => new TextEntity(node, state));
         }
     },
 
     // NB `Program` is used as expression for text node
     Program(node: Program, state) {
-        return new TextEntity(node, state);
+        return runSlot(node, state, () => new TextEntity(node, state));
     },
 
     ENDIfStatement(node: ENDIfStatement, state, next) {
@@ -243,7 +217,7 @@ function isSimpleConditionContent(node: ENDStatement): boolean {
 /**
  * Generates entity with default slot content
  */
-function defaultSlotEntity(elem: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): Entity {
+function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): Entity {
     const node = elem.node as ENDElement;
     const slotName = String(getAttrValue(node, 'name') || '');
 
@@ -254,8 +228,9 @@ function defaultSlotEntity(elem: ElementEntity, state: CompileState, next: AstVi
         : null;
 
     return state.entity('slot', {
-        mount: () => state.runtime('mountSlot', [state.host, qStr(slotName), elem.getSymbol(), contentArg]),
-        unmount: slot => slot.unmount('unmountSlot')
+        mount: () => state.runtime('mountSlot', [state.host, qStr(slotName), contentArg]),
+        update: ent => state.runtime('updateDefaultSlot', [ent.getSymbol()]),
+        unmount: ent => ent.unmount('unmountSlot'),
     });
 }
 
@@ -282,4 +257,48 @@ function generateObject(params: ENDAttribute[], state: CompileState, level: numb
 
 function objectKey(node: Identifier | Program, state: CompileState) {
     return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
+}
+
+/**
+ * Runs given function in context for slot, inferred from given node
+ */
+function runSlot<T>(node: Literal | Program | ENDElement, state: CompileState, fn: () => T): T {
+    const { component } = state;
+
+    if (!component) {
+        return fn();
+    }
+
+    // Enter named slot context
+    const { slot } = component;
+    const slotName = isElement(node) && (getAttrValue(node, 'slot') as string) || '';
+
+    if (slot == null) {
+        component.slot = slotName;
+    } else if (slotName) {
+        // tslint:disable-next-line:max-line-length
+        state.warn(`Invalid slot nesting: unable to set "${slotName}" slot inside "${slot || 'default'}" slot`, node.loc.start.offset);
+    }
+
+    const result = fn();
+
+    // Restore slot context
+    component.slot = slot;
+
+    return result;
+}
+
+/**
+ * Runs given function in context of given element if it’s a component
+ */
+function runComponent<T>(element: ElementEntity, state: CompileState, fn: () => T): T {
+    const { component } = state;
+
+    if (element.isComponent) {
+        state.component = new ComponentState(element, state.blockContext);
+    }
+
+    const result = fn();
+    state.component = component;
+    return result;
 }

@@ -1,108 +1,125 @@
-import { moveContents } from './utils';
-import { createInjector, Injector } from './injector';
-import { mountBlock, updateBlock, unmountBlock, FunctionBlock } from './block';
-import { runHook } from './hooks';
-import { MountBlock, GetMount } from './types';
+import { MountBlock, UpdateBlock } from './types';
+import { BaseBlock, injectBlock, run, emptyBlockContent, disposeBlock, getSlotContext } from './injector';
 import { Component } from './component';
+import { isolateElement } from './dom';
+import { getScope } from './scope';
+import { runHook } from './hooks';
 
-interface SlotContext {
-	host: Component;
+export interface SlotContext {
 	name: string;
+	element: HTMLElement;
 	isDefault: boolean;
-	defaultContent?: MountBlock;
+	defaultContent: SlotBlock | null;
+}
+
+export interface SlotBlock extends BaseBlock<SlotBlock> {
+	fn: MountBlock;
+	update: UpdateBlock | void;
 }
 
 /**
- * Registers given element as output slot for `host` component
- * @param defaultContent Function for rendering default slot content
+ * Creates slot element
  */
-export function mountSlot(host: Component, name: string, elem: HTMLElement, defaultContent?: MountBlock): SlotContext {
-	const ctx: SlotContext = { host, name, defaultContent, isDefault: false };
-	const { slots } = host.componentModel;
-	const injector = createInjector(elem);
+export function createSlot(host: Component, name: string, cssScope?: string): HTMLElement {
+	return isolateElement(getSlotContext(host.componentModel.input, name).element, cssScope);
+}
 
-	const blockEntry: GetMount = () => {
-		ctx.isDefault = !renderSlot(host, injector);
-		return ctx.isDefault ? ctx.defaultContent : void 0;
-	};
+/**
+ * Mounts slot context
+ */
+export function mountSlot(host: Component, name: string, defaultContent?: MountBlock): SlotContext {
+	const injector = host.componentModel.input;
+	const ctx = getSlotContext(injector, name);
+	if (defaultContent) {
+		// Add block with default slot content
+		ctx.defaultContent = injectBlock<SlotBlock>(injector, {
+			host,
+			injector,
+			scope: getScope(host),
+			dispose: null,
+			fn: defaultContent,
+			update: undefined
+		});
 
-	slots[name] = mountBlock(host, injector, blockEntry);
+		if (isEmpty(ctx)) {
+			// No incoming content, mount default content
+			renderDefaultContent(ctx);
+		} else {
+			setSlotted(ctx, true);
+		}
+	}
 
 	return ctx;
 }
 
 /**
- * Unmounts given slot
- * @param {SlotContext} ctx
+ * Handles possible update of incoming data
+ */
+export function updateIncomingSlot(host: Component, name: string, updated: number) {
+	const ctx = getSlotContext(host.componentModel.input, name);
+
+	if (updated) {
+		// Incoming content was updated but there’s default content mounted
+		if (ctx.isDefault) {
+			emptyBlockContent(ctx.defaultContent!);
+			setSlotted(ctx, true);
+		}
+
+		// Notify about updated slot content
+		runHook(host, 'didSlotUpdate', name, ctx.element);
+	}
+
+	if (!ctx.isDefault && ctx.defaultContent && isEmpty(ctx)) {
+		// If slot content is empty, ensure default content is rendered
+		renderDefaultContent(ctx);
+	}
+}
+
+/**
+ * Updates default slot content only if it was already rendered
+ */
+export function updateDefaultSlot(ctx: SlotContext) {
+	if (ctx.isDefault) {
+		const block = ctx.defaultContent!;
+		if (block.update) {
+			run(block, block.update, block.scope);
+		}
+	}
+}
+
+/**
+ * Unmounts default content of given slot context
  */
 export function unmountSlot(ctx: SlotContext) {
-	const { host, name } = ctx;
-	const { slots } = host.componentModel;
-
-	if (ctx.isDefault) {
-		unmountBlock(slots[name] as FunctionBlock);
-	}
-
-	ctx.defaultContent = void 0;
-	delete slots[name];
-}
-
-/**
- * Sync slot content if necessary
- */
-export function updateSlots(host: Component) {
-	const { slots, slotStatus, input } = host.componentModel;
-	for (const name in slots) {
-		updateBlock(slots[name] as FunctionBlock);
-	}
-
-	for (const name in slotStatus) {
-		if (slotStatus[name]) {
-			runHook(host, 'didSlotUpdate', name, input.slots![name]);
-			slotStatus[name] = 0;
-		}
+	if (ctx.defaultContent) {
+		disposeBlock(ctx.defaultContent);
+		setSlotted(ctx, false);
+		ctx.isDefault = false;
+		ctx.defaultContent = null;
 	}
 }
 
 /**
- * Renders incoming contents of given slot
- * @returns Returns `true` if slot content was filled with incoming data,
- * `false` otherwise
+ * Renders default slot content
  */
-function renderSlot(host: Component, target: Injector): boolean {
-	const { parentNode } = target;
-	const name = parentNode.getAttribute('name') || '';
-	const slotted = parentNode.hasAttribute('slotted');
-	const { input } = host.componentModel;
-	const source: Element | DocumentFragment = input.slots![name];
-
-	if (source && source.childNodes.length) {
-		// There’s incoming slot content
-		if (!slotted) {
-			parentNode.setAttribute('slotted', '');
-			input.slots![name] = moveContents(source, parentNode);
-		}
-
-		return true;
-	}
-
-	if (slotted) {
-		// Parent renderer removed incoming data
-		parentNode.removeAttribute('slotted');
-		input[name] = null;
-	}
-
-	return false;
+function renderDefaultContent(ctx: SlotContext) {
+	const block = ctx.defaultContent!;
+	block.update = run(block, block.fn, block.scope);
+	setSlotted(ctx, false);
 }
 
 /**
- * Marks slot update status
+ * Check if given slot is empty
  */
-export function markSlotUpdate(component: Component, slotName: string, status: number) {
-	const { slotStatus } = component.componentModel;
-	if (slotName in slotStatus!) {
-		slotStatus![slotName] |= status;
-	} else {
-		slotStatus![slotName] = status;
-	}
+function isEmpty(ctx: SlotContext): boolean {
+	// TODO better check for input content?
+	return !ctx.element.childNodes.length;
+}
+
+/**
+ * Toggles slotted state in slot container
+ */
+function setSlotted(ctx: SlotContext, slotted: boolean) {
+	ctx.isDefault = !slotted;
+	slotted ? ctx.element.setAttribute('slotted', '') : ctx.element.removeAttribute('slotted');
 }

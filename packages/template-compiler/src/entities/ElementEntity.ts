@@ -140,19 +140,25 @@ export default class ElementEntity extends Entity {
         if (isElement(node)) {
             this.setMount(() => {
                 const elemName = node.name.name;
+                const cssScope = state.cssScope;
 
                 if (getControlName(elemName) === 'self') {
                     // Create component which points to itself
                     return state.runtime('createComponent', [`${state.host}.nodeName`, `${state.host}.componentModel.definition`, state.host], node);
                 }
 
-                if (state.isComponent(node)) {
+                if (this.isComponent) {
                     // Create component
                     return state.runtime('createComponent', [qStr(elemName), state.getComponent(node), state.host], node);
                 }
 
+                if (elemName === 'slot') {
+                    // Create slot
+                    const slotName = (getAttrValue(node, 'slot') as string) || '';
+                    return state.runtime('createSlot', [state.host, qStr(slotName), cssScope], node);
+                }
+
                 // Create plain DOM element
-                const cssScope = state.cssScope;
                 const nodeName = getNodeName(elemName);
                 const nsSymbol = state.namespace(nodeName.ns);
 
@@ -185,13 +191,13 @@ export default class ElementEntity extends Entity {
     }
 
     /**
-     * Adds entity to mark slot updates
+     * Adds entity to update incoming slot data
      */
     markSlotUpdate() {
         const { state, slotMarks } = this;
         Object.keys(slotMarks).forEach(slot => {
             this.add(state.entity({
-                update: () => state.runtime('markSlotUpdate', [this.getSymbol(), qStr(slot), this.slotMark(slot)])
+                update: () => sn([state.runtime('updateIncomingSlot', [this.getSymbol(), qStr(slot), this.slotMark(slot)])])
             }));
         });
     }

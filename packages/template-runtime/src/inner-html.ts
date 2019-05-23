@@ -3,6 +3,7 @@ import { isDefined } from './utils';
 import { getScope } from './scope';
 import { GetMount } from './types';
 import { Component } from './component';
+import { isolateElement } from './dom';
 
 interface InnerHtmlBlock extends BaseBlock<InnerHtmlBlock> {
 	get: GetMount;
@@ -78,7 +79,7 @@ function scopeDOM(node: Element, cssScope: string) {
 	node = node.firstChild as Element;
 	while (node) {
 		if (node.nodeType === node.ELEMENT_NODE) {
-			node.setAttribute(cssScope, '');
+			isolateElement(node, cssScope);
 			scopeDOM(node, cssScope);
 		}
 		node = node.nextSibling as Element;

@@ -94,8 +94,10 @@ export default class BlockContext {
         }
 
         if (this.slotSymbols.size) {
-            // Mark used slot symbols as updated in mount context
-            mountChunks.push(`${Array.from(this.slotSymbols).join(' = ')} = 1`);
+            // Mark used slot symbols as updated in mount and unmount context
+            const updateSlots = `${Array.from(this.slotSymbols).join(' = ')} = 1`;
+            mountChunks.push(updateSlots);
+            unmountChunks.push(updateSlots);
         }
 
         if (unmountChunks.length) {
