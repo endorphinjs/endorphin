@@ -95,7 +95,7 @@ function createTween(elem: ElementEntity, handler: ENDAttributeValue, state: Com
         if (expr.type === 'ExpressionStatement') {
             let call: Expression = expr.expression;
 
-            if (isIdentifier(call)) {
+            if (isIdentifier(call) && (!call.context || call.context === 'property')) {
                 // Tween handler is passed as function pointer:
                 // `animate:in={handler}`
                 // Rewrite it to function call with empty options argument

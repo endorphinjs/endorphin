@@ -1,11 +1,11 @@
 <!-- Template with dynamic attributes -->
-<main a1="{id}" a2="0">
-	<t-attribute name="a2" if="c1">1</t-attribute>
-	<t-attribute name="a2" if="c2">2</t-attribute>
-	<t-if test="c3">
-		<t-attribute name="a2">3</t-attribute>
-		<t-attribute name="a1">3</t-attribute>
-		<t-attribute name="a3">3</t-attribute>
-	</t-if>
-	<t-attribute name="a3">4</t-attribute>
-</main>
+<template>
+	<main a1={id} a2=0>
+		<e:attribute a2=1 e:if={c1} />
+		<e:attribute a2=2 e:if={c2} />
+		<e:if test={c3}>
+			<e:attribute a2=3 a1=3 a3=3 />
+		</e:if>
+		<e:attribute a3=4 />
+	</main>
+</template>

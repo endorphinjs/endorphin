@@ -1,8 +1,11 @@
 import { strictEqual } from 'assert';
 import document from './assets/document';
-import attribute1 from './samples/attribute1';
-import attribute2 from './samples/attribute2';
 import { createComponent, mountComponent, renderComponent } from '../src/runtime';
+
+// @ts-ignore
+import attribute1 from './samples/attribute1.html';
+// @ts-ignore
+import attribute2 from './samples/attribute2.html';
 
 describe('Attribute', () => {
 	before(() => global['document'] = document);
@@ -43,25 +46,21 @@ describe('Attribute', () => {
 		});
 
 		// Initial render
-		// XXX `a2` attribute is applied before `a1` since `a2` is static and applied immediately,
-		// while `a1` is dynamic and applied on element finalization.
-		// It shouldn’t be a problem for regular HTML, for component attributes (props)
-		// are applied differently
 		mountComponent(component);
-		strictEqual(component.innerHTML, '<main a2="0" a1="foo" class="foo baz"></main>');
+		strictEqual(component.innerHTML, '<main a1="foo" a2="0" class="foo baz"></main>');
 
 		// Re-render: retain the same result
 		renderComponent(component);
-		strictEqual(component.innerHTML, '<main a2="0" a1="foo" class="foo baz"></main>');
+		strictEqual(component.innerHTML, '<main a1="foo" a2="0" class="foo baz"></main>');
 
 		component.setProps({ c1: true, c2: true });
-		strictEqual(component.innerHTML, '<main a2="1" a1="foo" class="foo bar baz"></main>');
+		strictEqual(component.innerHTML, '<main a1="foo" a2="1" class="foo bar baz"></main>');
 
 		// Re-render: should retain previous result
 		renderComponent(component);
-		strictEqual(component.innerHTML, '<main a2="1" a1="foo" class="foo bar baz"></main>');
+		strictEqual(component.innerHTML, '<main a1="foo" a2="1" class="foo bar baz"></main>');
 
 		component.setProps({ c3: true });
-		strictEqual(component.innerHTML, '<main a2="1" a1="foo" class="bam foo baz"></main>');
+		strictEqual(component.innerHTML, '<main a1="foo" a2="1" class="bam foo baz"></main>');
 	});
 });

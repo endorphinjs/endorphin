@@ -1,8 +1,10 @@
 import { deepEqual, strictEqual } from 'assert';
 import document from './assets/document';
 import { Store } from '../src/store';
-import storeTemplate from './samples/store';
 import { createComponent, mountComponent, unmountComponent } from '../src/runtime';
+
+// @ts-ignore
+import storeTemplate from './samples/store.html';
 
 interface StoreData {
 	foo?: string;

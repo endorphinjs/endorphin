@@ -1,8 +1,10 @@
 import { strictEqual, ok } from 'assert';
 import read from './assets/read-file';
 import document, { setCallback, clearCallbacks, ElementShim } from './assets/document';
-import parentTemplate from './samples/slot';
 import { createComponent, mountComponent, renderComponent, Component } from '../src/runtime';
+
+// @ts-ignore
+import parentTemplate from './samples/slots/slot.html';
 
 describe('Slots', () => {
 	before(() => global['document'] = document);

@@ -25,7 +25,7 @@ export default class BlockContext {
      * so it must be unique in its scope
      * @param topLevel Indicates this is a top-level block
      */
-    constructor(readonly name: string, readonly state: CompileState) {}
+    constructor(readonly name: string, readonly state: CompileState, readonly parent?: BlockContext) {}
 
     /**
      * Generates mount, update and unmount functions from given entities
@@ -98,6 +98,9 @@ export default class BlockContext {
             const updateSlots = `${Array.from(this.slotSymbols).join(' = ')} = 1`;
             mountChunks.push(updateSlots);
             unmountChunks.push(updateSlots);
+            // Mark scope as used in unmount context in case if slot marker is
+            // the only output of unmount function
+            scopeUsage.use('unmount');
         }
 
         if (unmountChunks.length) {

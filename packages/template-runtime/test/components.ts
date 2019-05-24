@@ -1,8 +1,10 @@
 import { strictEqual, ok } from 'assert';
 import document, { ElementShim } from './assets/document';
 import read from './assets/read-file';
-import * as MyComponent from './samples/set1/my-component';
 import { createComponent, mountComponent } from '../src/runtime';
+
+// @ts-ignore
+import * as MyComponent from './samples/set1/my-component.html';
 
 describe('Full component render', () => {
 	before(() => global['document'] = document);
@@ -10,8 +12,8 @@ describe('Full component render', () => {
 
 	it('set1', () => {
 		const component = createComponent('my-component', MyComponent);
-
 		mountComponent(component);
+
 		strictEqual(component.innerHTML, read('samples/set1/output1.html'));
 
 		const sub1 = (component as any as ElementShim).findByName('sub-component1');

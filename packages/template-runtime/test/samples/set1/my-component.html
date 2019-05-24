@@ -1,8 +1,26 @@
+<link rel="import" href="./sub-component1.html" />
+<link rel="import" href="./sub-component2.html" />
+
 <template>
 	<h1>Title</h1>
 	<sub-component1 foo={value1}>
-		<t-if test="value1 > 0">
+		<e:if test={value1 > 0}>
 			<sub-component2 bar={value2}>Hello world</sub-component2>
-		</t-if>
+		</e:if>
 	</sub-component1>
 </template>
+
+<script>
+import { Store } from '../../../src/runtime';
+
+export function store() {
+	return new Store({ foo: 'bar' });
+}
+
+export function props() {
+	return {
+		value1: 1,
+		value2: 2
+	};
+}
+</script>

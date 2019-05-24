@@ -1,8 +1,10 @@
 import { strictEqual, ok } from 'assert';
 import read from './assets/read-file';
 import document from './assets/document';
-import branching from './samples/branching-scoped';
 import { createComponent, mountComponent, updateComponent } from '../src/runtime';
+
+// @ts-ignore
+import branching from './samples/branching-scoped.html';
 
 describe('CSS scoping', () => {
 	before(() => global['document'] = document);

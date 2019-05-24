@@ -1,8 +1,10 @@
 import { strictEqual, ok } from 'assert';
 import read from './assets/read-file';
 import document from './assets/document';
-import keyIterate from './samples/key-iterate';
 import { createComponent, mountComponent } from '../src/runtime';
+
+// @ts-ignore
+import keyIterate from './samples/key-iterate.html';
 
 describe('Key iterate', () => {
 	before(() => global['document'] = document);

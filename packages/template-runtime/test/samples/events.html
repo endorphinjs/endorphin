@@ -1,4 +1,6 @@
 <!-- Template with dynamic attributes -->
-<main on:click="method1(foo, bar)">
-	<t-event if="c1" on:click="method2(foo, bar)" />
-</main>
+<template>
+	<main on:click={method1(foo, bar)}>
+		<e:attribute on:click={method2(foo, bar)} e:if={c1} />
+	</main>
+</template>

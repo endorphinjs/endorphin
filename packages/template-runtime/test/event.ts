@@ -1,10 +1,14 @@
 import { strictEqual, deepStrictEqual } from 'assert';
 import document, { ElementShim, EventShim } from './assets/document';
-import template from './samples/events';
-import loopTemplate from './samples/events-loop';
-import branching from './samples/branching';
 import { createComponent, mountComponent, updateComponent } from '../src/runtime';
 import { Component } from '../src/component';
+
+// @ts-ignore
+import template from './samples/events.html';
+// @ts-ignore
+import loopTemplate from './samples/events-loop.html';
+// @ts-ignore
+import branching from './samples/branching.html';
 
 describe('Event handler', () => {
 	before(() => global['document'] = document);

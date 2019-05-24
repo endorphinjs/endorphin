@@ -1,9 +1,12 @@
 import { equal } from 'assert';
 import read from './assets/read-file';
 import document from './assets/document';
-import partials from './samples/partials';
-import * as OuterComponent from './samples/set2/outer-component';
 import { createComponent, mountComponent, renderComponent } from '../src/runtime';
+
+// @ts-ignore
+import partials from './samples/partials.html';
+// @ts-ignore
+import * as OuterComponent from './samples/set2/outer-component.html';
 
 describe('Partials', () => {
 	before(() => global['document'] = document);

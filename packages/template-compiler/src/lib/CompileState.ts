@@ -5,7 +5,7 @@ import Entity, { RenderOptions, entity } from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
 import ComponentState from './ComponentState';
-import { nameToJS, propGetter, isIdentifier, isLiteral, isElement, sn, prepareHelpers } from './utils';
+import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers } from './utils';
 import { Chunk, RenderContext, ComponentImport, RuntimeSymbols, ChunkList } from '../types';
 import { CompileOptions } from '..';
 
@@ -62,6 +62,26 @@ export default class CompileState {
     get element(): ElementEntity {
         return this.blockContext
             && this.blockContext.element;
+    }
+
+    /** Returns actual content receiver */
+    get receiver(): ElementEntity | null {
+        let { blockContext } = this;
+
+        while (blockContext) {
+            let { element } = blockContext;
+            while (element && !element.node) {
+                element = element.parent;
+            }
+
+            if (element) {
+                return element;
+            }
+
+            blockContext = blockContext.parent;
+        }
+
+        return null;
     }
 
     get hasPartials(): boolean {
@@ -247,7 +267,7 @@ export default class CompileState {
      */
     runBlock(name: string, fn: (block: BlockContext) => Entity | Entity[]): string {
         const prevBlock = this.blockContext;
-        const block = new BlockContext(this.globalSymbol(name), this);
+        const block = new BlockContext(this.globalSymbol(name), this, prevBlock);
 
         this.blockContext = block;
         const result = this.mount(() => fn(block));
@@ -273,7 +293,7 @@ export default class CompileState {
         }
 
         const prevElem = blockContext.element;
-        const ent = blockContext.element = new ElementEntity(node, this);
+        const ent = blockContext.element = new ElementEntity(node, this, prevElem);
 
         if (node && isElement(node)) {
             this.namespaceMap = {
@@ -316,7 +336,7 @@ export default class CompileState {
      */
     store(name: string): string {
         this.usedStore.add(name);
-        return `${this.options.host}.store.data${propGetter(name)}`;
+        return name;
     }
 
     /**

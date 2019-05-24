@@ -30,6 +30,7 @@ export function createSlot(host: Component, name: string, cssScope?: string): HT
 export function mountSlot(host: Component, name: string, defaultContent?: MountBlock): SlotContext {
 	const injector = host.componentModel.input;
 	const ctx = getSlotContext(injector, name);
+
 	if (defaultContent) {
 		// Add block with default slot content
 		ctx.defaultContent = injectBlock<SlotBlock>(injector, {
@@ -40,13 +41,13 @@ export function mountSlot(host: Component, name: string, defaultContent?: MountB
 			fn: defaultContent,
 			update: undefined
 		});
+	}
 
-		if (isEmpty(ctx)) {
-			// No incoming content, mount default content
-			renderDefaultContent(ctx);
-		} else {
-			setSlotted(ctx, true);
-		}
+	if (isEmpty(ctx)) {
+		// No incoming content, mount default content
+		renderDefaultContent(ctx);
+	} else {
+		setSlotted(ctx, true);
 	}
 
 	return ctx;
@@ -65,11 +66,10 @@ export function updateIncomingSlot(host: Component, name: string, updated: numbe
 			setSlotted(ctx, true);
 		}
 
-		// Notify about updated slot content
-		runHook(host, 'didSlotUpdate', name, ctx.element);
+		notifySlotUpdate(host, ctx);
 	}
 
-	if (!ctx.isDefault && ctx.defaultContent && isEmpty(ctx)) {
+	if (!ctx.isDefault && isEmpty(ctx)) {
 		// If slot content is empty, ensure default content is rendered
 		renderDefaultContent(ctx);
 	}
@@ -99,12 +99,18 @@ export function unmountSlot(ctx: SlotContext) {
 	}
 }
 
+export function notifySlotUpdate(host: Component, ctx: SlotContext) {
+	runHook(host, 'didSlotUpdate', ctx.name, ctx.element);
+}
+
 /**
  * Renders default slot content
  */
 function renderDefaultContent(ctx: SlotContext) {
-	const block = ctx.defaultContent!;
-	block.update = run(block, block.fn, block.scope);
+	if (ctx.defaultContent) {
+		const block = ctx.defaultContent;
+		block.update = run(block, block.fn, block.scope);
+	}
 	setSlotted(ctx, false);
 }
 

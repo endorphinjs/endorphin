@@ -7,6 +7,7 @@ import { runHook, reverseWalkDefinitions } from './hooks';
 import { getScope } from './scope';
 import { Changes, Data, UpdateTemplate, ChangeSet, UnmountBlock, MountTemplate } from './types';
 import { Store } from './store';
+import { notifySlotUpdate } from './slot';
 
 type DescriptorMap = object & { [x: string]: PropertyDescriptor };
 interface RefMap { [key: string]: Element; }
@@ -284,7 +285,7 @@ export function mountComponent(component: Component, initialProps?: object) {
 
 	// Notify slot status
 	for (const p in input.slots) {
-		runHook(component, 'didSlotUpdate', p, input.slots[p]);
+		notifySlotUpdate(component, input.slots[p]);
 	}
 
 	if (changes) {

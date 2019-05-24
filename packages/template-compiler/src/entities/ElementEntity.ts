@@ -48,7 +48,7 @@ export default class ElementEntity extends Entity {
 
     private slotMarks: { [slotName: string]: string } = {};
 
-    constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
+    constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState, readonly parent?: ElementEntity) {
         super(node && isElement(node) ? node.name.name : 'target', state);
         if (node) {
             this.isStaticContent = true;
@@ -154,7 +154,7 @@ export default class ElementEntity extends Entity {
 
                 if (elemName === 'slot') {
                     // Create slot
-                    const slotName = (getAttrValue(node, 'slot') as string) || '';
+                    const slotName = (getAttrValue(node, 'name') as string) || '';
                     return state.runtime('createSlot', [state.host, qStr(slotName), cssScope], node);
                 }
 
@@ -293,14 +293,37 @@ export default class ElementEntity extends Entity {
      */
     private addInjector(entity: Entity): SourceNode {
         const args: ChunkList = [this.injector, entity.code.mount];
-        if (this.state.component) {
-            let slotName = '';
-            if (entity instanceof ElementEntity && isElement(entity.node)) {
-                slotName = getAttrValue(entity.node, 'slot') as string || '';
-            }
+        const slotName = this.getSlotContext(entity);
+
+        if (slotName != null) {
             args.push(qStr(slotName));
         }
+
         return this.state.runtime('insert', args);
+    }
+
+    /**
+     * Detects and returns name of current context slot.
+     * Returns `null` if there’s no slot context
+     */
+    private getSlotContext(entity: Entity): string | null {
+        // Get actual context element
+        const { receiver } = this.state;
+
+        if (receiver && isElement(receiver.node)) {
+            if (receiver.isComponent && entity instanceof ElementEntity && entity.node && isElement(entity.node)) {
+                // Injecting entity as top-level item of component
+                return getAttrValue(entity.node, 'slot') as string || '';
+            }
+
+            if (receiver.node.name.name === 'slot') {
+                // Injecting entity as top-level item of `<slot>` element
+                return getAttrValue(receiver.node, 'name') as string || '';
+            }
+
+        }
+
+        return null;
     }
 
     private collectStats() {
