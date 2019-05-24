@@ -64,26 +64,6 @@ export default class CompileState {
             && this.blockContext.element;
     }
 
-    /** Returns actual content receiver */
-    get receiver(): ElementEntity | null {
-        let { blockContext } = this;
-
-        while (blockContext) {
-            let { element } = blockContext;
-            while (element && !element.node) {
-                element = element.parent;
-            }
-
-            if (element) {
-                return element;
-            }
-
-            blockContext = blockContext.parent;
-        }
-
-        return null;
-    }
-
     get hasPartials(): boolean {
         return this.partialsMap.size > 0;
     }
@@ -105,6 +85,9 @@ export default class CompileState {
     get cssScope(): string | null {
         return this.options.cssScope ? this.cssScopeSymbol : null;
     }
+
+    /** Actual content receiver */
+    receiver: ElementEntity | null;
 
     /** Endorphin runtime symbols required by compiled template */
     usedRuntime: Set<RuntimeSymbols> = new Set();
@@ -267,7 +250,7 @@ export default class CompileState {
      */
     runBlock(name: string, fn: (block: BlockContext) => Entity | Entity[]): string {
         const prevBlock = this.blockContext;
-        const block = new BlockContext(this.globalSymbol(name), this, prevBlock);
+        const block = new BlockContext(this.globalSymbol(name), this);
 
         this.blockContext = block;
         const result = this.mount(() => fn(block));
@@ -286,25 +269,27 @@ export default class CompileState {
      * Runs given `fn` function in context of `node` element
      */
     runElement(node: ENDTemplate | ENDElement | null, fn: (entity: ElementEntity) => void): ElementEntity {
-        const { blockContext, namespaceMap } = this;
+        const { blockContext, namespaceMap, receiver } = this;
 
         if (!blockContext) {
             throw new Error('Unable to run in element context: parent block is absent');
         }
 
         const prevElem = blockContext.element;
-        const ent = blockContext.element = new ElementEntity(node, this, prevElem);
+        const ent = blockContext.element = new ElementEntity(node, this);
 
         if (node && isElement(node)) {
             this.namespaceMap = {
                 ...namespaceMap,
                 ...collectNamespaces(node)
             };
+            this.receiver = ent;
         }
 
         fn(ent);
 
         this.namespaceMap = namespaceMap;
+        this.receiver = receiver;
         blockContext.element = prevElem;
         return ent;
     }

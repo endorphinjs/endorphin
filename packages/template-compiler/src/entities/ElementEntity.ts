@@ -48,7 +48,7 @@ export default class ElementEntity extends Entity {
 
     private slotMarks: { [slotName: string]: string } = {};
 
-    constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState, readonly parent?: ElementEntity) {
+    constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
         if (node) {
             this.isStaticContent = true;
