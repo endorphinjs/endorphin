@@ -1,13 +1,12 @@
-import { elem, elemWithText, insert, mountSlot, unmountSlot, createInjector, addDisposeCallback, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { elem, createSlot, elemWithText, insert, mountSlot, updateDefaultSlot, unmountSlot, createInjector, addDisposeCallback, mountBlock, updateBlock, unmountBlock } from "endorphin";
 
 function defaultSlotHeader$0(host, injector) {
-	insert(injector, elemWithText("h2", "Default header"));
+	insert(injector, elemWithText("h2", "Default header"), "header");
 }
 
 function ifBody$0(host, injector, scope) {
-	const slot$4 = insert(injector, elem("slot"));
-	slot$4.setAttribute("name", "error");
-	scope.slot$5 = mountSlot(host, "error", slot$4);
+	insert(injector, createSlot(host, "error"));
+	scope.slot$5 = mountSlot(host, "error");
 	addDisposeCallback(injector, ifBody$0Unmount);
 }
 
@@ -22,14 +21,18 @@ function ifEntry$0(host) {
 }
 
 function defaultSlotFooter$0(host, injector) {
-	insert(injector, elemWithText("footer", "Default footer"));
+	insert(injector, elemWithText("footer", "Default footer"), "footer");
 }
 
 function ifBody$1(host, injector, scope) {
-	const slot$6 = insert(injector, elem("slot"));
-	slot$6.setAttribute("name", "footer");
-	scope.slot$7 = mountSlot(host, "footer", slot$6, defaultSlotFooter$0);
+	insert(injector, createSlot(host, "footer"));
+	scope.slot$7 = mountSlot(host, "footer", defaultSlotFooter$0);
 	addDisposeCallback(injector, ifBody$1Unmount);
+	return ifBody$1Update;
+}
+
+function ifBody$1Update(host, injector, scope) {
+	updateDefaultSlot(scope.slot$7);
 }
 
 function ifBody$1Unmount(scope) {
@@ -47,12 +50,11 @@ export default function template$0(host, scope) {
 	const div$0 = target$0.appendChild(elem("div"));
 	const inj$0 = createInjector(div$0);
 	div$0.setAttribute("class", "container");
-	const slot$0 = insert(inj$0, elem("slot"));
-	slot$0.setAttribute("name", "header");
-	scope.slot$1 = mountSlot(host, "header", slot$0, defaultSlotHeader$0);
+	insert(inj$0, createSlot(host, "header"));
+	scope.slot$1 = mountSlot(host, "header", defaultSlotHeader$0);
 	insert(inj$0, elemWithText("p", "content"));
-	const slot$2 = insert(inj$0, elem("slot"));
-	scope.slot$3 = mountSlot(host, "", slot$2);
+	insert(inj$0, createSlot(host, ""));
+	scope.slot$3 = mountSlot(host, "");
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
 	addDisposeCallback(host, template$0Unmount);
@@ -60,6 +62,7 @@ export default function template$0(host, scope) {
 }
 
 function template$0Update(host, scope) {
+	updateDefaultSlot(scope.slot$1);
 	updateBlock(scope.if$0);
 	updateBlock(scope.if$1);
 }

@@ -224,9 +224,14 @@ function getAnchorNode(item: LinkedListItem<Node>, parent: Node): Node | undefin
  * Creates context for given slot
  */
 function createSlotContext(name: string): SlotContext {
+	const element = document.createElement('slot');
+	if (name) {
+		element.setAttribute('name', name);
+	}
+
 	return {
 		name,
-		element: document.createElement('slot'),
+		element,
 		isDefault: false,
 		defaultContent: null
 	};

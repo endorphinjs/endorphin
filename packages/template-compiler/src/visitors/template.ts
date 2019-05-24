@@ -16,7 +16,10 @@ import IteratorEntity from '../entities/IteratorEntity';
 import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
-import { sn, qStr, isLiteral, toObjectLiteral, getAttrValue, nameToJS, propGetter, propSetter, isExpression, isElement } from '../lib/utils';
+import {
+    sn, qStr, isLiteral, toObjectLiteral, getAttrValue, nameToJS, propGetter,
+    propSetter, isExpression, isElement, isIdentifier
+} from '../lib/utils';
 import ElementEntity from '../entities/ElementEntity';
 import ComponentState from '../lib/ComponentState';
 
@@ -57,14 +60,7 @@ export default {
                 element.setRef(node.ref);
             }
 
-            // In component, static attributes/props (e.g. ones which won’t change
-            // in runtime) must be added during component mount. Thus, we should
-            // process dynamic attributes only
-            const attrs = element.isComponent
-                ? node.attributes.filter(attr => element.isDynamicAttribute(attr))
-                : node.attributes;
-
-            element.setContent(attrs, next);
+            element.setContent(getContentAttributes(element), next);
             element.setContent(node.directives, next);
 
             const isSlot = node.name.name === 'slot';
@@ -229,7 +225,7 @@ function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorCon
 
     return state.entity('slot', {
         mount: () => state.runtime('mountSlot', [state.host, qStr(slotName), contentArg]),
-        update: ent => state.runtime('updateDefaultSlot', [ent.getSymbol()]),
+        update: ent => contentArg ? state.runtime('updateDefaultSlot', [ent.getSymbol()]) : null,
         unmount: ent => ent.unmount('unmountSlot'),
     });
 }
@@ -301,4 +297,24 @@ function runComponent<T>(element: ElementEntity, state: CompileState, fn: () => 
     const result = fn();
     state.component = component;
     return result;
+}
+
+/**
+ * Returns list of attributes to be added as a content of given element entity
+ */
+function getContentAttributes(element: ElementEntity): ENDAttribute[] {
+    const node = element.node as ENDElement;
+    if (element.isComponent) {
+        // In component, static attributes/props (e.g. ones which won’t change
+        // in runtime) must be added during component mount. Thus, we should
+        // process dynamic attributes only
+        return node.attributes.filter(attr => element.isDynamicAttribute(attr));
+    }
+
+    if (node.name.name === 'slot') {
+        // Do not return `name` attribute of slot: it will be added by runtime
+        return node.attributes.filter(attr => !isIdentifier(attr.name) || attr.name.name !== 'name');
+    }
+
+    return node.attributes;
 }
