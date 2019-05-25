@@ -4,6 +4,7 @@ import CompileState from '../lib/CompileState';
 import UsageStats from '../lib/UsageStats';
 import { Chunk, RenderChunk, UsageContext, TemplateContinue, RuntimeSymbols } from '../types';
 import { sn, nameToJS } from '../lib/utils';
+import BlockContext from '../lib/BlockContext';
 
 export type RenderOptions = { [K in RenderContext]?: RenderChunk };
 type RenderContext = UsageContext | 'shared';
@@ -40,6 +41,9 @@ export default class Entity {
     /** Entity symbol name */
     name: string;
 
+    /** Block context where current entity was created */
+    readonly block?: BlockContext;
+
     /** Entity code chunks */
     code: { [K in UsageContext]?: Chunk };
     readonly symbolUsage = new UsageStats();
@@ -58,6 +62,7 @@ export default class Entity {
             unmount: null,
             ref: new SourceNode()
         };
+        this.block = state.blockContext;
     }
 
     /**

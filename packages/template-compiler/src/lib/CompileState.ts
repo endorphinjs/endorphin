@@ -4,7 +4,6 @@ import BlockContext from './BlockContext';
 import Entity, { RenderOptions, entity } from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
-import ComponentState from './ComponentState';
 import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue } from './utils';
 import { Chunk, RenderContext, ComponentImport, RuntimeSymbols, ChunkList } from '../types';
 import { CompileOptions } from '..';
@@ -95,9 +94,6 @@ export default class CompileState {
     /** Name of receiving slot, e.g. target for immediate component children */
     slot?: string;
 
-    /** Current slot context. Unlike `slot`, this attribute is available for deep children as well */
-    slotContext?: string;
-
     /** Endorphin runtime symbols required by compiled template */
     usedRuntime: Set<RuntimeSymbols> = new Set();
 
@@ -120,9 +116,6 @@ export default class CompileState {
 
     /** Generates unique symbol with given name for storing in component scope */
     scopeSymbol: SymbolGenerator;
-
-    /** Current component and slot context */
-    componentCtx?: ComponentState;
 
     /** List of child components */
     readonly componentsMap: Map<string, ComponentImport> = new Map();
@@ -233,18 +226,17 @@ export default class CompileState {
     /**
      * Accumulates slot update
      */
-    markSlot<T extends Entity>(ent?: T): T {
-        if (this.componentCtx) {
-            const { element, block, slot } = this.componentCtx;
-            if (slot != null) {
-                const { blockContext } = this;
-                if (blockContext && blockContext !== block) {
-                    blockContext.slotSymbols.add(element.slotMark(slot));
-                }
+    markSlot<T extends Entity>(ent?: T, slot: string | null = this.slot): T {
+        const { component, blockContext } = this;
+        if (component && slot != null) {
+            if (component.block !== blockContext) {
+                // Do not add mark if block context of receiving component
+                // is the same as current one
+                blockContext.slotSymbols.add(component.slotMark(slot));
+            }
 
-                if (ent && ent.code.update) {
-                    ent.setUpdate(() => sn([element.slotMark(slot), ' |= ', ent.getUpdate()]));
-                }
+            if (ent && ent.code.update) {
+                ent.setUpdate(() => sn([component.slotMark(slot), ' |= ', ent.getUpdate()]));
             }
         }
 
@@ -278,7 +270,7 @@ export default class CompileState {
      * Runs given `fn` function in context of `node` element
      */
     runElement(node: ENDTemplate | ENDElement | null, fn: (entity: ElementEntity) => void): ElementEntity {
-        const { blockContext, namespaceMap, receiver, component, slot, slotContext } = this;
+        const { blockContext, namespaceMap, receiver, component, slot } = this;
 
         if (!blockContext) {
             throw new Error('Unable to run in element context: parent block is absent');
@@ -296,15 +288,19 @@ export default class CompileState {
             if (component && component === receiver) {
                 // Given node is an immediate child of component: it must be added
                 // to a slot
-                this.slotContext = this.slot = (getAttrValue(node, 'slot') as string) || '';
+                this.slot = (getAttrValue(node, 'slot') as string) || '';
             } else if (node.name.name === 'slot') {
                 // Entering `<slot>` element
-                this.slotContext = (getAttrValue(node, 'name') as string) || '';
+                this.component = null;
+                this.slot = (getAttrValue(node, 'name') as string) || '';
             }
+
+            // If element is created inside component, mark parent slot as updated
+            this.markSlot();
 
             if (ent.isComponent) {
                 this.component = ent;
-                this.slotContext = this.slot = null;
+                this.slot = null;
             }
 
             this.receiver = ent;
@@ -316,7 +312,6 @@ export default class CompileState {
         this.receiver = receiver;
         this.component = component;
         this.slot = slot;
-        this.slotContext = slotContext;
         blockContext.element = prevElem;
         return ent;
     }

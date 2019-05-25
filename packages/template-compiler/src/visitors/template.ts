@@ -17,11 +17,10 @@ import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
 import {
-    sn, qStr, isLiteral, toObjectLiteral, getAttrValue, nameToJS, propGetter,
-    propSetter, isExpression, isElement, isIdentifier
+    sn, qStr, isLiteral, toObjectLiteral, nameToJS, propGetter,
+    propSetter, isExpression, isIdentifier
 } from '../lib/utils';
 import ElementEntity from '../entities/ElementEntity';
-import ComponentState from '../lib/ComponentState';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
@@ -73,33 +72,26 @@ export default {
             // Create element instance
             element.create(singleTextContent);
 
-            runSlot(node, state, () => {
-                // If element is created inside component, mark parent slot as updated
-                state.markSlot();
+            if (isSlot) {
+                element.add(mountSlot(element, state, next));
+            } else if (!singleTextContent) {
+                element.setContent(node.body, next);
+            }
 
-                runComponent(element, state, () => {
-                    if (isSlot) {
-                        element.add(mountSlot(element, state, next));
-                    } else if (!singleTextContent) {
-                        element.setContent(node.body, next);
-                    }
-
-                    if (!element.isComponent) {
-                        if (element.dynamicAttributes.size || element.hasPartials) {
-                            element.finalizeAttributes();
-                        }
-
-                        if (element.dynamicEvents.size || element.hasPartials) {
-                            element.finalizeEvents();
-                        }
-                    }
-                });
-
-                if (element.isComponent) {
-                    element.markSlotUpdate();
-                    element.mountComponent();
+            if (!element.isComponent) {
+                if (element.dynamicAttributes.size || element.hasPartials) {
+                    element.finalizeAttributes();
                 }
-            });
+
+                if (element.dynamicEvents.size || element.hasPartials) {
+                    element.finalizeEvents();
+                }
+            }
+
+            if (element.isComponent) {
+                element.markSlotUpdate();
+                element.mountComponent();
+            }
 
             element.animate();
         });
@@ -128,13 +120,13 @@ export default {
 
     Literal(node: Literal, state) {
         if (node.value != null) {
-            return runSlot(node, state, () => new TextEntity(node, state));
+            return new TextEntity(node, state);
         }
     },
 
     // NB `Program` is used as expression for text node
     Program(node: Program, state) {
-        return runSlot(node, state, () => new TextEntity(node, state));
+        return new TextEntity(node, state);
     },
 
     ENDIfStatement(node: ENDIfStatement, state, next) {
@@ -177,7 +169,7 @@ export default {
     },
 
     ENDPartialStatement(node: ENDPartialStatement, state) {
-        const getter = `${state.host}.props['partial:${node.id}'] || ${state.partials}${propGetter(node.id)}`;
+        const getter = `${state.prefix('property')}['partial:${node.id}'] || ${state.partials}${propGetter(node.id)}`;
 
         return entity('partial', state, {
             mount: () => state.runtime('mountPartial', [state.host, state.injector, getter, generateObject(node.params, state, 1)]),
@@ -215,16 +207,15 @@ function isSimpleConditionContent(node: ENDStatement): boolean {
  */
 function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): Entity {
     const node = elem.node as ENDElement;
-    const slotName = String(getAttrValue(node, 'name') || '');
 
     // Generates function with default content of given slot
     const contentArg = node.body.length
-        ? state.runChildBlock(`defaultSlot${nameToJS(slotName, true)}`,
-            (child, slot) => slot.setContent(node.body, next))
+        ? state.runChildBlock(`defaultSlot${nameToJS(state.slot, true)}`,
+            (child, ent) => ent.setContent(node.body, next))
         : null;
 
     return state.entity('slot', {
-        mount: () => state.runtime('mountSlot', [state.host, qStr(slotName), contentArg]),
+        mount: () => state.runtime('mountSlot', [state.host, qStr(state.slot), contentArg]),
         update: ent => contentArg ? state.runtime('updateDefaultSlot', [ent.getSymbol()]) : null,
         unmount: ent => ent.unmount('unmountSlot'),
     });
@@ -253,50 +244,6 @@ function generateObject(params: ENDAttribute[], state: CompileState, level: numb
 
 function objectKey(node: Identifier | Program, state: CompileState) {
     return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
-}
-
-/**
- * Runs given function in context for slot, inferred from given node
- */
-function runSlot<T>(node: Literal | Program | ENDElement, state: CompileState, fn: () => T): T {
-    const { componentCtx: component } = state;
-
-    if (!component) {
-        return fn();
-    }
-
-    // Enter named slot context
-    const { slot } = component;
-    const slotName = isElement(node) && (getAttrValue(node, 'slot') as string) || '';
-
-    if (slot == null) {
-        component.slot = slotName;
-    } else if (slotName) {
-        // tslint:disable-next-line:max-line-length
-        state.warn(`Invalid slot nesting: unable to set "${slotName}" slot inside "${slot || 'default'}" slot`, node.loc.start.offset);
-    }
-
-    const result = fn();
-
-    // Restore slot context
-    component.slot = slot;
-
-    return result;
-}
-
-/**
- * Runs given function in context of given element if it’s a component
- */
-function runComponent<T>(element: ElementEntity, state: CompileState, fn: () => T): T {
-    const { componentCtx: component } = state;
-
-    if (element.isComponent) {
-        state.componentCtx = new ComponentState(element, state.blockContext);
-    }
-
-    const result = fn();
-    state.componentCtx = component;
-    return result;
 }
 
 /**

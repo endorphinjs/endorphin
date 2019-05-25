@@ -15,6 +15,11 @@ export default class TextEntity extends Entity {
             this.setMount(() => state.runtime('text', [qStr(node.value as string)], node));
         }
 
-        state.markSlot(this);
+        let { slot } = state;
+        if (slot == null && state.component && state.receiver === state.component) {
+            // Adding text as immediate child of component: redirect to default slot
+            slot = '';
+        }
+        state.markSlot(this, slot);
     }
 }

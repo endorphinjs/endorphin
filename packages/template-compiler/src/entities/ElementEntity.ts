@@ -12,8 +12,8 @@ import AnimationEntity from './AnimationEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
 import { isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
-import { Chunk, ChunkList } from '../types';
 import { ENDCompileError } from '../lib/error';
+import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 
 const dynamicContent = new Set(['ENDIfStatement', 'ENDChooseStatement', 'ENDForEachStatement']);
