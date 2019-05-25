@@ -259,7 +259,7 @@ function objectKey(node: Identifier | Program, state: CompileState) {
  * Runs given function in context for slot, inferred from given node
  */
 function runSlot<T>(node: Literal | Program | ENDElement, state: CompileState, fn: () => T): T {
-    const { component } = state;
+    const { componentCtx: component } = state;
 
     if (!component) {
         return fn();
@@ -288,14 +288,14 @@ function runSlot<T>(node: Literal | Program | ENDElement, state: CompileState, f
  * Runs given function in context of given element if it’s a component
  */
 function runComponent<T>(element: ElementEntity, state: CompileState, fn: () => T): T {
-    const { component } = state;
+    const { componentCtx: component } = state;
 
     if (element.isComponent) {
-        state.component = new ComponentState(element, state.blockContext);
+        state.componentCtx = new ComponentState(element, state.blockContext);
     }
 
     const result = fn();
-    state.component = component;
+    state.componentCtx = component;
     return result;
 }
 

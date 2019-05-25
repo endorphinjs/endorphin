@@ -5,7 +5,7 @@ import Entity, { RenderOptions, entity } from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
 import ComponentState from './ComponentState';
-import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers } from './utils';
+import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue } from './utils';
 import { Chunk, RenderContext, ComponentImport, RuntimeSymbols, ChunkList } from '../types';
 import { CompileOptions } from '..';
 
@@ -87,7 +87,16 @@ export default class CompileState {
     }
 
     /** Actual content receiver */
-    receiver: ElementEntity | null;
+    receiver?: ElementEntity;
+
+    /** Current receiving component */
+    component?: ElementEntity;
+
+    /** Name of receiving slot, e.g. target for immediate component children */
+    slot?: string;
+
+    /** Current slot context. Unlike `slot`, this attribute is available for deep children as well */
+    slotContext?: string;
 
     /** Endorphin runtime symbols required by compiled template */
     usedRuntime: Set<RuntimeSymbols> = new Set();
@@ -113,7 +122,7 @@ export default class CompileState {
     scopeSymbol: SymbolGenerator;
 
     /** Current component and slot context */
-    component?: ComponentState;
+    componentCtx?: ComponentState;
 
     /** List of child components */
     readonly componentsMap: Map<string, ComponentImport> = new Map();
@@ -225,8 +234,8 @@ export default class CompileState {
      * Accumulates slot update
      */
     markSlot<T extends Entity>(ent?: T): T {
-        if (this.component) {
-            const { element, block, slot } = this.component;
+        if (this.componentCtx) {
+            const { element, block, slot } = this.componentCtx;
             if (slot != null) {
                 const { blockContext } = this;
                 if (blockContext && blockContext !== block) {
@@ -269,7 +278,7 @@ export default class CompileState {
      * Runs given `fn` function in context of `node` element
      */
     runElement(node: ENDTemplate | ENDElement | null, fn: (entity: ElementEntity) => void): ElementEntity {
-        const { blockContext, namespaceMap, receiver } = this;
+        const { blockContext, namespaceMap, receiver, component, slot, slotContext } = this;
 
         if (!blockContext) {
             throw new Error('Unable to run in element context: parent block is absent');
@@ -283,6 +292,21 @@ export default class CompileState {
                 ...namespaceMap,
                 ...collectNamespaces(node)
             };
+
+            if (component && component === receiver) {
+                // Given node is an immediate child of component: it must be added
+                // to a slot
+                this.slotContext = this.slot = (getAttrValue(node, 'slot') as string) || '';
+            } else if (node.name.name === 'slot') {
+                // Entering `<slot>` element
+                this.slotContext = (getAttrValue(node, 'name') as string) || '';
+            }
+
+            if (ent.isComponent) {
+                this.component = ent;
+                this.slotContext = this.slot = null;
+            }
+
             this.receiver = ent;
         }
 
@@ -290,6 +314,9 @@ export default class CompileState {
 
         this.namespaceMap = namespaceMap;
         this.receiver = receiver;
+        this.component = component;
+        this.slot = slot;
+        this.slotContext = slotContext;
         blockContext.element = prevElem;
         return ent;
     }
