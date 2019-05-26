@@ -1,4 +1,4 @@
-import { setAttribute, createComponent, mountComponent, unmountComponent, updateComponent, addDisposeCallback } from "endorphin";
+import { setAttribute, createComponent, mountComponent, unmountComponent, updateComponent } from "endorphin";
 import * as SubComponent from "./sub-component.html";
 
 function ifAttr$0(host, injector) {
@@ -22,9 +22,10 @@ export default function template$0(host, scope) {
 	mountComponent(subComponent$1, {
 		enabled: true
 	});
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { inj$0 } = scope;

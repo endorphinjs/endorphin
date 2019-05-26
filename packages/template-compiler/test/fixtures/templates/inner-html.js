@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, addDisposeCallback } from "endorphin";
+import { elemWithText, createInjector, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML } from "endorphin";
 
 function ifBody$0(host, injector) {
 	insert(injector, elemWithText("div", "foo"));
@@ -31,9 +31,10 @@ export default function template$0(host, scope) {
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	scope.html$0 = mountInnerHTML(host, inj$0, html$0);
 	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	updateBlock(scope.if$0);

@@ -1,4 +1,4 @@
-import { createComponent, elem, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, mountComponent, unmountComponent, createInjector, updateIncomingSlot, updateComponent } from "endorphin";
+import { createComponent, elem, insert, mountBlock, updateBlock, unmountBlock, mountComponent, unmountComponent, createInjector, updateIncomingSlot, updateComponent } from "endorphin";
 import * as MyComponent1 from "./my-component1.html";
 import * as MyComponent2 from "./my-component2.html";
 import * as InnerComponent from "./inner-component.html";
@@ -6,8 +6,9 @@ import * as InnerComponent from "./inner-component.html";
 function ifBody$0(host, injector, scope) {
 	insert(injector, elem("header"), "");
 	scope.su$0 = 1;
-	addDisposeCallback(injector, ifBody$0Unmount);
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Unmount(scope) {
 	scope.su$0 = 1;
@@ -22,8 +23,9 @@ function ifEntry$0(host) {
 function ifBody$1(host, injector, scope) {
 	insert(injector, elem("blockquote"));
 	scope.su$1 = 1;
-	addDisposeCallback(injector, ifBody$1Unmount);
 }
+
+ifBody$1.dispose = ifBody$1Unmount;
 
 function ifBody$1Unmount(scope) {
 	scope.su$1 = 1;
@@ -52,9 +54,10 @@ export default function template$0(host, scope) {
 	div$0.setAttribute("slot", "footer");
 	scope.if$1 = mountBlock(host, inj$2, ifEntry$1);
 	mountComponent(myComponent1$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { myComponent1$0 } = scope;

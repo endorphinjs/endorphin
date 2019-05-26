@@ -1,4 +1,4 @@
-import { elem, text, updateText, createComponent, insert, updateIncomingSlot, mountComponent, unmountComponent, addDisposeCallback } from "endorphin";
+import { elem, text, updateText, createComponent, insert, updateIncomingSlot, mountComponent, unmountComponent } from "endorphin";
 import * as SlotInner from "./slot-inner.html";
 
 export default function template$0(host, scope) {
@@ -11,9 +11,10 @@ export default function template$0(host, scope) {
 	mountComponent(slotInner$0);
 	const footer$0 = target$0.appendChild(elem("footer"));
 	scope.text$2 = footer$0.appendChild(text(host.props.footer));
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	scope.su$0 = 0;

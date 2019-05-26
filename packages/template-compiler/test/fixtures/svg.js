@@ -1,4 +1,4 @@
-import { elemWithText, elemNS, createInjector, setAttributeNS, finalizeAttributes, addDisposeCallback } from "endorphin";
+import { elemWithText, elemNS, createInjector, setAttributeNS, finalizeAttributes } from "endorphin";
 const ns$0 = "http://www.w3.org/2000/svg";
 const ns$1 = "http://www.w3.org/1999/xlink";
 
@@ -22,9 +22,10 @@ export default function template$0(host, scope) {
 	image$0.setAttribute("width", "100px");
 	finalizeAttributes(inj$0);
 	target$0.appendChild(elemWithText("footer", "Footer"));
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { inj$0 } = scope;

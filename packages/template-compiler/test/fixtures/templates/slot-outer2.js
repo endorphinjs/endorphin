@@ -1,13 +1,14 @@
-import { elem, text, updateText, createComponent, createInjector, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, elemWithText, updateIncomingSlot, mountComponent, unmountComponent } from "endorphin";
+import { elem, text, updateText, createComponent, createInjector, insert, mountBlock, updateBlock, unmountBlock, elemWithText, updateIncomingSlot, mountComponent, unmountComponent } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
 function ifBody$0(host, injector, scope) {
 	const p$0 = insert(injector, elem("p"));
 	scope.text$2 = p$0.appendChild(text(host.props.content2));
 	scope.su$0 = 1;
-	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Update(host, injector, scope) {
 	scope.su$0 |= updateText(scope.text$2, host.props.content2);
@@ -27,8 +28,9 @@ function ifEntry$0(host) {
 function ifBody$1(host, injector, scope) {
 	insert(injector, elemWithText("div", "Branching footer"));
 	scope.su$1 = 1;
-	addDisposeCallback(injector, ifBody$1Unmount);
 }
+
+ifBody$1.dispose = ifBody$1Unmount;
 
 function ifBody$1Unmount(scope) {
 	scope.su$1 = 1;
@@ -56,9 +58,10 @@ export default function template$0(host, scope) {
 	scope.text$3 = insert(inj$1, text(host.props.footer));
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 	mountComponent(slotInner$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { slotInner$0 } = scope;

@@ -1,4 +1,4 @@
-import { elemWithText, setAttribute, createComponent, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, mountIterator, updateIterator, unmountIterator, updateIncomingSlot, mountComponent, unmountComponent, updateComponent } from "endorphin";
+import { elemWithText, setAttribute, createComponent, insert, mountBlock, updateBlock, unmountBlock, mountIterator, updateIterator, unmountIterator, updateIncomingSlot, mountComponent, unmountComponent, updateComponent } from "endorphin";
 import * as SubComponent from "./slot-inner.html";
 
 function setVars$0(host, scope) {
@@ -8,8 +8,9 @@ function setVars$0(host, scope) {
 function ifBody$0(host, injector, scope) {
 	insert(injector, elemWithText("p", "bar"), "");
 	scope.su$0 = 1;
-	addDisposeCallback(injector, ifBody$0Unmount);
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Unmount(scope) {
 	scope.su$0 = 1;
@@ -25,8 +26,9 @@ function ifBody$1(host, injector, scope) {
 	const p$1 = insert(injector, elemWithText("p", "bar"), "header");
 	p$1.setAttribute("slot", "header");
 	scope.su$1 = 1;
-	addDisposeCallback(injector, ifBody$1Unmount);
 }
+
+ifBody$1.dispose = ifBody$1Unmount;
 
 function ifBody$1Unmount(scope) {
 	scope.su$1 = 1;
@@ -47,8 +49,9 @@ function forContent$0(host, injector, scope) {
 	const div$2 = insert(injector, elemWithText("div", "item footer"), "footer");
 	div$2.setAttribute("slot", "footer");
 	scope.su$0 = scope.su$2 = 1;
-	addDisposeCallback(injector, forContent$0Unmount);
 }
+
+forContent$0.dispose = forContent$0Unmount;
 
 function forContent$0Unmount(scope) {
 	scope.su$0 = scope.su$2 = 1;
@@ -58,8 +61,9 @@ function ifBody$2(host, injector, scope) {
 	const div$3 = insert(injector, elemWithText("div", "Got error"), "error");
 	div$3.setAttribute("slot", "error");
 	scope.su$3 = 1;
-	addDisposeCallback(injector, ifBody$2Unmount);
 }
+
+ifBody$2.dispose = ifBody$2Unmount;
 
 function ifBody$2Unmount(scope) {
 	scope.su$3 = 1;
@@ -84,9 +88,10 @@ export default function template$0(host, scope) {
 	scope.for$0 = mountIterator(host, inj$0, forSelect$0, forContent$0);
 	scope.if$2 = mountBlock(host, inj$0, ifEntry$2);
 	mountComponent(subComponent$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { subComponent$0 } = scope;

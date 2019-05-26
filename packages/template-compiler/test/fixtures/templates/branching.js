@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, elem, insert, mountBlock, updateBlock, unmountBlock, text, addDisposeCallback } from "endorphin";
+import { elemWithText, createInjector, elem, insert, mountBlock, updateBlock, unmountBlock, text } from "endorphin";
 
 function ifBody$1(host, injector) {
 	insert(injector, elemWithText("div", "top 2"));
@@ -26,9 +26,10 @@ function ifBody$0(host, injector, scope) {
 	p$0.appendChild(elemWithText("strong", "top 1"));
 	scope.if$1 = mountBlock(host, injector, ifEntry$1);
 	scope.if$2 = mountBlock(host, injector, ifEntry$2);
-	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Update(host, injector, scope) {
 	updateBlock(scope.if$1);
@@ -78,9 +79,10 @@ export default function template$0(host, scope) {
 	insert(inj$1, elemWithText("p", "Lorem ipsum 1"));
 	scope.choose$0 = mountBlock(host, inj$1, chooseEntry$0);
 	insert(inj$1, elemWithText("p", "Lorem ipsum 2"));
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	updateBlock(scope.if$0);

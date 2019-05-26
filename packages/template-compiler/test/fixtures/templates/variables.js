@@ -1,4 +1,4 @@
-import { createInjector, setAttribute, elem, text, updateText, finalizeAttributes, addDisposeCallback } from "endorphin";
+import { createInjector, setAttribute, elem, text, updateText, finalizeAttributes } from "endorphin";
 
 function setVars$0(host, scope) {
 	scope.v1 = "bar";
@@ -16,9 +16,10 @@ export default function template$0(host, scope) {
 	div$0.appendChild(text("Sum: "));
 	scope.text$1 = div$0.appendChild(text(scope.v2));
 	finalizeAttributes(inj$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { inj$0 } = scope;

@@ -1,4 +1,4 @@
-import { elem, createSlot, elemWithText, insert, mountSlot, updateDefaultSlot, unmountSlot, createInjector, addDisposeCallback, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { elem, createSlot, elemWithText, insert, mountSlot, updateDefaultSlot, unmountSlot, createInjector, mountBlock, updateBlock, unmountBlock } from "endorphin";
 
 function defaultSlotHeader$0(host, injector) {
 	insert(injector, elemWithText("h2", "Default header"), "header");
@@ -7,8 +7,9 @@ function defaultSlotHeader$0(host, injector) {
 function ifBody$0(host, injector, scope) {
 	insert(injector, createSlot(host, "error"));
 	scope.slot$5 = mountSlot(host, "error");
-	addDisposeCallback(injector, ifBody$0Unmount);
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Unmount(scope) {
 	scope.slot$5 = unmountSlot(scope.slot$5);
@@ -27,9 +28,10 @@ function defaultSlotFooter$0(host, injector) {
 function ifBody$1(host, injector, scope) {
 	insert(injector, createSlot(host, "footer"));
 	scope.slot$7 = mountSlot(host, "footer", defaultSlotFooter$0);
-	addDisposeCallback(injector, ifBody$1Unmount);
 	return ifBody$1Update;
 }
+
+ifBody$1.dispose = ifBody$1Unmount;
 
 function ifBody$1Update(host, injector, scope) {
 	updateDefaultSlot(scope.slot$7);
@@ -57,9 +59,10 @@ export default function template$0(host, scope) {
 	scope.slot$3 = mountSlot(host, "");
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	updateDefaultSlot(scope.slot$1);

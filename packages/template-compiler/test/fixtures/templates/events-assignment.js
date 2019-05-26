@@ -1,4 +1,4 @@
-import { addStaticEvent, removeStaticEvent, elem, addDisposeCallback } from "endorphin";
+import { addStaticEvent, removeStaticEvent, elem } from "endorphin";
 
 function onEvt1$0(evt) {
 	this.host.setState({ count: this.host.state.count + 1 });
@@ -24,8 +24,9 @@ export default function template$0(host, scope) {
 	scope.evt2$0 = addStaticEvent(div$0, "evt2", onEvt2$0, host, scope);
 	scope.evt3$0 = addStaticEvent(div$0, "evt3", onEvt3$0, host, scope);
 	scope.evt4$0 = addStaticEvent(div$0, "evt4", onEvt4$0, host, scope);
-	addDisposeCallback(host, template$0Unmount);
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Unmount(scope) {
 	scope.evt1$0 = removeStaticEvent(scope.evt1$0);
