@@ -15,7 +15,7 @@ export default class AttributeEntity extends Entity {
             // Set attribute in child block
             this.setMount(mountDynamicAttribute);
         } else if (element.isComponent || element.isDynamicAttribute(node)) {
-            // Attribute must be updates in runtime
+            // Attribute must be updated in runtime
             this.setShared(mountDynamicAttribute);
         } else {
             // Attribute with literal value: set only once, no need to update

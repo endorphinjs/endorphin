@@ -234,6 +234,9 @@ function updateIdContext(node: Identifier, ancestors: Expression[], options: JSP
         node.context = prefixes[prefix];
         node.raw = node.name;
         node.name = node.name.slice(prefix.length);
+        if (node.context === 'store' && !node.name) {
+            node.context = 'store-host';
+        }
     } else if (ancestors.some(expr => isFunctionArgument(node, expr))) {
         node.context = 'argument';
     } else {

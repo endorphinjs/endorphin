@@ -207,6 +207,10 @@ export default class CompileState {
             return `${this.host}.store.data`;
         }
 
+        if (context === 'store-host') {
+            return `${this.host}.store`;
+        }
+
         if (context === 'definition') {
             return `${this.host}.componentModel.definition`;
         }

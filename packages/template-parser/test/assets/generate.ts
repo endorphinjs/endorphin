@@ -49,7 +49,9 @@ const generator = Object.assign({}, baseGenerator, {
     Identifier(node: Identifier, state: AstringState) {
         if (node.context && node.context !== 'helper' && node.context !== 'argument') {
             state.write(getPrefix(node.context));
-            state.write('.');
+            if (node.name) {
+                state.write('.');
+            }
         }
 
         state.write(node.name);
@@ -71,6 +73,10 @@ function getPrefix(context: IdentifierContext): string {
 
     if (context === 'store') {
         return '$store';
+    }
+
+    if (context === 'store-host') {
+        return '$storeHost';
     }
 
     return '';
