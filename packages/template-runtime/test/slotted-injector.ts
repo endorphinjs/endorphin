@@ -138,9 +138,9 @@ describe('Slotted injector', () => {
 		deepEqual(children(injector.slots[''].element), ['1', '2']);
 		deepEqual(children(injector.slots['slot1'].element), ['3']);
 
-		ok(listHas(injector.items, block1));
-		ok(listHas(injector.items, block2));
-		ok(listHas(injector.items, block3));
+		ok(listHas(injector, block1));
+		ok(listHas(injector, block2));
+		ok(listHas(injector, block3));
 
 		// Empty outer block
 		emptyBlockContent(block1);
@@ -148,9 +148,9 @@ describe('Slotted injector', () => {
 		deepEqual(children(parent), []);
 		deepEqual(children(injector.slots[''].element), []);
 		deepEqual(children(injector.slots['slot1'].element), []);
-		ok(listHas(injector.items, block1));
-		ok(!listHas(injector.items, block2));
-		ok(!listHas(injector.items, block3));
+		ok(listHas(injector, block1));
+		ok(!listHas(injector, block2));
+		ok(!listHas(injector, block3));
 	});
 
 	it('dispose', () => {
@@ -193,8 +193,8 @@ describe('Slotted injector', () => {
 		deepEqual(children(parent), []);
 		deepEqual(children(injector.slots[''].element), ['1']);
 		deepEqual(children(injector.slots['slot1'].element), []);
-		ok(listHas(injector.items, block1));
-		ok(!listHas(injector.items, block2));
-		ok(!listHas(injector.items, block3));
+		ok(listHas(injector, block1));
+		ok(!listHas(injector, block2));
+		ok(!listHas(injector, block3));
 	});
 });

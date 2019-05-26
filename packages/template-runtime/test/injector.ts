@@ -113,17 +113,17 @@ describe('Injector', () => {
 		emptyBlockContent(block3);
 
 		deepStrictEqual(children(parent), ['1', '2', '3']);
-		ok(listHas(injector.items, block1));
-		ok(listHas(injector.items, block2));
-		ok(listHas(injector.items, block3));
+		ok(listHas(injector, block1));
+		ok(listHas(injector, block2));
+		ok(listHas(injector, block3));
 
 		// Empty outer block
 		emptyBlockContent(block1);
 
 		deepStrictEqual(children(parent), []);
-		ok(listHas(injector.items, block1));
-		ok(!listHas(injector.items, block2));
-		ok(!listHas(injector.items, block3));
+		ok(listHas(injector, block1));
+		ok(!listHas(injector, block2));
+		ok(!listHas(injector, block3));
 	});
 
 	it('dispose', () => {
@@ -160,17 +160,17 @@ describe('Injector', () => {
 		emptyBlockContent(block3);
 
 		deepStrictEqual(children(parent), ['1', '2', '3']);
-		ok(listHas(injector.items, block1));
-		ok(listHas(injector.items, block2));
-		ok(listHas(injector.items, block3));
+		ok(listHas(injector, block1));
+		ok(listHas(injector, block2));
+		ok(listHas(injector, block3));
 
 		// Completely remove second block
 		disposeBlock(block2);
 
 		deepStrictEqual(children(parent), ['1']);
-		ok(listHas(injector.items, block1));
-		ok(!listHas(injector.items, block2));
-		ok(!listHas(injector.items, block3));
+		ok(listHas(injector, block1));
+		ok(!listHas(injector, block2));
+		ok(!listHas(injector, block3));
 	});
 
 	it('move', () => {

@@ -4,15 +4,15 @@ import { Injector } from './injector';
 export type GetMount = (host: Component, scope: Scope) => MountBlock | undefined;
 
 export interface MountTemplate {
-	(host: Component, scope: Scope): UpdateTemplate | undefined
-	dispose?: UnmountBlock
+	(host: Component, scope: Scope): UpdateTemplate | undefined;
+	dispose?: UnmountBlock;
 }
 
 export type UpdateTemplate = (host: Component, scope: Scope) => number | void;
 
 export interface MountBlock<D = Scope> {
 	(host: Component, injector: Injector, data: D): UpdateBlock | undefined;
-	dispose?: UnmountBlock
+	dispose?: UnmountBlock;
 }
 
 export type UpdateBlock<D = Scope> = (host: Component, injector: Injector, data: D) => number | void;

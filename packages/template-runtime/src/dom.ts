@@ -22,7 +22,7 @@ export function elemNS(tagName: string, ns: string, cssScope?: string): Element 
  */
 export function elemWithText(tagName: string, value: string, cssScope?: string): Element {
 	const el = elem(tagName, cssScope);
-	el.textContent = textValue(value);
+	el.appendChild(textNode(value));
 	return el;
 }
 
@@ -32,7 +32,7 @@ export function elemWithText(tagName: string, value: string, cssScope?: string):
  */
 export function elemNSWithText(tagName: string, ns: string, value: string, cssScope?: string): Element {
 	const el = elemNS(tagName, ns, cssScope);
-	el.textContent = textValue(value);
+	el.appendChild(textNode(value));
 	return el;
 }
 
@@ -40,9 +40,16 @@ export function elemNSWithText(tagName: string, ns: string, value: string, cssSc
  * Creates text node with given value
  */
 export function text(value: string): TextNode {
-	const node = document.createTextNode(textValue(value)) as TextNode;
+	const node = textNode(value) as TextNode;
 	node.$value = value;
 	return node;
+}
+
+/**
+ * Creates text node with given value
+ */
+function textNode(value: any): Text {
+	return document.createTextNode(value != null ? value : '');
 }
 
 /**
@@ -51,7 +58,8 @@ export function text(value: string): TextNode {
  */
 export function updateText(node: TextNode, value: any): number {
 	if (value !== node.$value) {
-		node.nodeValue = textValue(value);
+		// node.nodeValue = textValue(value);
+		node.nodeValue = value != null ? value : '';
 		node.$value = value;
 		return 1;
 	}
@@ -88,6 +96,6 @@ export function domRemove(node: Node) {
 /**
  * Returns textual representation of given `value` object
  */
-function textValue(value: any): string {
-	return value != null ? value : '';
-}
+// function textValue(value: any): string {
+// 	return value != null ? value : '';
+// }

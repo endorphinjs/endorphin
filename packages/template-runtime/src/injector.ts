@@ -1,16 +1,16 @@
-import { createList, listInsertValueAfter, listPrependValue, listMoveFragmentAfter, listMoveFragmentFirst, listDetachFragment, LinkedList, LinkedListItem } from './linked-list';
+import { listInsertValueAfter, listPrependValue, listMoveFragmentAfter, listMoveFragmentFirst, listDetachFragment, LinkedList, LinkedListItem } from './linked-list';
 import { changeSet, animatingKey } from './utils';
 import { domInsert, domRemove } from './dom';
 import { ChangeSet, EventBinding, Scope, MountBlock, UpdateBlock } from './types';
 import { Component } from './component';
 import { SlotContext } from './slot';
 
-export interface Injector {
+export interface Injector extends LinkedList {
 	/** Injector DOM target */
 	parentNode: Element;
 
 	/** Current injector contents */
-	items: LinkedList;
+	head: LinkedListItem | null;
 
 	/** Current insertion pointer */
 	ptr: LinkedListItem | null;
@@ -50,7 +50,7 @@ export interface Block {
 export function createInjector(target: Element): Injector {
 	return {
 		parentNode: target,
-		items: createList(),
+		head: null,
 		ptr: null,
 
 		// NB create `slots` placeholder to promote object to hidden class.
@@ -58,6 +58,7 @@ export function createInjector(target: Element): Injector {
 		// to reduce runtime checks and keep functions in monomorphic state
 		slots: null,
 		attributes: changeSet(),
+		attributesNS: void 0,
 		events: changeSet()
 	};
 }
@@ -66,13 +67,13 @@ export function createInjector(target: Element): Injector {
  * Inserts given node into current context
  */
 export function insert<T extends Node>(injector: Injector, node: T, slotName = ''): T {
-	const { items, slots, ptr } = injector;
+	const { slots, ptr } = injector;
 	const target = slots
 		? getSlotContext(injector, slotName).element
 		: injector.parentNode;
 
 	domInsert(node, target, ptr ? getAnchorNode(ptr.next!, target) : void 0);
-	injector.ptr = ptr ? listInsertValueAfter(node, ptr) : listPrependValue(items, node);
+	injector.ptr = ptr ? listInsertValueAfter(node, ptr) : listPrependValue(injector, node);
 
 	return node;
 }
@@ -84,14 +85,14 @@ type BlockInput<T, TOptional extends keyof T> = Pick<T, Diff<keyof T, TOptional>
  * Injects given block
  */
 export function injectBlock<T extends Block>(injector: Injector, block: BlockInput<T, 'start' | 'end' | '$$block'>): T {
-	const { items, ptr } = injector;
+	const { ptr } = injector;
 
 	if (ptr) {
 		block.end = listInsertValueAfter(block as T, ptr);
 		block.start = listInsertValueAfter(block as T, ptr);
 	} else {
-		block.end = listPrependValue(items, block);
-		block.start = listPrependValue(items, block);
+		block.end = listPrependValue(injector, block);
+		block.start = listPrependValue(injector, block);
 	}
 
 	block.$$block = true;
@@ -149,9 +150,9 @@ export function move<T extends Node, B extends Block>(injector: Injector, block:
 	const { start, end } = block;
 
 	if (ref) {
-		listMoveFragmentAfter(injector.items, start, end, ref);
+		listMoveFragmentAfter(injector, start, end, ref);
 	} else {
-		listMoveFragmentFirst(injector.items, start, end);
+		listMoveFragmentFirst(injector, start, end);
 	}
 
 	// Move block contents in DOM
@@ -174,7 +175,7 @@ export function move<T extends Node, B extends Block>(injector: Injector, block:
  */
 export function disposeBlock(block: Block) {
 	emptyBlockContent(block);
-	listDetachFragment(block.injector.items, block.start, block.end);
+	listDetachFragment(block.injector, block.start, block.end);
 
 	// @ts-ignore: Nulling disposed object
 	block.start = block.end = null;
@@ -205,9 +206,7 @@ function getAnchorNode(item: LinkedListItem<Node | Block>, parent: Node): Node |
  */
 function createSlotContext(name: string): SlotContext {
 	const element = document.createElement('slot');
-	if (name) {
-		element.setAttribute('name', name);
-	}
+	name && element.setAttribute('name', name);
 
 	return {
 		name,

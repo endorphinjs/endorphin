@@ -8,20 +8,22 @@ import { LinkedListItem } from './linked-list';
 
 type KeyExpr = (host: Component, scope?: Scope) => string;
 
+interface ItemLookup {
+	[key: string]: KeyIteratorItemBlock;
+}
+
 interface KeyIteratorBlock extends IteratorBlock {
 	keyExpr: KeyExpr;
-	used: {
-		[key: string]: KeyIteratorItemBlock[]
-	} | null;
-	rendered: {
-		[key: string]: KeyIteratorItemBlock[]
-	} | null;
+	used: ItemLookup | null;
+	rendered: ItemLookup | null;
 	order: KeyIteratorItemBlock[];
 	needReorder: boolean;
 	parentScope: Scope;
 }
 
-type KeyIteratorItemBlock = Block;
+interface KeyIteratorItemBlock extends Block {
+	next: this | null;
+}
 
 /**
  * Renders key iterator block
@@ -37,11 +39,11 @@ export function mountKeyIterator(host: Component, injector: Injector, get: Rende
 		keyExpr,
 		index: 0,
 		updated: 0,
+		used: null,
 		rendered: null,
 		needReorder: false,
 		parentScope,
-		order: [],
-		used: null
+		order: []
 	});
 	updateKeyIterator(block);
 	return block;
@@ -60,15 +62,12 @@ export function updateKeyIterator(block: KeyIteratorBlock): number {
 
 	const collection = block.get(host, block.parentScope);
 	if (collection && typeof collection.forEach === 'function') {
+		const prevScope = getScope(host);
 		collection.forEach(iterator, block);
+		setScope(host, prevScope);
 	}
 
-	for (const p in rendered) {
-		for (let i = 0, items = rendered[p]; i < items.length; i++) {
-			block.updated = 1;
-			disposeBlock(items[i]);
-		}
-	}
+	block.updated |= disposeLookup(rendered!);
 
 	if (block.needReorder) {
 		reorder(block);
@@ -91,10 +90,8 @@ function getItem(listItem: LinkedListItem, bound: LinkedListItem): KeyIteratorIt
 function iterator(this: KeyIteratorBlock, value: any, key: any) {
 	const { host, injector, index, rendered } = this;
 	const id = this.keyExpr(value, prepareScope(this.scope, index, key, value));
-	// TODO make `rendered` a linked list for faster insert and remove
-	let entry = rendered && id in rendered ? rendered[id].shift() : null;
+	let entry = rendered && getLookup(rendered, id);
 
-	const prevScope = getScope(host);
 	const scope = prepareScope(entry ? entry.scope : obj(this.scope), index, key, value);
 	setScope(host, scope);
 
@@ -113,9 +110,8 @@ function iterator(this: KeyIteratorBlock, value: any, key: any) {
 		}
 	}
 
-	setScope(host, prevScope);
-
-	markUsed(this, id, entry);
+	putLookup(this.used!, id, entry);
+	this.order.push(entry);
 	injector.ptr = entry.end;
 	this.index++;
 }
@@ -142,24 +138,41 @@ function reorder(block: KeyIteratorBlock) {
 	}
 }
 
-function markUsed(iter: KeyIteratorBlock, id: string, block: KeyIteratorItemBlock) {
-	const { used } = iter;
-	// We allow multiple items key in case of poorly prepared data.
-	if (id in used!) {
-		used![id].push(block);
-	} else {
-		used![id] = [block];
-	}
-
-	iter.order.push(block);
-}
-
 function createItem(iter: KeyIteratorBlock, scope: Scope): KeyIteratorItemBlock {
 	return injectBlock<KeyIteratorItemBlock>(iter.injector, {
 		host: iter.host,
 		injector: iter.injector,
 		scope,
 		mount: iter.body,
-		update: undefined
+		update: undefined,
+		next: null
 	});
+}
+
+function getLookup<K extends keyof ItemLookup>(lookup: ItemLookup, key: K): ItemLookup[K] | void {
+	const item = lookup[key];
+	if (item && (lookup[key] = item.next!)) {
+		item.next = null;
+	}
+
+	return item;
+}
+
+function putLookup<K extends keyof ItemLookup>(lookup: ItemLookup, key: K, value: ItemLookup[K]) {
+	value.next = lookup[key];
+	lookup[key] = value;
+}
+
+function disposeLookup(lookup: ItemLookup): number {
+	let updated = 0;
+	for (const p in lookup) {
+		let item = lookup[p];
+		while (item) {
+			updated = 1;
+			disposeBlock(item);
+			item = item.next!;
+		}
+	}
+
+	return updated;
 }
