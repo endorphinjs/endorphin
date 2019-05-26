@@ -67,9 +67,12 @@ export function updateKeyIterator(block: KeyIteratorBlock): number {
 		setScope(host, prevScope);
 	}
 
-	block.updated |= disposeLookup(rendered!);
+	if (rendered) {
+		block.updated |= disposeLookup(rendered);
+	}
 
 	if (block.needReorder) {
+		block.updated = 1;
 		reorder(block);
 	}
 
@@ -88,32 +91,56 @@ function getItem(listItem: LinkedListItem, bound: LinkedListItem): KeyIteratorIt
 }
 
 function iterator(this: KeyIteratorBlock, value: any, key: any) {
-	const { host, injector, index, rendered } = this;
+	const { injector, index, rendered } = this;
 	const id = this.keyExpr(value, prepareScope(this.scope, index, key, value));
 	let entry = rendered && getLookup(rendered, id);
 
-	const scope = prepareScope(entry ? entry.scope : obj(this.scope), index, key, value);
-	setScope(host, scope);
-
-	if (!entry) {
-		entry = createItem(this, scope);
-		injector.ptr = entry.start;
-		entry.update = this.body(host, injector, scope);
-		this.updated = 1;
-	} else if (entry.update) {
+	if (entry) {
 		if (entry.start.prev !== injector.ptr) {
 			this.needReorder = true;
 		}
 
-		if (entry.update(host, injector, scope)) {
-			this.updated = 1;
-		}
+		this.updated |= updateEntry(entry, value, key, index);
+	} else {
+		entry = mountEntry(this, value, key, index);
+		this.updated = 1;
 	}
 
 	putLookup(this.used!, id, entry);
 	this.order.push(entry);
 	injector.ptr = entry.end;
 	this.index++;
+}
+
+function mountEntry(block: KeyIteratorBlock, value: any, key: any, index: number): KeyIteratorItemBlock {
+	const { host, injector, body: mount } = block;
+	const scope = prepareScope(obj(block.scope), index, key, value);
+	setScope(host, scope);
+	const entry = injectBlock<KeyIteratorItemBlock>(injector, {
+		host,
+		injector,
+		scope,
+		mount,
+		update: undefined,
+		next: null
+	});
+
+	injector.ptr = entry.start;
+	entry.update = mount && mount(host, injector, scope);
+	return entry;
+}
+
+function updateEntry(entry: KeyIteratorItemBlock, value: any, key: any, index: number): number {
+	if (entry.update) {
+		const { host, injector } = entry;
+		const scope = prepareScope(entry.scope, index, key, value);
+		setScope(host, scope);
+		if (entry.update(host, injector, scope)) {
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 function reorder(block: KeyIteratorBlock) {
@@ -136,17 +163,6 @@ function reorder(block: KeyIteratorBlock) {
 			move(injector, item, expectedPrev ? expectedPrev.end : block.start);
 		}
 	}
-}
-
-function createItem(iter: KeyIteratorBlock, scope: Scope): KeyIteratorItemBlock {
-	return injectBlock<KeyIteratorItemBlock>(iter.injector, {
-		host: iter.host,
-		injector: iter.injector,
-		scope,
-		mount: iter.body,
-		update: undefined,
-		next: null
-	});
 }
 
 function getLookup<K extends keyof ItemLookup>(lookup: ItemLookup, key: K): ItemLookup[K] | void {
