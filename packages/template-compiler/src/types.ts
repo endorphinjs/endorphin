@@ -36,7 +36,7 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock'
     | 'createInjector' | 'unmountInjector' | 'block'
     | 'setAttribute' | 'setAttributeNS' | 'addClass' | 'finalizeAttributes'
     | 'addEvent' | 'addStaticEvent' | 'removeStaticEvent' | 'finalizeEvents'
-    | 'setRef' | 'finalizeRefs' | 'createComponent' | 'updateText' | 'addDisposeCallback'
+    | 'setRef' | 'finalizeRefs' | 'createComponent' | 'updateText'
     | 'insert' | 'get' | 'call' | 'assign' | 'elem' | 'elemWithText' | 'elemNS'
     | 'elemNSWithText' | 'text' | 'filter' | 'find' | 'subscribeStore'
     | 'animate' | 'createAnimation' | 'domRemove';

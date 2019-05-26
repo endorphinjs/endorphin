@@ -1,5 +1,5 @@
-import { MountBlock, UpdateBlock } from './types';
-import { BaseBlock, injectBlock, run, emptyBlockContent, disposeBlock, getSlotContext } from './injector';
+import { MountBlock } from './types';
+import { injectBlock, emptyBlockContent, disposeBlock, getSlotContext, Block } from './injector';
 import { Component } from './component';
 import { isolateElement } from './dom';
 import { getScope } from './scope';
@@ -12,9 +12,12 @@ export interface SlotContext {
 	defaultContent: SlotBlock | null;
 }
 
-export interface SlotBlock extends BaseBlock<SlotBlock> {
-	fn: MountBlock;
-	update: UpdateBlock | void;
+interface SlotBlock extends Block {
+	// Since `SlotBlock` is retained in injector, we have to toggle `mount` property
+	// depending on current rendering state (incoming or default data) to not invoke
+	// `mount.dispose` or already empty block.
+	// We’ll keep mount function in separate property to restore `mount` property value
+	content: MountBlock;
 }
 
 /**
@@ -37,9 +40,9 @@ export function mountSlot(host: Component, name: string, defaultContent?: MountB
 			host,
 			injector,
 			scope: getScope(host),
-			dispose: null,
-			fn: defaultContent,
-			update: undefined
+			content: defaultContent,
+			mount: void 0,
+			update: void 0
 		});
 	}
 
@@ -62,7 +65,9 @@ export function updateIncomingSlot(host: Component, name: string, updated: numbe
 	if (updated) {
 		// Incoming content was updated but there’s default content mounted
 		if (ctx.isDefault) {
-			emptyBlockContent(ctx.defaultContent!);
+			const block = ctx.defaultContent!;
+			emptyBlockContent(block);
+			block.mount = void 0;
 			setSlotted(ctx, true);
 		}
 
@@ -82,7 +87,7 @@ export function updateDefaultSlot(ctx: SlotContext) {
 	if (ctx.isDefault) {
 		const block = ctx.defaultContent!;
 		if (block.update) {
-			run(block, block.update, block.scope);
+			block.update(block.host, block.injector, block.scope);
 		}
 	}
 }
@@ -91,8 +96,9 @@ export function updateDefaultSlot(ctx: SlotContext) {
  * Unmounts default content of given slot context
  */
 export function unmountSlot(ctx: SlotContext) {
-	if (ctx.defaultContent) {
-		disposeBlock(ctx.defaultContent);
+	const block = ctx.defaultContent;
+	if (block) {
+		disposeBlock(block);
 		setSlotted(ctx, false);
 		ctx.isDefault = false;
 		ctx.defaultContent = null;
@@ -109,7 +115,11 @@ export function notifySlotUpdate(host: Component, ctx: SlotContext) {
 function renderDefaultContent(ctx: SlotContext) {
 	if (ctx.defaultContent) {
 		const block = ctx.defaultContent;
-		block.update = run(block, block.fn, block.scope);
+		const { injector } = block;
+		injector.ptr = block.start;
+		block.mount = block.content;
+		block.update = block.mount!(block.host, injector, block.scope);
+		injector.ptr = block.end;
 	}
 	setSlotted(ctx, false);
 }

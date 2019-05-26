@@ -1,8 +1,7 @@
 import { deepEqual, ok } from 'assert';
 import document from './assets/document';
-import { createInjector, run, insert, injectBlock, emptyBlockContent, disposeBlock, Injector } from '../src/injector';
+import { createInjector, insert, injectBlock, emptyBlockContent, disposeBlock, Injector, Block } from '../src/injector';
 import { obj } from '../src/utils';
-import { MountBlock } from '../src/types';
 import { FunctionBlock } from '../src/block';
 import { LinkedList } from '../src/linked-list';
 
@@ -13,11 +12,16 @@ describe('Slotted injector', () => {
 	const elem = (name: string) => document.createElement(name) as any as HTMLElement;
 	const children = (node: Element) => Array.from(node.childNodes).map(el => el.nodeName);
 
-	function render(injector: Injector, fn: MountBlock | null = null): FunctionBlock {
+	function run(block: Block, fn?: () => void) {
+		block.injector.ptr = block.start;
+		fn && fn();
+		block.injector.ptr = block.end;
+	}
+
+	function render(injector: Injector, fn?: () => void): FunctionBlock {
 		// @ts-ignore
 		const b = injectBlock<FunctionBlock>(injector, { injector, fn });
-		fn && run(b, fn, b);
-		injector.ptr = b.end;
+		run(b, fn);
 		return b;
 	}
 

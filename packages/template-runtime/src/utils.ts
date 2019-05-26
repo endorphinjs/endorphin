@@ -1,6 +1,5 @@
-import { Changes, ChangeSet, UnmountBlock } from './types';
+import { Changes, ChangeSet } from './types';
 import { Component } from './component';
-import { Injector } from './injector';
 
 export const animatingKey = '$$animating';
 
@@ -76,38 +75,12 @@ export function changed(next: any, prev: any, prefix = ''): Changes | null {
 }
 
 /**
- * Moves contents of given `from` element into `to` element
- * @returns The `to` element
- */
-export function moveContents(from: Element | DocumentFragment, to: Element): Element {
-	if (from !== to) {
-		if (from.nodeType === from.DOCUMENT_FRAGMENT_NODE) {
-			to.appendChild(from);
-		} else {
-			let node: Node;
-			while (node = from.firstChild!) {
-				to.appendChild(node);
-			}
-		}
-	}
-
-	return to;
-}
-
-/**
  * Adds given `scope` attribute to `el` to isolate its CSS
  */
 export function cssScope(el: HTMLElement, host?: Component): HTMLElement {
 	const scope = host && host.componentModel && host.componentModel.definition.cssScope;
 	scope && el.setAttribute(scope, '');
 	return el;
-}
-
-/**
- * Queues given `fn` function to be invoked asynchronously as soon as possible
- */
-export function nextTick(fn: (value: void) => void): Promise<any> {
-	return Promise.resolve().then(fn);
 }
 
 // tslint:disable-next-line:only-arrow-functions
@@ -180,19 +153,6 @@ export function representAttributeValue(elem: Element, name: string, value: any)
 	}
 
 	isDefined(value) ? elem.setAttribute(name, value) : elem.removeAttribute(name);
-}
-
-/**
- * Marks given item as explicitly disposable for given host
- */
-export function addDisposeCallback(host: Component | Injector, callback: UnmountBlock): Component | Injector {
-	if ('componentModel' in host) {
-		host.componentModel.dispose = callback;
-	} else if (host.ctx) {
-		host.ctx.dispose = callback;
-	}
-
-	return host;
 }
 
 export function safeCall<T, U, Y>(fn?: (p1?: T, p2?: U) => Y, arg1?: T, arg2?: U): Y | undefined {

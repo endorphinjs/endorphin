@@ -103,10 +103,6 @@ export default class BlockContext {
             scopeUsage.use('unmount');
         }
 
-        if (unmountChunks.length) {
-            mountChunks.push(state.runtime('addDisposeCallback', [this.injector ? this.injector.name : state.host, `${name}Unmount`]));
-        }
-
         if (updateChunks.length) {
             mountChunks.push(`return ${name}Update`);
         }
@@ -115,15 +111,17 @@ export default class BlockContext {
         const injectorArg = this.injector ? this.injector.name : '';
         const scopeArg = (count: number): string => count ? scope : '';
         const mountFn = createFunction(name, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
+        const updateFn = createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent);
+        const unmountFn = createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
 
         if (this.exports) {
             mountFn.prepend([`export `, this.exports === 'default' ? 'default ' : '']);
         }
 
-        return [
-            mountFn,
-            createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent),
-            createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent)
-        ];
+        if (unmountFn) {
+            mountFn.add(`${name}.dispose = ${name}Unmount;\n`);
+        }
+
+        return [mountFn, updateFn, unmountFn];
     }
 }

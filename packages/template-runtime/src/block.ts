@@ -1,12 +1,10 @@
-import { injectBlock, emptyBlockContent, run, disposeBlock, Injector, BaseBlock } from './injector';
+import { injectBlock, emptyBlockContent, disposeBlock, Injector, Block } from './injector';
 import { getScope } from './scope';
-import { GetMount, MountBlock, UpdateBlock } from './types';
+import { GetMount } from './types';
 import { Component } from './component';
 
-export interface FunctionBlock extends BaseBlock<FunctionBlock> {
+export interface FunctionBlock extends Block {
 	get: GetMount;
-	fn?: MountBlock | void;
-	update?: UpdateBlock | void;
 }
 
 export function mountBlock(host: Component, injector: Injector, get: GetMount): FunctionBlock {
@@ -14,9 +12,8 @@ export function mountBlock(host: Component, injector: Injector, get: GetMount): 
 		host,
 		injector,
 		scope: getScope(host),
-		dispose: null,
 		get,
-		fn: undefined,
+		mount: undefined,
 		update: undefined
 	});
 	updateBlock(block);
@@ -29,20 +26,21 @@ export function mountBlock(host: Component, injector: Injector, get: GetMount): 
  */
 export function updateBlock(block: FunctionBlock): number {
 	let updated = 0;
-	const { scope } = block;
-	const fn = block.get(block.host, scope);
+	const { host, injector, scope } = block;
+	const mount = block.get(host, scope);
 
-	if (block.fn !== fn) {
+	if (block.mount !== mount) {
 		updated = 1;
 		// Unmount previously rendered content
-		block.fn && emptyBlockContent(block);
+		block.mount && emptyBlockContent(block);
 
 		// Mount new block content
-		block.update = fn && run(block, fn, scope);
-		block.fn = fn;
+		injector.ptr = block.start;
+		block.mount = mount;
+		block.update = mount && mount(block.host, injector, scope);
 	} else if (block.update) {
 		// Update rendered result
-		updated = run(block, block.update, scope) ? 1 : 0;
+		updated = block.update(host, injector, scope) ? 1 : 0;
 	}
 
 	block.injector.ptr = block.end;

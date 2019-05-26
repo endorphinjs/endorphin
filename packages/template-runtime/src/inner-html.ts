@@ -1,11 +1,11 @@
-import { run, insert, injectBlock, disposeBlock, emptyBlockContent, BaseBlock, Injector } from './injector';
+import { insert, injectBlock, disposeBlock, emptyBlockContent, Injector, Block } from './injector';
 import { isDefined } from './utils';
 import { getScope } from './scope';
 import { GetMount } from './types';
 import { Component } from './component';
 import { isolateElement } from './dom';
 
-interface InnerHtmlBlock extends BaseBlock<InnerHtmlBlock> {
+interface InnerHtmlBlock extends Block {
 	get: GetMount;
 	code: any;
 	slotName: string;
@@ -16,11 +16,9 @@ interface InnerHtmlBlock extends BaseBlock<InnerHtmlBlock> {
  */
 export function mountInnerHTML(host: Component, injector: Injector, get: GetMount, slotName: string): InnerHtmlBlock {
 	const block = injectBlock<InnerHtmlBlock>(injector, {
-		$$block: true,
 		host,
 		injector,
 		scope: getScope(host),
-		dispose: null,
 		get,
 		code: null,
 		slotName
@@ -34,40 +32,41 @@ export function mountInnerHTML(host: Component, injector: Injector, get: GetMoun
  * @returns Returns `1` if inner HTML was updated, `0` otherwise
  */
 export function updateInnerHTML(block: InnerHtmlBlock): number {
-	const code = block.get(block.host, block.scope);
+	const { host, injector, scope } = block;
+	const code = block.get(host, scope);
 
 	if (code !== block.code) {
 		emptyBlockContent(block);
 		if (isDefined(block.code = code)) {
-			run(block, renderHTML, block);
+			injector.ptr = block.start;
+			renderHTML(host, injector, code, block.slotName);
 		}
-		block.injector.ptr = block.end;
+		injector.ptr = block.end;
 		return 1;
 	}
 
 	return 0;
 }
 
-export function unmountInnerHTML(ctx: InnerHtmlBlock) {
-	disposeBlock(ctx);
+export function unmountInnerHTML(block: InnerHtmlBlock) {
+	disposeBlock(block);
 }
 
-function renderHTML(host: Component, injector: Injector, ctx: InnerHtmlBlock) {
-	const { code } = ctx;
+function renderHTML(host: Component, injector: Injector, code: any, slotName: string) {
 	const { cssScope } = host.componentModel.definition;
 
 	if (code && code.nodeType) {
 		// Insert as DOM element
 		cssScope && scopeDOM(code, cssScope);
-		insert(injector, code, ctx.slotName);
+		insert(injector, code, slotName);
 	} else {
 		// Render as HTML
 		const div = document.createElement('div');
-		div.innerHTML = ctx.code;
+		div.innerHTML = code;
 
 		cssScope && scopeDOM(div, cssScope);
 		while (div.firstChild) {
-			insert(injector, div.firstChild, ctx.slotName);
+			insert(injector, div.firstChild, slotName);
 		}
 	}
 }

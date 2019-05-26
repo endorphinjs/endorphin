@@ -1,13 +1,21 @@
 import { Component } from './component';
 import { Injector } from './injector';
 
-export type RunCallback<D = any, R = undefined | null> = (host: Component, injector: Injector, data?: D) => R;
 export type GetMount = (host: Component, scope: Scope) => MountBlock | undefined;
-export type MountTemplate = (host: Component, scope: Scope) => UpdateTemplate | undefined;
-export type UpdateTemplate = (host: Component, scope: Scope) => number | void;
-export type MountBlock<D = Scope> = (host: Component, injector: Injector, data: D) => UpdateBlock | void;
-export type UpdateBlock<D = Scope> = (host: Component, injector: Injector, data: D) => number | void;
 
+export interface MountTemplate {
+	(host: Component, scope: Scope): UpdateTemplate | undefined
+	dispose?: UnmountBlock
+}
+
+export type UpdateTemplate = (host: Component, scope: Scope) => number | void;
+
+export interface MountBlock<D = Scope> {
+	(host: Component, injector: Injector, data: D): UpdateBlock | undefined;
+	dispose?: UnmountBlock
+}
+
+export type UpdateBlock<D = Scope> = (host: Component, injector: Injector, data: D) => number | void;
 // NB: unlike in `MountBlock` and `UpdateBlock` types, use `host` as last argument
 // since it’s used in rare cases (for example, in `animate:out`) and can be safely
 // ignored by compiler in most cases to produce smaller bundle

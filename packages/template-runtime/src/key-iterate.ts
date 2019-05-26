@@ -1,9 +1,10 @@
-import { run, move, injectBlock, disposeBlock, BaseBlock, Injector } from './injector';
+import { move, injectBlock, disposeBlock, Injector, Block } from './injector';
 import { setScope, getScope } from './scope';
 import { obj } from './utils';
 import { prepareScope, IteratorBlock, RenderItemsGetter } from './iterate';
-import { MountBlock, UpdateBlock, Scope } from './types';
+import { MountBlock, Scope } from './types';
 import { Component } from './component';
+import { LinkedListItem } from './linked-list';
 
 type KeyExpr = (host: Component, scope?: Scope) => string;
 
@@ -20,10 +21,7 @@ interface KeyIteratorBlock extends IteratorBlock {
 	parentScope: Scope;
 }
 
-interface KeyIteratorItemBlock extends BaseBlock<KeyIteratorItemBlock> {
-	update: UpdateBlock | void;
-	owner: KeyIteratorBlock;
-}
+type KeyIteratorItemBlock = Block;
 
 /**
  * Renders key iterator block
@@ -34,7 +32,6 @@ export function mountKeyIterator(host: Component, injector: Injector, get: Rende
 		host,
 		injector,
 		scope: obj(parentScope),
-		dispose: null,
 		get,
 		body,
 		keyExpr,
@@ -55,18 +52,10 @@ export function mountKeyIterator(host: Component, injector: Injector, get: Rende
  * @returns Returns `1` if iterator was updated, `0` otherwise
  */
 export function updateKeyIterator(block: KeyIteratorBlock): number {
-	run(block, keyIteratorHost, block);
-	return block.updated;
-}
-
-export function unmountKeyIterator(ctx: KeyIteratorBlock) {
-	disposeBlock(ctx);
-}
-
-function keyIteratorHost(host: Component, injector: Injector, block: KeyIteratorBlock) {
+	const { host, injector, rendered } = block;
+	injector.ptr = block.start;
 	block.used = obj();
-	block.index = 0;
-	block.updated = 0;
+	block.index = block.updated = 0;
 	block.needReorder = false;
 
 	const collection = block.get(host, block.parentScope);
@@ -74,7 +63,6 @@ function keyIteratorHost(host: Component, injector: Injector, block: KeyIterator
 		collection.forEach(iterator, block);
 	}
 
-	const { rendered } = block;
 	for (const p in rendered) {
 		for (let i = 0, items = rendered[p]; i < items.length; i++) {
 			block.updated = 1;
@@ -88,20 +76,21 @@ function keyIteratorHost(host: Component, injector: Injector, block: KeyIterator
 
 	block.order.length = 0;
 	block.rendered = block.used;
+	injector.ptr = block.end;
+	return block.updated;
 }
 
-/**
- * @param {KeyIteratorItemBlock} expected
- * @param {KeyIteratorBlock} owner
- * @returns {KeyIteratorItemBlock | null}
- */
-function getItem(expected: KeyIteratorItemBlock, owner: KeyIteratorBlock): KeyIteratorItemBlock | null {
-	return expected.owner === owner ? expected : null;
+export function unmountKeyIterator(block: KeyIteratorBlock) {
+	disposeBlock(block);
+}
+
+function getItem(listItem: LinkedListItem, bound: LinkedListItem): KeyIteratorItemBlock | null {
+	return listItem !== bound ? listItem.value : null;
 }
 
 function iterator(this: KeyIteratorBlock, value: any, key: any) {
 	const { host, injector, index, rendered } = this;
-	const id = getId(this, index, key, value);
+	const id = this.keyExpr(value, prepareScope(this.scope, index, key, value));
 	// TODO make `rendered` a linked list for faster insert and remove
 	let entry = rendered && id in rendered ? rendered[id].shift() : null;
 
@@ -110,7 +99,7 @@ function iterator(this: KeyIteratorBlock, value: any, key: any) {
 	setScope(host, scope);
 
 	if (!entry) {
-		entry = injector.ctx = createItem(this, scope);
+		entry = createItem(this, scope);
 		injector.ptr = entry.start;
 		entry.update = this.body(host, injector, scope);
 		this.updated = 1;
@@ -137,13 +126,14 @@ function reorder(block: KeyIteratorBlock) {
 	let actualNext: KeyIteratorItemBlock | null;
 	let expectedPrev: KeyIteratorItemBlock | null;
 	let expectedNext: KeyIteratorItemBlock | null;
+	const { start, end } = block;
 
 	for (let i = 0, maxIx = order.length - 1, item: KeyIteratorItemBlock; i <= maxIx; i++) {
 		item = order[i];
 		expectedPrev = i > 0 ? order[i - 1] : null;
 		expectedNext = i < maxIx ? order[i + 1] : null;
-		actualPrev = getItem(item.start.prev!.value, block);
-		actualNext = getItem(item.end.next!.value, block);
+		actualPrev = getItem(item.start.prev!, start);
+		actualNext = getItem(item.end.next!, end);
 
 		if (expectedPrev !== actualPrev && expectedNext !== actualNext) {
 			// Blocks must be reordered
@@ -164,18 +154,12 @@ function markUsed(iter: KeyIteratorBlock, id: string, block: KeyIteratorItemBloc
 	iter.order.push(block);
 }
 
-function getId(iter: KeyIteratorBlock, index: number, key: any, value: any): string {
-	return iter.keyExpr(value, prepareScope(iter.scope, index, key, value));
-}
-
-function createItem(iter: KeyIteratorBlock, scope: object): KeyIteratorItemBlock {
+function createItem(iter: KeyIteratorBlock, scope: Scope): KeyIteratorItemBlock {
 	return injectBlock<KeyIteratorItemBlock>(iter.injector, {
-		$$block: true,
 		host: iter.host,
 		injector: iter.injector,
 		scope,
-		dispose: null,
-		update: undefined,
-		owner: iter
+		mount: iter.body,
+		update: undefined
 	});
 }

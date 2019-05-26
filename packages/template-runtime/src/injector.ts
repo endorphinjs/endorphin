@@ -1,7 +1,7 @@
 import { createList, listInsertValueAfter, listPrependValue, listMoveFragmentAfter, listMoveFragmentFirst, listDetachFragment, LinkedList, LinkedListItem } from './linked-list';
 import { changeSet, animatingKey } from './utils';
 import { domInsert, domRemove } from './dom';
-import { RunCallback, ChangeSet, EventBinding, Scope, UnmountBlock } from './types';
+import { ChangeSet, EventBinding, Scope, MountBlock, UpdateBlock } from './types';
 import { Component } from './component';
 import { SlotContext } from './slot';
 
@@ -14,9 +14,6 @@ export interface Injector {
 
 	/** Current insertion pointer */
 	ptr: LinkedListItem | null;
-
-	/** Current block context */
-	ctx: BaseBlock | null;
 
 	/**
 	 * Slots container
@@ -35,17 +32,16 @@ export interface Injector {
 	events: ChangeSet<EventBinding>;
 }
 
-export interface BaseBlock<T = any> {
+export interface Block {
 	$$block: true;
+	parentNode?: void;
 	host: Component;
 	injector: Injector;
 	scope: Scope;
-
-	/** A function to dispose block contents */
-	dispose: UnmountBlock | null;
-
-	start: LinkedListItem<T>;
-	end: LinkedListItem<T>;
+	mount?: MountBlock;
+	update?: UpdateBlock;
+	start: LinkedListItem<this>;
+	end: LinkedListItem<this>;
 }
 
 /**
@@ -55,7 +51,6 @@ export function createInjector(target: Element): Injector {
 	return {
 		parentNode: target,
 		items: createList(),
-		ctx: null,
 		ptr: null,
 
 		// NB create `slots` placeholder to promote object to hidden class.
@@ -88,35 +83,20 @@ type BlockInput<T, TOptional extends keyof T> = Pick<T, Diff<keyof T, TOptional>
 /**
  * Injects given block
  */
-export function injectBlock<T extends BaseBlock>(injector: Injector, block: BlockInput<T, 'start' | 'end' | '$$block'>): T {
+export function injectBlock<T extends Block>(injector: Injector, block: BlockInput<T, 'start' | 'end' | '$$block'>): T {
 	const { items, ptr } = injector;
 
 	if (ptr) {
-		block.end = listInsertValueAfter(block, ptr);
-		block.start = listInsertValueAfter(block, ptr);
+		block.end = listInsertValueAfter(block as T, ptr);
+		block.start = listInsertValueAfter(block as T, ptr);
 	} else {
 		block.end = listPrependValue(items, block);
 		block.start = listPrependValue(items, block);
 	}
 
 	block.$$block = true;
-	injector.ptr = block.end;
+	injector.ptr = block.end!;
 	return block as T;
-}
-
-/**
- * Runs `fn` template function in context of given `block`
- */
-export function run<D, R>(block: BaseBlock, fn: RunCallback<D, R>, data?: D): R {
-	const { host, injector } = block;
-	const { ctx } = injector;
-	injector.ctx = block;
-	injector.ptr = block.start;
-	const result = fn(host, injector, data);
-	injector.ptr = block.end;
-	injector.ctx = ctx;
-
-	return result;
 }
 
 /**
@@ -131,10 +111,10 @@ export function getSlotContext(injector: Injector, name: string): SlotContext {
 /**
  * Empties content of given block
  */
-export function emptyBlockContent(block: BaseBlock): void {
-	if (block.dispose) {
-		block.dispose(block.scope, block.host);
-		block.dispose = null;
+export function emptyBlockContent<T extends Block>(block: T): void {
+	const unmount = block.mount && block.mount.dispose;
+	if (unmount) {
+		unmount(block.scope, block.host);
 	}
 
 	let item = block.start.next;
@@ -160,7 +140,7 @@ export function emptyBlockContent(block: BaseBlock): void {
 /**
  * Moves contents of `block` after `ref` list item
  */
-export function move<T extends Node, B extends BaseBlock>(injector: Injector, block: B, ref?: LinkedListItem<T | BaseBlock>) {
+export function move<T extends Node, B extends Block>(injector: Injector, block: B, ref?: LinkedListItem<T | Block>) {
 	if (ref && ref.next && ref.next.value === block) {
 		return;
 	}
@@ -192,7 +172,7 @@ export function move<T extends Node, B extends BaseBlock>(injector: Injector, bl
 /**
  * Disposes given block
  */
-export function disposeBlock(block: BaseBlock<any>) {
+export function disposeBlock(block: Block) {
 	emptyBlockContent(block);
 	listDetachFragment(block.injector.items, block.start, block.end);
 
@@ -203,17 +183,17 @@ export function disposeBlock(block: BaseBlock<any>) {
 /**
  * Check if given value is a block
  */
-function isBlock(obj: any): obj is BaseBlock {
+function isBlock(obj: any): obj is Block {
 	return '$$block' in obj;
 }
 
 /**
  * Get DOM node nearest to given position of items list
  */
-function getAnchorNode(item: LinkedListItem<Node>, parent: Node): Node | undefined {
+function getAnchorNode(item: LinkedListItem<Node | Block>, parent: Node): Node | undefined {
 	while (item) {
 		if (item.value.parentNode === parent) {
-			return item.value;
+			return item.value as Node;
 		}
 
 		item = item.next!;

@@ -1,7 +1,6 @@
 import { deepStrictEqual, ok } from 'assert';
 import document, { ElementShim } from './assets/document';
-import { createInjector, run, insert, move, emptyBlockContent, injectBlock, disposeBlock, Injector } from '../src/injector';
-import { RunCallback } from '../src/types';
+import { createInjector, insert, move, emptyBlockContent, injectBlock, disposeBlock, Injector, Block } from '../src/injector';
 import { LinkedList, LinkedListItem } from '../src/linked-list';
 import { FunctionBlock } from '../src/block';
 
@@ -12,11 +11,16 @@ describe('Injector', () => {
 	const elem = (name: string) => document.createElement(name) as any as Element;
 	const children = (node: Element) => (node as any as ElementShim).childNodes.map((el: ElementShim) => el.nodeName);
 
-	function render(injector: Injector, fn?: RunCallback<any, void>) {
+	function run(block: Block, fn?: () => void) {
+		block.injector.ptr = block.start;
+		fn && fn();
+		block.injector.ptr = block.end;
+	}
+
+	function render(injector: Injector, fn?: () => void) {
 		// @ts-ignore
 		const b = injectBlock<FunctionBlock>(injector, { injector, fn });
-		fn && run(b, fn, b);
-		injector.ptr = b.end;
+		run(b, fn);
 		return b;
 	}
 

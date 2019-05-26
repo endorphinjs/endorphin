@@ -5,7 +5,7 @@ import { normalizeClassName } from './attribute';
 import { createInjector, Injector } from './injector';
 import { runHook, reverseWalkDefinitions } from './hooks';
 import { getScope } from './scope';
-import { Changes, Data, UpdateTemplate, ChangeSet, UnmountBlock, MountTemplate } from './types';
+import { Changes, Data, UpdateTemplate, ChangeSet, MountTemplate } from './types';
 import { Store } from './store';
 import { notifySlotUpdate } from './slot';
 
@@ -99,9 +99,6 @@ interface ComponentModel {
 
 	/** Default props values */
 	defaultProps: object;
-
-	/** A function for disposing component contents */
-	dispose?: UnmountBlock;
 }
 
 /**
@@ -253,7 +250,6 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 		update: void 0,
 		queued: false,
 		events,
-		dispose: void 0,
 		defaultProps: props
 	};
 
@@ -325,7 +321,7 @@ export function updateComponent(component: Component): number {
  */
 export function unmountComponent(component: Component): void {
 	const { componentModel } = component;
-	const { dispose, events } = componentModel;
+	const { definition, events } = componentModel;
 	const scope = getScope(component);
 
 	runHook(component, 'willUnmount');
@@ -339,6 +335,7 @@ export function unmountComponent(component: Component): void {
 		component.store.unwatch(component);
 	}
 
+	const dispose = definition.default && definition.default.dispose;
 	safeCall(dispose, scope);
 
 	runHook(component, 'didUnmount');
