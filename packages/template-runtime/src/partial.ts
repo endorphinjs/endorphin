@@ -1,11 +1,10 @@
 import { setScope, getScope } from './scope';
 import { assign, obj } from './utils';
-import { run, injectBlock, emptyBlockContent, disposeBlock, BaseBlock, Injector } from './injector';
-import { UpdateBlock, MountBlock } from './types';
+import { injectBlock, emptyBlockContent, disposeBlock, Injector, Block } from './injector';
+import { MountBlock } from './types';
 import { Component } from './component';
 
-interface PartialBlock extends BaseBlock<PartialBlock> {
-	update: UpdateBlock | void;
+interface PartialBlock extends Block {
 	partial: PartialDefinition | null;
 }
 
@@ -20,11 +19,10 @@ interface PartialDefinition {
  */
 export function mountPartial(host: Component, injector: Injector, partial: PartialDefinition, args: object): PartialBlock {
 	const block = injectBlock<PartialBlock>(injector, {
-		$$block: true,
 		host,
 		injector,
 		scope: getScope(host),
-		dispose: null,
+		mount: void 0,
 		update: void 0,
 		partial: null
 	});
@@ -36,41 +34,43 @@ export function mountPartial(host: Component, injector: Injector, partial: Parti
  * Updates mounted partial
  * @returns Returns `1` if partial was updated, `0` otherwise
  */
-export function updatePartial(ctx: PartialBlock, partial: PartialDefinition, args: object): number {
-	const host = partial.host || ctx.host;
-	const { injector } = ctx;
-	const prevHost = ctx.host;
+export function updatePartial(block: PartialBlock, partial: PartialDefinition, args: object): number {
+	const host = partial.host || block.host;
+	const { injector } = block;
+	const prevHost = block.host;
 	const prevScope = getScope(host);
 	let updated = 0;
 
-	ctx.host = host;
+	block.host = host;
 
-	if (ctx.partial !== partial) {
+	if (block.partial !== partial) {
 		// Unmount previously rendered partial
-		ctx.partial && emptyBlockContent(ctx);
+		block.partial && emptyBlockContent(block);
 
 		// Mount new partial
-		const scope = ctx.scope = assign(obj(prevScope), partial.defaults, args);
+		const scope = block.scope = assign(obj(prevScope), partial.defaults, args);
 		setScope(host, scope);
-		ctx.update = partial ? run(ctx, partial.body, scope) : void 0;
-		ctx.partial = partial;
+		injector.ptr = block.start;
+		block.mount = partial && partial.body;
+		block.update = block.mount && block.mount(host, injector, scope);
+		block.partial = partial;
 		setScope(host, prevScope);
 		updated = 1;
-	} else if (ctx.update) {
+	} else if (block.update) {
 		// Update rendered partial
-		const scope = setScope(host, assign(ctx.scope, args));
-		if (run(ctx, ctx.update, scope)) {
+		const scope = setScope(host, assign(block.scope, args));
+		if (block.update(host, injector, scope)) {
 			updated = 1;
 		}
 		setScope(host, prevScope);
 	}
 
-	ctx.host = prevHost;
-	injector.ptr = ctx.end;
+	block.host = prevHost;
+	injector.ptr = block.end;
 
 	return updated;
 }
 
-export function unmountPartial(ctx: PartialBlock) {
-	disposeBlock(ctx);
+export function unmountPartial(block: PartialBlock) {
+	disposeBlock(block);
 }

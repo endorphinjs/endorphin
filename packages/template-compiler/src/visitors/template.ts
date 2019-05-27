@@ -16,9 +16,11 @@ import IteratorEntity from '../entities/IteratorEntity';
 import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
-import { sn, qStr, isLiteral, toObjectLiteral, getAttrValue, nameToJS, propGetter, propSetter, isExpression } from '../lib/utils';
+import {
+    sn, qStr, isLiteral, toObjectLiteral, nameToJS, propGetter,
+    propSetter, isExpression, isIdentifier
+} from '../lib/utils';
 import ElementEntity from '../entities/ElementEntity';
-import ComponentState from '../lib/ComponentState';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
@@ -57,14 +59,7 @@ export default {
                 element.setRef(node.ref);
             }
 
-            // In component, static attributes/props (e.g. ones which won’t change
-            // in runtime) must be added during component mount. Thus, we should
-            // process dynamic attributes only
-            const attrs = element.isComponent
-                ? node.attributes.filter(attr => element.isDynamicAttribute(attr))
-                : node.attributes;
-
-            element.setContent(attrs, next);
+            element.setContent(getContentAttributes(element), next);
             element.setContent(node.directives, next);
 
             const isSlot = node.name.name === 'slot';
@@ -74,34 +69,11 @@ export default {
                 ? node.body[0] as Literal
                 : null;
 
-            // Set component context
-            const { component } = state;
-            const slot = component ? component.slot : null;
-
             // Create element instance
             element.create(singleTextContent);
 
-            if (component) {
-                // Enter named slot context
-                const slotName = (getAttrValue(node, 'slot') as string) || '';
-                if (slot == null) {
-                    component.slot = slotName;
-                } else if (slotName) {
-                    // tslint:disable-next-line:max-line-length
-                    state.warn(`Invalid slot nesting: unable to set "${slotName}" slot inside "${slot || 'default'}" slot`, node.loc.start.offset);
-                }
-
-                // If element is created inside component, mark parent slot as updated
-                state.markSlot();
-            }
-
-            if (element.isComponent) {
-                // Enter new component context
-                state.component = new ComponentState(element, state.blockContext);
-            }
-
             if (isSlot) {
-                element.add(defaultSlotEntity(element, state, next));
+                element.add(mountSlot(element, state, next));
             } else if (!singleTextContent) {
                 element.setContent(node.body, next);
             }
@@ -116,19 +88,9 @@ export default {
                 }
             }
 
-            // Restore component context
-            if (element.isComponent) {
-                state.component = component;
-            }
-
             if (element.isComponent) {
                 element.markSlotUpdate();
                 element.mountComponent();
-            }
-
-            // Restore slot context
-            if (component) {
-                component.slot = slot;
             }
 
             element.animate();
@@ -207,7 +169,7 @@ export default {
     },
 
     ENDPartialStatement(node: ENDPartialStatement, state) {
-        const getter = `${state.host}.props['partial:${node.id}'] || ${state.partials}${propGetter(node.id)}`;
+        const getter = `${state.prefix('property')}['partial:${node.id}'] || ${state.partials}${propGetter(node.id)}`;
 
         return entity('partial', state, {
             mount: () => state.runtime('mountPartial', [state.host, state.injector, getter, generateObject(node.params, state, 1)]),
@@ -243,19 +205,19 @@ function isSimpleConditionContent(node: ENDStatement): boolean {
 /**
  * Generates entity with default slot content
  */
-function defaultSlotEntity(elem: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): Entity {
+function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): Entity {
     const node = elem.node as ENDElement;
-    const slotName = String(getAttrValue(node, 'name') || '');
 
     // Generates function with default content of given slot
     const contentArg = node.body.length
-        ? state.runChildBlock(`defaultSlot${nameToJS(slotName, true)}`,
-            (child, slot) => slot.setContent(node.body, next))
+        ? state.runChildBlock(`defaultSlot${nameToJS(state.slot, true)}`,
+            (child, ent) => ent.setContent(node.body, next))
         : null;
 
     return state.entity('slot', {
-        mount: () => state.runtime('mountSlot', [state.host, qStr(slotName), elem.getSymbol(), contentArg]),
-        unmount: slot => slot.unmount('unmountSlot')
+        mount: () => state.runtime('mountSlot', [state.host, qStr(state.slot), contentArg]),
+        update: ent => contentArg ? state.runtime('updateDefaultSlot', [ent.getSymbol()]) : null,
+        unmount: ent => ent.unmount('unmountSlot'),
     });
 }
 
@@ -282,4 +244,24 @@ function generateObject(params: ENDAttribute[], state: CompileState, level: numb
 
 function objectKey(node: Identifier | Program, state: CompileState) {
     return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
+}
+
+/**
+ * Returns list of attributes to be added as a content of given element entity
+ */
+function getContentAttributes(element: ElementEntity): ENDAttribute[] {
+    const node = element.node as ENDElement;
+    if (element.isComponent) {
+        // In component, static attributes/props (e.g. ones which won’t change
+        // in runtime) must be added during component mount. Thus, we should
+        // process dynamic attributes only
+        return node.attributes.filter(attr => element.isDynamicAttribute(attr));
+    }
+
+    if (node.name.name === 'slot') {
+        // Do not return `name` attribute of slot: it will be added by runtime
+        return node.attributes.filter(attr => !isIdentifier(attr.name) || attr.name.name !== 'name');
+    }
+
+    return node.attributes;
 }

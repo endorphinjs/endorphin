@@ -1,4 +1,4 @@
-import { elem, createInjector, setAttribute, addClass, mountBlock, updateBlock, unmountBlock, finalizeAttributes, addDisposeCallback } from "endorphin";
+import { elem, createInjector, setAttribute, addClass, mountBlock, updateBlock, unmountBlock, finalizeAttributes } from "endorphin";
 
 function ifAttr$0(host, injector, scope) {
 	if (((host.state.customBg && (host.state.customBg !== "default")) && !scope["pro-mode"])) {
@@ -29,9 +29,10 @@ export default function template$0(host, scope) {
 	const inj$0 = scope.inj$0 = createInjector(main$0);
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	finalizeAttributes(inj$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	updateBlock(scope.if$0);

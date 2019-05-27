@@ -1,9 +1,13 @@
 import { strictEqual, deepStrictEqual } from 'assert';
 import document from './assets/document';
-import sample1 from './samples/slots/outer-component1';
-import sample2 from './samples/slots/outer-component2';
-import sample3 from './samples/slots/outer-component3';
 import { createComponent, mountComponent } from '../src/runtime';
+
+// @ts-ignore
+import sample1 from './samples/slots/outer-component1.html';
+// @ts-ignore
+import sample2 from './samples/slots/outer-component2.html';
+// @ts-ignore
+import sample3 from './samples/slots/outer-component3.html';
 
 describe('Slot Update Hook', () => {
 	const slotCallbacks = [];
@@ -97,7 +101,7 @@ describe('Slot Update Hook', () => {
 
 		component.setProps({ active: true });
 		strictEqual(slotCallbacks.length, 3);
-		deepStrictEqual(last(slotCallbacks), ['footer', 'Footer 1\n\t\t\tBranching footer']);
+		deepStrictEqual(last(slotCallbacks), ['footer', 'Footer 1Branching footer']);
 
 		component.setProps({ active: false, footer: 'Footer 2' });
 		strictEqual(slotCallbacks.length, 4);
@@ -105,7 +109,7 @@ describe('Slot Update Hook', () => {
 
 		component.setProps({ enabled: true, footer: 'Footer 3' });
 		strictEqual(slotCallbacks.length, 6);
-		deepStrictEqual(slotCallbacks[4], ['footer', 'Footer 3']);
-		deepStrictEqual(slotCallbacks[5], ['', 'Content 1\n\t\t\tSubContent 1']);
+		deepStrictEqual(slotCallbacks[4], ['', 'Content 1SubContent 1']);
+		deepStrictEqual(slotCallbacks[5], ['footer', 'Footer 3']);
 	});
 });

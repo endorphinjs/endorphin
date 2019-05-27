@@ -1,0 +1,9 @@
+<link rel="import" href="./inner-component2.html" />
+
+<template>
+	<e:if test={enabled}>
+		<inner-component2>
+			<div e:if={content}>{ content }</div>
+		</inner-component2>
+	</e:if>
+</template>

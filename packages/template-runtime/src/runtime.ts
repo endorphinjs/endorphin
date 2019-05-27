@@ -16,7 +16,7 @@ export * from './dom';
 export * from './partial';
 export * from './store';
 export * from './animation';
-export { addDisposeCallback, assign } from './utils';
+export { assign } from './utils';
 
 type FilterCallback<T> = (value: T, key: string | number) => boolean;
 

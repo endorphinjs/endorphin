@@ -1,4 +1,4 @@
-import { createComponent, mountComponent, unmountComponent, elem, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, markSlotUpdate, updateComponent } from "endorphin";
+import { createComponent, mountComponent, unmountComponent, elem, insert, mountBlock, updateBlock, unmountBlock, updateIncomingSlot, updateComponent } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
 function ifBody$0(host, injector, scope) {
@@ -13,12 +13,14 @@ function ifBody$0(host, injector, scope) {
 		a: 2
 	});
 	scope.su$0 = scope.su$1 = 1;
-	addDisposeCallback(injector, ifBody$0Unmount);
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Unmount(scope) {
 	scope.slotInner$1 = unmountComponent(scope.slotInner$1);
 	scope.slotInner$2 = unmountComponent(scope.slotInner$2);
+	scope.su$0 = scope.su$1 = 1;
 }
 
 function ifEntry$0(host) {
@@ -33,16 +35,17 @@ export default function template$0(host, scope) {
 	const inj$0 = slotInner$0.componentModel.input;
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	mountComponent(slotInner$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { slotInner$0 } = scope;
 	scope.su$0 = scope.su$1 = 0;
 	updateBlock(scope.if$0);
-	markSlotUpdate(slotInner$0, "", scope.su$0);
-	markSlotUpdate(slotInner$0, "inner", scope.su$1);
+	updateIncomingSlot(slotInner$0, "", scope.su$0);
+	updateIncomingSlot(slotInner$0, "inner", scope.su$1);
 	updateComponent(slotInner$0);
 }
 

@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, addDisposeCallback, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, unmountComponent, finalizeAttributes, finalizeEvents, animate, domRemove, finalizeRefs } from "endorphin";
+import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, unmountComponent, finalizeAttributes, finalizeEvents, animate, domRemove, finalizeRefs } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -37,9 +37,10 @@ function forSelect$0(host) {
 
 function forContent$0(host, injector, scope) {
 	scope.partial$0 = mountPartial(host, injector, host.props['partial:test'] || partials.test, {});
-	addDisposeCallback(injector, forContent$0Unmount);
 	return forContent$0Update;
 }
+
+forContent$0.dispose = forContent$0Unmount;
 
 function forContent$0Update(host, injector, scope) {
 	updatePartial(scope.partial$0, host.props['partial:test'] || partials.test, {});
@@ -70,9 +71,10 @@ function ifBody$0(host, injector, scope) {
 	finalizeAttributes(inj$1);
 	finalizeEvents(inj$1);
 	animate(div$0, "show");
-	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Update(host, injector, scope) {
 	const { inj$1 } = scope;
@@ -108,8 +110,9 @@ function ifBody$2(host, injector, scope) {
 	const innerComponent$1 = scope.innerComponent$1 = insert(inj$2, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$1);
 	mountComponent(outerComponent$0);
-	addDisposeCallback(injector, ifBody$2Unmount);
 }
+
+ifBody$2.dispose = ifBody$2Unmount;
 
 function ifBody$2Unmount(scope, host) {
 	animate(scope.outerComponent$0, "fade-out", () => animateOut$1(scope, host));
@@ -128,9 +131,10 @@ export default function template$0(host, scope) {
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	scope.if$2 = mountBlock(host, inj$0, ifEntry$2);
 	finalizeRefs(host);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	updateBlock(scope.if$0);

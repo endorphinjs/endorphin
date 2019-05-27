@@ -1,8 +1,10 @@
 import { strictEqual } from 'assert';
 import read from './assets/read-file';
 import document from './assets/document';
-import iterate from './samples/iterate';
 import { createComponent, mountComponent } from '../src/runtime';
+
+// @ts-ignore
+import iterate from './samples/iterate.html';
 
 describe('Iterate', () => {
 	before(() => global['document'] = document);

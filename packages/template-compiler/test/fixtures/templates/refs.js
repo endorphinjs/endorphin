@@ -1,12 +1,13 @@
-import { setRef, elem, createInjector, insert, addDisposeCallback, mountBlock, updateBlock, unmountBlock, createComponent, mountComponent, unmountComponent, finalizeRefs } from "endorphin";
+import { setRef, elem, createInjector, insert, mountBlock, updateBlock, unmountBlock, createComponent, mountComponent, unmountComponent, finalizeRefs } from "endorphin";
 import * as SlotInner from "./slot-inner.html";
 
 function ifBody$0(host, injector, scope) {
 	const span$0 = scope.span$0 = insert(injector, elem("span"));
 	setRef(host, "header", span$0);
-	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Update(host, injector, scope) {
 	setRef(host, "header", scope.span$0);
@@ -34,9 +35,10 @@ export default function template$0(host, scope) {
 	setRef(host, "addon", slotInner$0);
 	mountComponent(slotInner$0);
 	finalizeRefs(host);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	setRef(host, "main", scope.main$0);

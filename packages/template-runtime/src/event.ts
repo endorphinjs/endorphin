@@ -1,4 +1,4 @@
-import { finalizeItems } from './utils';
+import { finalizeItems, runtimeError } from './utils';
 import { Scope, EventBinding } from './types';
 import { Injector } from './injector';
 import { Component } from './component';
@@ -8,6 +8,7 @@ import { Component } from './component';
  * object to unregister event
  */
 export function addStaticEvent(target: Element, type: string, handleEvent: EventListener, host: Component, scope: Scope): EventBinding {
+	handleEvent = safeEventListener(host, handleEvent);
 	return registerBinding({ host, scope, type, handleEvent, target });
 }
 
@@ -27,6 +28,8 @@ export function addEvent(injector: Injector, type: string, handleEvent: EventLis
 	const { prev, cur } = injector.events;
 	const binding = cur[type] || prev[type];
 
+	handleEvent = safeEventListener(host, handleEvent);
+
 	if (binding) {
 		binding.scope = scope;
 		binding.handleEvent = handleEvent;
@@ -41,6 +44,19 @@ export function addEvent(injector: Injector, type: string, handleEvent: EventLis
  */
 export function finalizeEvents(injector: Injector): number {
 	return finalizeItems(injector.events, changeEvent, injector.parentNode);
+}
+
+export function safeEventListener(host: Component, handler: EventListener): EventListener {
+	// tslint:disable-next-line:only-arrow-functions
+	return function(this: EventBinding, event: Event) {
+		try {
+			handler.call(this, event);
+		} catch (error) {
+			runtimeError(host, error);
+			// tslint:disable-next-line:no-console
+			console.error(error);
+		}
+	};
 }
 
 function registerBinding(binding: EventBinding): EventBinding {

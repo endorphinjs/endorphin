@@ -1,4 +1,4 @@
-import { elem, mountPartial, updatePartial, unmountPartial, addDisposeCallback, createInjector, mountIterator, updateIterator, unmountIterator, finalizeAttributes, finalizeEvents, finalizeRefs, addClass, text, updateText, insert } from "endorphin";
+import { elem, mountPartial, updatePartial, unmountPartial, createInjector, mountIterator, updateIterator, unmountIterator, finalizeAttributes, finalizeEvents, finalizeRefs, addClass, text, updateText, insert } from "endorphin";
 
 export const partials = {
 	button: {
@@ -22,9 +22,10 @@ function forContent$0(host, injector, scope) {
 		enabled: (scope.index !== 1),
 		"dashed-name": "bar"
 	});
-	addDisposeCallback(injector, forContent$0Unmount);
 	return forContent$0Update;
 }
+
+forContent$0.dispose = forContent$0Unmount;
 
 function forContent$0Update(host, injector, scope) {
 	updatePartial(scope.partial$0, host.props['partial:button'] || partials.button, {
@@ -46,9 +47,10 @@ export default function template$0(host, scope) {
 	finalizeAttributes(inj$0);
 	finalizeEvents(inj$0);
 	finalizeRefs(host);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { inj$0 } = scope;
@@ -76,9 +78,10 @@ function partialButton$0(host, injector, scope) {
 	ifAttr$0(host, inj$1, scope);
 	scope.text$0 = insert(inj$1, text(scope.item));
 	finalizeAttributes(inj$1);
-	addDisposeCallback(injector, partialButton$0Unmount);
 	return partialButton$0Update;
 }
+
+partialButton$0.dispose = partialButton$0Unmount;
 
 function partialButton$0Update(host, injector, scope) {
 	const { inj$1 } = scope;

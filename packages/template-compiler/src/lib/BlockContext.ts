@@ -94,12 +94,13 @@ export default class BlockContext {
         }
 
         if (this.slotSymbols.size) {
-            // Mark used slot symbols as updated in mount context
-            mountChunks.push(`${Array.from(this.slotSymbols).join(' = ')} = 1`);
-        }
-
-        if (unmountChunks.length) {
-            mountChunks.push(state.runtime('addDisposeCallback', [this.injector ? this.injector.name : state.host, `${name}Unmount`]));
+            // Mark used slot symbols as updated in mount and unmount context
+            const updateSlots = `${Array.from(this.slotSymbols).join(' = ')} = 1`;
+            mountChunks.push(updateSlots);
+            unmountChunks.push(updateSlots);
+            // Mark scope as used in unmount context in case if slot marker is
+            // the only output of unmount function
+            scopeUsage.use('unmount');
         }
 
         if (updateChunks.length) {
@@ -110,15 +111,18 @@ export default class BlockContext {
         const injectorArg = this.injector ? this.injector.name : '';
         const scopeArg = (count: number): string => count ? scope : '';
         const mountFn = createFunction(name, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
+        const updateFn = createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent);
+        const unmountFn = createFunction(`${name}Unmount`,
+            [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
 
         if (this.exports) {
             mountFn.prepend([`export `, this.exports === 'default' ? 'default ' : '']);
         }
 
-        return [
-            mountFn,
-            createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent),
-            createFunction(`${name}Unmount`, [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent)
-        ];
+        if (unmountFn) {
+            mountFn.add(`\n${name}.dispose = ${name}Unmount;\n`);
+        }
+
+        return [mountFn, updateFn, unmountFn];
     }
 }

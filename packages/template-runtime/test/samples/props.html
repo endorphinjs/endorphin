@@ -1,6 +1,8 @@
-<sub-component p1="1" id={id}>
-	<t-if test="c1">
-		<t-attribute name="p2">2</t-attribute>
-	</t-if>
-	<t-attribute name="p3" select="3" />
-</sub-component>
+<link rel="import" href="./set1/sub-component1.html" as="sub-component" />
+
+<template>
+	<sub-component p1=1 id={id}>
+		<e:attribute p2=2 e:if={c1} />
+		<e:attribute p3=3 />
+	</sub-component>
+</template>

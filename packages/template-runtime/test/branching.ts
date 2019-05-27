@@ -1,9 +1,12 @@
 import { strictEqual } from 'assert';
 import read from './assets/read-file';
 import document from './assets/document';
-import branching from './samples/branching';
-import deepBranching from './samples/branching-deep-nesting';
 import { createComponent, mountComponent, updateComponent } from '../src/runtime';
+
+// @ts-ignore
+import branching from './samples/branching.html';
+// @ts-ignore
+import deepBranching from './samples/branching-deep-nesting.html';
 
 describe('Branching', () => {
 	before(() => global['document'] = document);

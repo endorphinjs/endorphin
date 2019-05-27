@@ -12,8 +12,8 @@ import AnimationEntity from './AnimationEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
 import { isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
-import { Chunk, ChunkList } from '../types';
 import { ENDCompileError } from '../lib/error';
+import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 
 const dynamicContent = new Set(['ENDIfStatement', 'ENDChooseStatement', 'ENDForEachStatement']);
@@ -140,19 +140,25 @@ export default class ElementEntity extends Entity {
         if (isElement(node)) {
             this.setMount(() => {
                 const elemName = node.name.name;
+                const cssScope = state.cssScope;
 
                 if (getControlName(elemName) === 'self') {
                     // Create component which points to itself
                     return state.runtime('createComponent', [`${state.host}.nodeName`, `${state.host}.componentModel.definition`, state.host], node);
                 }
 
-                if (state.isComponent(node)) {
+                if (this.isComponent) {
                     // Create component
                     return state.runtime('createComponent', [qStr(elemName), state.getComponent(node), state.host], node);
                 }
 
+                if (elemName === 'slot') {
+                    // Create slot
+                    const slotName = (getAttrValue(node, 'name') as string) || '';
+                    return state.runtime('createSlot', [state.host, qStr(slotName), cssScope], node);
+                }
+
                 // Create plain DOM element
-                const cssScope = state.cssScope;
                 const nodeName = getNodeName(elemName);
                 const nsSymbol = state.namespace(nodeName.ns);
 
@@ -185,13 +191,13 @@ export default class ElementEntity extends Entity {
     }
 
     /**
-     * Adds entity to mark slot updates
+     * Adds entity to update incoming slot data
      */
     markSlotUpdate() {
         const { state, slotMarks } = this;
         Object.keys(slotMarks).forEach(slot => {
             this.add(state.entity({
-                update: () => state.runtime('markSlotUpdate', [this.getSymbol(), qStr(slot), this.slotMark(slot)])
+                update: () => sn([state.runtime('updateIncomingSlot', [this.getSymbol(), qStr(slot), this.slotMark(slot)])])
             }));
         });
     }
@@ -287,14 +293,37 @@ export default class ElementEntity extends Entity {
      */
     private addInjector(entity: Entity): SourceNode {
         const args: ChunkList = [this.injector, entity.code.mount];
-        if (this.state.component) {
-            let slotName = '';
-            if (entity instanceof ElementEntity && isElement(entity.node)) {
-                slotName = getAttrValue(entity.node, 'slot') as string || '';
-            }
+        const slotName = this.getSlotContext(entity);
+
+        if (slotName != null) {
             args.push(qStr(slotName));
         }
+
         return this.state.runtime('insert', args);
+    }
+
+    /**
+     * Detects and returns name of current context slot.
+     * Returns `null` if there’s no slot context
+     */
+    private getSlotContext(entity: Entity): string | null {
+        // Get actual context element
+        const { receiver } = this.state;
+
+        if (receiver && isElement(receiver.node)) {
+            if (receiver.isComponent && entity instanceof ElementEntity && entity.node && isElement(entity.node)) {
+                // Injecting entity as top-level item of component
+                return getAttrValue(entity.node, 'slot') as string || '';
+            }
+
+            if (receiver.node.name.name === 'slot') {
+                // Injecting entity as top-level item of `<slot>` element
+                return getAttrValue(receiver.node, 'name') as string || '';
+            }
+
+        }
+
+        return null;
     }
 
     private collectStats() {

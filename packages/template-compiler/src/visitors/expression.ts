@@ -15,10 +15,6 @@ export default {
         return sn(node.body.map(next), node);
     },
     Identifier(node: Identifier, state, next) {
-        if (node.context === 'store') {
-            return sn(state.store(node.name), node, node.raw);
-        }
-
         if (node.context === 'helper') {
             return state.helper(node.name);
         }
@@ -28,6 +24,11 @@ export default {
                 type: 'ENDGetterPrefix',
                 context: node.context
             } as ENDGetterPrefix);
+
+            if (node.context === 'store') {
+                // Mark store data source as used
+                state.store(node.name);
+            }
 
             return sn([prefix, propGetter(node.name)], node, node.raw);
         }

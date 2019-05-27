@@ -1,4 +1,4 @@
-import { createInjector, text, insert, mountBlock, updateBlock, unmountBlock, addDisposeCallback } from "endorphin";
+import { createInjector, text, insert, mountBlock, updateBlock, unmountBlock } from "endorphin";
 
 function ifBody$2(host, injector) {
 	insert(injector, text("\n                test\n            "));
@@ -12,9 +12,10 @@ function ifEntry$2(host) {
 
 function ifBody$1(host, injector, scope) {
 	scope.if$2 = mountBlock(host, injector, ifEntry$2);
-	addDisposeCallback(injector, ifBody$1Unmount);
 	return ifBody$1Update;
 }
+
+ifBody$1.dispose = ifBody$1Unmount;
 
 function ifBody$1Update(host, injector, scope) {
 	updateBlock(scope.if$2);
@@ -32,9 +33,10 @@ function ifEntry$1(host) {
 
 function ifBody$0(host, injector, scope) {
 	scope.if$1 = mountBlock(host, injector, ifEntry$1);
-	addDisposeCallback(injector, ifBody$0Unmount);
 	return ifBody$0Update;
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Update(host, injector, scope) {
 	updateBlock(scope.if$1);
@@ -54,9 +56,10 @@ export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const inj$0 = createInjector(target$0);
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	updateBlock(scope.if$0);

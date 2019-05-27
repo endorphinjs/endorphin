@@ -1,7 +1,9 @@
 import { strictEqual } from 'assert';
 import document from './assets/document';
-import template, { cssScope } from './samples/inner-html';
 import { createComponent, mountComponent } from '../src/runtime';
+
+// @ts-ignore
+import template, { cssScope } from './samples/inner-html.html';
 
 describe('Inner HTML', () => {
 	before(() => global['document'] = document);

@@ -1,13 +1,14 @@
-import { elem, createInjector, get, setAttribute, createComponent, mountComponent, unmountComponent, updateComponent, insert, addDisposeCallback, elemWithText, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { elem, createInjector, get, setAttribute, createComponent, mountComponent, unmountComponent, updateComponent, insert, elemWithText, mountBlock, updateBlock, unmountBlock } from "endorphin";
 
 function chooseBody$0(host, injector, scope) {
 	const e_self$0 = scope.e_self$0 = insert(injector, createComponent(host.nodeName, host.componentModel.definition, host));
 	const inj$1 = scope.inj$1 = e_self$0.componentModel.input;
 	setAttribute(inj$1, "item", host.props.link);
 	mountComponent(e_self$0);
-	addDisposeCallback(injector, chooseBody$0Unmount);
 	return chooseBody$0Update;
 }
+
+chooseBody$0.dispose = chooseBody$0Unmount;
 
 function chooseBody$0Update(host, injector, scope) {
 	setAttribute(scope.inj$1, "item", host.props.link);
@@ -36,9 +37,10 @@ export default function template$0(host, scope) {
 	const div$0 = target$0.appendChild(elem("div"));
 	const inj$0 = createInjector(div$0);
 	scope.choose$0 = mountBlock(host, inj$0, chooseEntry$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	updateBlock(scope.choose$0);

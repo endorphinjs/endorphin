@@ -1,4 +1,4 @@
-import { elemWithText, setAttribute, createComponent, mountComponent, unmountComponent, updateComponent, assign, subscribeStore, addDisposeCallback, elem, createInjector, text, updateText, finalizeAttributes, insert } from "endorphin";
+import { elemWithText, setAttribute, createComponent, mountComponent, unmountComponent, updateComponent, assign, subscribeStore, elem, createInjector, text, updateText, finalizeAttributes, insert } from "endorphin";
 import * as InnerComponent from "./inner-component.js";
 
 export const partials = {
@@ -26,9 +26,10 @@ export default function template$0(host, scope) {
 		"partial:item": assign({ host }, partials["my-item"])
 	});
 	subscribeStore(host, ["items1", "items2"]);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	setAttribute(scope.inj$0, "items", host.store.data.items1);
@@ -50,9 +51,10 @@ function partialMyItem$0(host, injector, scope) {
 	setAttribute(inj$2, "value", host.store.data.pos);
 	scope.text$0 = span$0.appendChild(text(host.store.data.item));
 	finalizeAttributes(inj$2);
-	addDisposeCallback(injector, partialMyItem$0Unmount);
 	return partialMyItem$0Update;
 }
+
+partialMyItem$0.dispose = partialMyItem$0Unmount;
 
 function partialMyItem$0Update(host, injector, scope) {
 	const { inj$2 } = scope;

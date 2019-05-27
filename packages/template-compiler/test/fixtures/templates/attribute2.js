@@ -1,4 +1,4 @@
-import { createInjector, setAttribute, elem, addClass, finalizeAttributes, addDisposeCallback } from "endorphin";
+import { createInjector, setAttribute, elem, addClass, finalizeAttributes } from "endorphin";
 
 function ifAttr$0(host, injector) {
 	if (host.props.c1) {
@@ -33,9 +33,10 @@ export default function template$0(host, scope) {
 	ifAttr$2(host, inj$0);
 	addClass(inj$0, "baz");
 	finalizeAttributes(inj$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { inj$0 } = scope;

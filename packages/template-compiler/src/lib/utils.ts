@@ -149,6 +149,10 @@ export function qStr(text: string): string {
  * Generates property getter code
  */
 export function propGetter(name: string): string {
+    if (!name) {
+        // NB: empty identifier is possible when accessing store root
+        return '';
+    }
     return isPropKey(name) ? `.${name}` : `[${qStr(name)}]`;
 }
 

@@ -127,7 +127,11 @@ export function normalizeClassName(str: string): string {
  */
 function changeAttribute(name: string, prevValue: any, newValue: any, elem: Element): void {
 	if (isDefined(newValue)) {
-		representAttributeValue(elem, name, newValue);
+		if (name === 'class') {
+			elem.className = normalizeClassName(newValue);
+		} else {
+			representAttributeValue(elem, name, newValue);
+		}
 	} else if (isDefined(prevValue)) {
 		elem.removeAttribute(name);
 	}

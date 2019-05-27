@@ -90,4 +90,10 @@ describe('JS Parser', () => {
         equal(js('#foo += 1', opt), '$host.state.foo += 1;');
         equal(js('#foo++', opt), '$host.state.foo++;');
     });
+
+    it('should handle store access', () => {
+        equal(js('$foo'), '$store.foo;');
+        equal(js('$'), '$storeHost;');
+        equal(js('$.method()'), '$call($storeHost, "method");');
+    });
 });

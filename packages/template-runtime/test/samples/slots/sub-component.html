@@ -1,0 +1,17 @@
+<template>
+	<div class="container">
+		<slot name="header">
+			<h2>Default header</h2>
+		</slot>
+		<p>content</p>
+		<slot></slot>
+		<e:if test={showError}>
+			<slot name="error"></slot>
+		</e:if>
+		<e:if test={showFooter}>
+			<slot name="footer">
+				<footer>Default footer</footer>
+			</slot>
+		</e:if>
+	</div>
+</template>

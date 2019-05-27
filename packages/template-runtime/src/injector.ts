@@ -1,27 +1,25 @@
-import { createList, listInsertValueAfter, listPrependValue, listMoveFragmentAfter, listMoveFragmentFirst, listDetachFragment, LinkedList, LinkedListItem } from './linked-list';
+import { listInsertValueAfter, listPrependValue, listMoveFragmentAfter, listMoveFragmentFirst, listDetachFragment, LinkedList, LinkedListItem } from './linked-list';
 import { changeSet, animatingKey } from './utils';
 import { domInsert, domRemove } from './dom';
-import { RunCallback, ChangeSet, EventBinding, Scope, UnmountBlock } from './types';
+import { ChangeSet, EventBinding, Scope, MountBlock, UpdateBlock } from './types';
 import { Component } from './component';
+import { SlotContext } from './slot';
 
-export interface Injector {
+export interface Injector extends LinkedList {
 	/** Injector DOM target */
 	parentNode: Element;
 
 	/** Current injector contents */
-	items: LinkedList;
+	head: LinkedListItem | null;
 
 	/** Current insertion pointer */
 	ptr: LinkedListItem | null;
-
-	/** Current block context */
-	ctx: BaseBlock | null;
 
 	/**
 	 * Slots container
 	 */
 	slots?: {
-		[name: string]: DocumentFragment | Element
+		[name: string]: SlotContext
 	} | null;
 
 	/** Pending attributes updates */
@@ -34,17 +32,16 @@ export interface Injector {
 	events: ChangeSet<EventBinding>;
 }
 
-export interface BaseBlock<T = any> {
+export interface Block {
 	$$block: true;
+	parentNode?: void;
 	host: Component;
 	injector: Injector;
 	scope: Scope;
-
-	/** A function to dispose block contents */
-	dispose: UnmountBlock | null;
-
-	start: LinkedListItem<T>;
-	end: LinkedListItem<T>;
+	mount?: MountBlock;
+	update?: UpdateBlock;
+	start: LinkedListItem<this>;
+	end: LinkedListItem<this>;
 }
 
 /**
@@ -53,8 +50,7 @@ export interface BaseBlock<T = any> {
 export function createInjector(target: Element): Injector {
 	return {
 		parentNode: target,
-		items: createList(),
-		ctx: null,
+		head: null,
 		ptr: null,
 
 		// NB create `slots` placeholder to promote object to hidden class.
@@ -62,6 +58,7 @@ export function createInjector(target: Element): Injector {
 		// to reduce runtime checks and keep functions in monomorphic state
 		slots: null,
 		attributes: changeSet(),
+		attributesNS: void 0,
 		events: changeSet()
 	};
 }
@@ -70,17 +67,13 @@ export function createInjector(target: Element): Injector {
  * Inserts given node into current context
  */
 export function insert<T extends Node>(injector: Injector, node: T, slotName = ''): T {
-	let target: Node;
-	const { items, slots, ptr } = injector;
-
-	if (slots) {
-		target = slots[slotName] || (slots[slotName] = document.createDocumentFragment());
-	} else {
-		target = injector.parentNode;
-	}
+	const { slots, ptr } = injector;
+	const target = slots
+		? getSlotContext(injector, slotName).element
+		: injector.parentNode;
 
 	domInsert(node, target, ptr ? getAnchorNode(ptr.next!, target) : void 0);
-	injector.ptr = ptr ? listInsertValueAfter(node, ptr) : listPrependValue(items, node);
+	injector.ptr = ptr ? listInsertValueAfter(node, ptr) : listPrependValue(injector, node);
 
 	return node;
 }
@@ -91,44 +84,38 @@ type BlockInput<T, TOptional extends keyof T> = Pick<T, Diff<keyof T, TOptional>
 /**
  * Injects given block
  */
-export function injectBlock<T extends BaseBlock>(injector: Injector, block: BlockInput<T, 'start' | 'end' | '$$block'>): T {
-	const { items, ptr } = injector;
+export function injectBlock<T extends Block>(injector: Injector, block: BlockInput<T, 'start' | 'end' | '$$block'>): T {
+	const { ptr } = injector;
 
 	if (ptr) {
-		block.end = listInsertValueAfter(block, ptr);
-		block.start = listInsertValueAfter(block, ptr);
+		block.end = listInsertValueAfter(block as T, ptr);
+		block.start = listInsertValueAfter(block as T, ptr);
 	} else {
-		block.end = listPrependValue(items, block);
-		block.start = listPrependValue(items, block);
+		block.end = listPrependValue(injector, block);
+		block.start = listPrependValue(injector, block);
 	}
 
 	block.$$block = true;
-	injector.ptr = block.end;
+	injector.ptr = block.end!;
 	return block as T;
 }
 
 /**
- * Runs `fn` template function in context of given `block`
+ * Returns named slot context from given component input’s injector. If slot context
+ * doesn’t exists, it will be created
  */
-export function run<D, R>(block: BaseBlock, fn: RunCallback<D, R>, data?: D): R {
-	const { host, injector } = block;
-	const { ctx } = injector;
-	injector.ctx = block;
-	injector.ptr = block.start;
-	const result = fn(host, injector, data);
-	injector.ptr = block.end;
-	injector.ctx = ctx;
-
-	return result;
+export function getSlotContext(injector: Injector, name: string): SlotContext {
+	const slots = injector.slots!;
+	return slots[name] || (slots[name] = createSlotContext(name));
 }
 
 /**
  * Empties content of given block
  */
-export function emptyBlockContent(block: BaseBlock): void {
-	if (block.dispose) {
-		block.dispose(block.scope, block.host);
-		block.dispose = null;
+export function emptyBlockContent<T extends Block>(block: T): void {
+	const unmount = block.mount && block.mount.dispose;
+	if (unmount) {
+		unmount(block.scope, block.host);
 	}
 
 	let item = block.start.next;
@@ -154,7 +141,7 @@ export function emptyBlockContent(block: BaseBlock): void {
 /**
  * Moves contents of `block` after `ref` list item
  */
-export function move<T extends Node, B extends BaseBlock>(injector: Injector, block: B, ref?: LinkedListItem<T | BaseBlock>) {
+export function move<T extends Node, B extends Block>(injector: Injector, block: B, ref?: LinkedListItem<T | Block>) {
 	if (ref && ref.next && ref.next.value === block) {
 		return;
 	}
@@ -163,9 +150,9 @@ export function move<T extends Node, B extends BaseBlock>(injector: Injector, bl
 	const { start, end } = block;
 
 	if (ref) {
-		listMoveFragmentAfter(injector.items, start, end, ref);
+		listMoveFragmentAfter(injector, start, end, ref);
 	} else {
-		listMoveFragmentFirst(injector.items, start, end);
+		listMoveFragmentFirst(injector, start, end);
 	}
 
 	// Move block contents in DOM
@@ -186,9 +173,9 @@ export function move<T extends Node, B extends BaseBlock>(injector: Injector, bl
 /**
  * Disposes given block
  */
-export function disposeBlock(block: BaseBlock<any>) {
+export function disposeBlock(block: Block) {
 	emptyBlockContent(block);
-	listDetachFragment(block.injector.items, block.start, block.end);
+	listDetachFragment(block.injector, block.start, block.end);
 
 	// @ts-ignore: Nulling disposed object
 	block.start = block.end = null;
@@ -197,19 +184,34 @@ export function disposeBlock(block: BaseBlock<any>) {
 /**
  * Check if given value is a block
  */
-function isBlock(obj: any): obj is BaseBlock {
+function isBlock(obj: any): obj is Block {
 	return '$$block' in obj;
 }
 
 /**
  * Get DOM node nearest to given position of items list
  */
-function getAnchorNode(item: LinkedListItem<Node>, parent: Node): Node | undefined {
+function getAnchorNode(item: LinkedListItem<Node | Block>, parent: Node): Node | undefined {
 	while (item) {
 		if (item.value.parentNode === parent) {
-			return item.value;
+			return item.value as Node;
 		}
 
 		item = item.next!;
 	}
+}
+
+/**
+ * Creates context for given slot
+ */
+function createSlotContext(name: string): SlotContext {
+	const element = document.createElement('slot');
+	name && element.setAttribute('name', name);
+
+	return {
+		name,
+		element,
+		isDefault: false,
+		defaultContent: null
+	};
 }

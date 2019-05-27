@@ -1,11 +1,16 @@
 import { strictEqual, deepStrictEqual } from 'assert';
 import document from './assets/document';
 import { createComponent, mountComponent, unmountComponent } from '../src/runtime';
+
 import { mounted } from './samples/unmount/unmount-beacon';
-import * as UnmountCondition from './samples/unmount/unmount-condition';
-import * as UnmountIterator from './samples/unmount/unmount-iterator';
-import * as UnmountKeyIterator from './samples/unmount/unmount-key-iterator';
-import * as UnmountSlot from './samples/unmount/unmount-slot';
+// @ts-ignore
+import * as UnmountCondition from './samples/unmount/unmount-condition.html';
+// @ts-ignore
+import * as UnmountIterator from './samples/unmount/unmount-iterator.html';
+// @ts-ignore
+import * as UnmountKeyIterator from './samples/unmount/unmount-key-iterator.html';
+// @ts-ignore
+import * as UnmountSlot from './samples/unmount/unmount-slot.html';
 
 describe('Unmount', () => {
 	before(() => global['document'] = document);
@@ -15,7 +20,7 @@ describe('Unmount', () => {
 	function calcRefs(vars: { [key: string]: any }) {
 		let refs = 0;
 		for (const p in vars) {
-			if (p.startsWith('$_') && vars[p] != null) {
+			if (/\$\w+$/.test(p) && vars[p] != null && typeof vars[p] === 'object') {
 				refs++;
 			}
 		}

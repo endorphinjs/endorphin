@@ -4,8 +4,12 @@
 
 <template>
     <my-component1>
+        <header e:if={enabled} />
         <my-component2 slot="header">
             <inner-component/>
         </my-component2>
+        <div slot="footer">
+            <blockquote e:if={enabled} />
+        </div>
     </my-component1>
 </template>

@@ -1,4 +1,4 @@
-import { elemWithText, setAttribute, createComponent, insert, mountBlock, updateBlock, unmountBlock, mountIterator, updateIterator, unmountIterator, markSlotUpdate, mountComponent, unmountComponent, updateComponent, addDisposeCallback } from "endorphin";
+import { elemWithText, setAttribute, createComponent, insert, mountBlock, updateBlock, unmountBlock, mountIterator, updateIterator, unmountIterator, updateIncomingSlot, mountComponent, unmountComponent, updateComponent } from "endorphin";
 import * as SubComponent from "./slot-inner.html";
 
 function setVars$0(host, scope) {
@@ -7,6 +7,12 @@ function setVars$0(host, scope) {
 
 function ifBody$0(host, injector, scope) {
 	insert(injector, elemWithText("p", "bar"), "");
+	scope.su$0 = 1;
+}
+
+ifBody$0.dispose = ifBody$0Unmount;
+
+function ifBody$0Unmount(scope) {
 	scope.su$0 = 1;
 }
 
@@ -19,6 +25,12 @@ function ifEntry$0(host) {
 function ifBody$1(host, injector, scope) {
 	const p$1 = insert(injector, elemWithText("p", "bar"), "header");
 	p$1.setAttribute("slot", "header");
+	scope.su$1 = 1;
+}
+
+ifBody$1.dispose = ifBody$1Unmount;
+
+function ifBody$1Unmount(scope) {
 	scope.su$1 = 1;
 }
 
@@ -39,9 +51,21 @@ function forContent$0(host, injector, scope) {
 	scope.su$0 = scope.su$2 = 1;
 }
 
+forContent$0.dispose = forContent$0Unmount;
+
+function forContent$0Unmount(scope) {
+	scope.su$0 = scope.su$2 = 1;
+}
+
 function ifBody$2(host, injector, scope) {
 	const div$3 = insert(injector, elemWithText("div", "Got error"), "error");
 	div$3.setAttribute("slot", "error");
+	scope.su$3 = 1;
+}
+
+ifBody$2.dispose = ifBody$2Unmount;
+
+function ifBody$2Unmount(scope) {
 	scope.su$3 = 1;
 }
 
@@ -64,9 +88,10 @@ export default function template$0(host, scope) {
 	scope.for$0 = mountIterator(host, inj$0, forSelect$0, forContent$0);
 	scope.if$2 = mountBlock(host, inj$0, ifEntry$2);
 	mountComponent(subComponent$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { subComponent$0 } = scope;
@@ -77,10 +102,10 @@ function template$0Update(host, scope) {
 	updateBlock(scope.if$1);
 	updateIterator(scope.for$0);
 	updateBlock(scope.if$2);
-	markSlotUpdate(subComponent$0, "", scope.su$0);
-	markSlotUpdate(subComponent$0, "header", scope.su$1);
-	markSlotUpdate(subComponent$0, "footer", scope.su$2);
-	markSlotUpdate(subComponent$0, "error", scope.su$3);
+	updateIncomingSlot(subComponent$0, "", scope.su$0);
+	updateIncomingSlot(subComponent$0, "header", scope.su$1);
+	updateIncomingSlot(subComponent$0, "footer", scope.su$2);
+	updateIncomingSlot(subComponent$0, "error", scope.su$3);
 	updateComponent(subComponent$0);
 }
 

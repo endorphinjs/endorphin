@@ -1,4 +1,4 @@
-import { elem, addStaticEvent, removeStaticEvent, elemWithText, insert, addDisposeCallback, createInjector, mountIterator, updateIterator, unmountIterator } from "endorphin";
+import { elem, addStaticEvent, removeStaticEvent, elemWithText, insert, createInjector, mountIterator, updateIterator, unmountIterator } from "endorphin";
 
 function setVars$0(host, scope) {
 	scope.foo = 1;
@@ -20,9 +20,10 @@ function forContent$0(host, injector, scope) {
 	setVars$1(host, scope);
 	const li$0 = insert(injector, elemWithText("li", "item"));
 	scope.click$0 = addStaticEvent(li$0, "click", onClick$0, host, scope);
-	addDisposeCallback(injector, forContent$0Unmount);
 	return forContent$0Update;
 }
+
+forContent$0.dispose = forContent$0Unmount;
 
 function forContent$0Update(host, injector, scope) {
 	setVars$1(host, scope);
@@ -43,9 +44,10 @@ export default function template$0(host, scope) {
 	setVars$0(host, scope);
 	scope.for$0 = mountIterator(host, inj$0, forSelect$0, forContent$0);
 	setVars$2(host, scope);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	setVars$0(host, scope);

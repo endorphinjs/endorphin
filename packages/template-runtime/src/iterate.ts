@@ -1,23 +1,20 @@
-import { run, injectBlock, disposeBlock, BaseBlock, Injector } from './injector';
+import { injectBlock, disposeBlock, Injector, Block } from './injector';
 import { setScope, getScope } from './scope';
 import { obj } from './utils';
-import { Scope, MountBlock, UpdateBlock } from './types';
+import { Scope, MountBlock } from './types';
 import { Component } from './component';
 import { LinkedListItem } from './linked-list';
 
 export type RenderItemsGetter = (host: Component, scope: Scope) => any[];
 
-export interface IteratorBlock extends BaseBlock<IteratorBlock> {
+export interface IteratorBlock extends Block {
 	get: RenderItemsGetter;
 	body: MountBlock;
 	index: number;
 	updated: number;
 }
 
-interface IteratorItemBlock extends BaseBlock<IteratorItemBlock> {
-	update: UpdateBlock | void;
-	owner: IteratorBlock;
-}
+type IteratorItemBlock = Block;
 
 /**
  * Mounts iterator block
@@ -29,7 +26,6 @@ export function mountIterator(host: Component, injector: Injector, get: RenderIt
 		host,
 		injector,
 		scope: getScope(host),
-		dispose: null,
 		get,
 		body,
 		index: 0,
@@ -44,23 +40,22 @@ export function mountIterator(host: Component, injector: Injector, get: RenderIt
  * @returns Returns `1` if iterator was updated, `0` otherwise
  */
 export function updateIterator(block: IteratorBlock): number {
-	run(block, iteratorHost, block);
+	const { injector } = block;
+	injector.ptr = block.start;
+	block.index = block.updated = 0;
+
+	const collection = block.get(block.host, block.scope);
+	if (collection && typeof collection.forEach === 'function') {
+		collection.forEach(iterator, block);
+	}
+
+	trimIteratorItems(block, injector.ptr!.next!);
+	injector.ptr = block.end;
 	return block.updated;
 }
 
 export function unmountIterator(block: IteratorBlock) {
 	disposeBlock(block);
-}
-
-function iteratorHost(host: Component, injector: Injector, block: IteratorBlock) {
-	block.index = 0;
-	block.updated = 0;
-	const collection = block.get(host, block.scope);
-	if (collection && typeof collection.forEach === 'function') {
-		collection.forEach(iterator, block);
-	}
-
-	trimIteratorItems(block);
 }
 
 export function prepareScope(scope: Scope, index: number, key: any, value: any): Scope {
@@ -73,30 +68,29 @@ export function prepareScope(scope: Scope, index: number, key: any, value: any):
 /**
  * Removes remaining iterator items from current context
  */
-function trimIteratorItems(block: IteratorBlock) {
-	let item: LinkedListItem<IteratorItemBlock> | null = block.injector.ptr!.next;
+function trimIteratorItems(block: IteratorBlock, start: LinkedListItem) {
 	let listItem: IteratorItemBlock;
-	while (item && item.value.owner === block) {
+	while (start !== block.end) {
 		block.updated = 1;
-		listItem = item.value;
-		item = listItem.end.next;
+		listItem = start.value;
+		start = listItem.end.next!;
 		disposeBlock(listItem);
 	}
 }
 
 function iterator(this: IteratorBlock, value: any, key: any) {
-	const { host, injector, index } = this;
-	const { ptr } = injector;
+	const { host, injector, index, body, end } = this;
+	const { next } = injector.ptr!;
 	const prevScope = getScope(host);
+	let rendered: IteratorItemBlock;
 
-	let rendered: IteratorItemBlock = ptr!.next!.value;
-
-	if (rendered.owner === this) {
+	if (next !== end) {
+		rendered = next!.value;
 		// We have rendered item, update it
 		if (rendered.update) {
 			const scope = prepareScope(rendered.scope, index, key, value);
 			setScope(host, scope);
-			if (run(rendered, rendered.update, scope)) {
+			if (rendered.update(host, injector, scope)) {
 				this.updated = 1;
 			}
 			setScope(host, prevScope);
@@ -109,13 +103,13 @@ function iterator(this: IteratorBlock, value: any, key: any) {
 			host,
 			injector,
 			scope,
-			dispose: null,
+			mount: body,
 			update: undefined,
-			owner: this
 		});
 
 		setScope(host, scope);
-		rendered.update = run(rendered, this.body, scope);
+		injector.ptr = rendered.start;
+		rendered.update = body(host, injector, scope);
 		setScope(host, prevScope);
 		this.updated = 1;
 	}

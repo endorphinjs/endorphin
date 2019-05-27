@@ -1,7 +1,9 @@
 import { deepEqual } from 'assert';
 import document from './assets/document';
-import template from './samples/props';
 import { createComponent, mountComponent, renderComponent, updateComponent, setAttribute, Component } from '../src/runtime';
+
+// @ts-ignore
+import template from './samples/props.html';
 
 describe('Props', () => {
 	before(() => global['document'] = document);

@@ -1,4 +1,4 @@
-import { createInjector, addEvent, addStaticEvent, removeStaticEvent, get, elem, mountBlock, updateBlock, unmountBlock, finalizeEvents, addDisposeCallback } from "endorphin";
+import { createInjector, addEvent, addStaticEvent, removeStaticEvent, get, elem, mountBlock, updateBlock, unmountBlock, finalizeEvents } from "endorphin";
 import { emit } from "endorphin/helpers";
 
 function onClick$0(evt) {
@@ -52,9 +52,10 @@ export default function template$0(host, scope) {
 	scope.mousedown$0 = addStaticEvent(main$0, "mousedown", onMousedown$0, host, scope);
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	finalizeEvents(inj$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { inj$0 } = scope;

@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, createComponent, mountComponent, unmountComponent, insert, domRemove, addDisposeCallback, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { elemWithText, createInjector, createComponent, mountComponent, unmountComponent, insert, domRemove, mountBlock, updateBlock, unmountBlock } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -15,8 +15,9 @@ function ifBody$0(host, injector, scope) {
 	mountComponent(innerComponent$0);
 	mountComponent(outerComponent$0);
 	host.componentModel.definition.expand(outerComponent$0);
-	addDisposeCallback(injector, ifBody$0Unmount);
 }
+
+ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Unmount(scope, host) {
 	host.componentModel.definition.collapse(scope.outerComponent$0, { duration: host.state.duration, next$: () => animateOut$0(scope, host) });
@@ -33,9 +34,10 @@ export default function template$0(host, scope) {
 	const inj$0 = createInjector(target$0);
 	insert(inj$0, elemWithText("p", "test"));
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
-	addDisposeCallback(host, template$0Unmount);
 	return template$0Update;
 }
+
+template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	updateBlock(scope.if$0);
