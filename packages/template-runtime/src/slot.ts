@@ -66,8 +66,10 @@ export function updateIncomingSlot(host: Component, name: string, updated: numbe
 		// Incoming content was updated but there’s default content mounted
 		if (ctx.isDefault) {
 			const block = ctx.defaultContent!;
-			emptyBlockContent(block);
-			block.mount = void 0;
+			if (block) {
+				emptyBlockContent(block);
+				block.mount = void 0;
+			}
 			setSlotted(ctx, true);
 		}
 

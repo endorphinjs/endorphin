@@ -167,6 +167,9 @@ class NodeShim {
 	}
 
 	dispatchEvent(event: EventShim) {
+		if (event.type === 'runtime-error') {
+			throw new Error(event.detail.error);
+		}
 		const listeners = this.listeners[event.type];
 		if (listeners) {
 			for (let i = listeners.length - 1; i >= 0; i--) {

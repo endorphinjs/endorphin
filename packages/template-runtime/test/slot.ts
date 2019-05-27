@@ -5,6 +5,8 @@ import { createComponent, mountComponent, renderComponent, Component } from '../
 
 // @ts-ignore
 import parentTemplate from './samples/slots/slot.html';
+// @ts-ignore
+import sample4 from './samples/slots/outer-component4.html';
 
 describe('Slots', () => {
 	before(() => global['document'] = document);
@@ -67,5 +69,26 @@ describe('Slots', () => {
 		// Dispose data rendered in iterator
 		component.setProps({ items: null });
 		strictEqual(component.innerHTML, read('./fixtures/slot6.html'));
+	});
+
+	it('should handle empty default content', () => {
+		const component = createComponent('my-component', {
+			default: sample4,
+			props() {
+				return {
+					content: null,
+					enabled: true
+				};
+			}
+		});
+
+		mountComponent(component);
+		strictEqual(component.innerHTML, read('./fixtures/slot2-1.html'));
+
+		component.setProps({ content: 'Content 1' });
+		strictEqual(component.innerHTML, read('./fixtures/slot2-2.html'));
+
+		component.setProps({ enabled: false });
+		strictEqual(component.innerHTML, '');
 	});
 });
