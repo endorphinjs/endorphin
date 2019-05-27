@@ -163,3 +163,21 @@ export function safeCall<T, U, Y>(fn?: (p1?: T, p2?: U) => Y, arg1?: T, arg2?: U
 		console.error(err);
 	}
 }
+
+export function captureError<T, U, Y>(host: Component, fn?: (p1?: T, p2?: U) => Y, arg1?: T, arg2?: U): Y | undefined {
+	try {
+		return fn && fn(arg1, arg2);
+	} catch (error) {
+		runtimeError(host, error);
+		// tslint:disable-next-line:no-console
+		console.error(error);
+	}
+}
+
+export function runtimeError(host: Component, error: Error) {
+	(host.root || host).dispatchEvent(new CustomEvent('runtime-error', {
+		bubbles: true,
+		cancelable: true,
+		detail: { error, host }
+	}));
+}

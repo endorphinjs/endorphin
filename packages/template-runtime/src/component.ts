@@ -1,6 +1,6 @@
 import { elem } from './dom';
-import { assign, obj, changeSet, representAttributeValue, safeCall, getObjectDescriptors } from './utils';
-import { finalizeEvents } from './event';
+import { assign, obj, changeSet, representAttributeValue, getObjectDescriptors, captureError } from './utils';
+import { finalizeEvents, safeEventListener } from './event';
 import { normalizeClassName } from './attribute';
 import { createInjector, Injector } from './injector';
 import { runHook, reverseWalkDefinitions } from './hooks';
@@ -290,7 +290,7 @@ export function mountComponent(component: Component, initialProps?: object) {
 
 	runHook(component, 'willMount', arg);
 	runHook(component, 'willRender', arg);
-	componentModel.update = safeCall(definition.default, component, getScope(component));
+	componentModel.update = captureError(component, definition.default, component, getScope(component));
 	componentModel.mounted = true;
 	componentModel.rendering = false;
 	componentModel.finalizing = true;
@@ -336,7 +336,7 @@ export function unmountComponent(component: Component): void {
 	}
 
 	const dispose = definition.default && definition.default.dispose;
-	safeCall(dispose, scope);
+	captureError(component, dispose, scope);
 
 	runHook(component, 'didUnmount');
 
@@ -397,7 +397,7 @@ export function renderComponent(component: Component, changes?: Changes) {
 
 	runHook(component, 'willUpdate', arg);
 	runHook(component, 'willRender', arg);
-	safeCall(componentModel.update, component, getScope(component));
+	captureError(component, componentModel.update, component, getScope(component));
 	componentModel.rendering = false;
 	componentModel.finalizing = true;
 	runHook(component, 'didRender', arg);
@@ -475,7 +475,7 @@ function prepare(component: Component, definition: ComponentDefinition) {
 	let events: AttachedStaticEvents | undefined;
 	let extend: DescriptorMap | undefined;
 
-	reverseWalkDefinitions(definition, dfn => {
+	reverseWalkDefinitions(component, definition, dfn => {
 		dfn.props && assign(props, dfn.props(component));
 		dfn.state && assign(state, dfn.state(component));
 
@@ -520,7 +520,7 @@ function createEventsMap(component: Component): AttachedStaticEvents {
 		}
 	};
 
-	return { handler, listeners };
+	return { handler: safeEventListener(component, handler), listeners };
 }
 
 function attachEventHandlers(component: Component, events: { [name: string]: ComponentEventHandler; }, eventMap: AttachedStaticEvents) {
