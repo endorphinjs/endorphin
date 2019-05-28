@@ -175,7 +175,7 @@ export function captureError<T, U, Y>(host: Component, fn?: (p1?: T, p2?: U) => 
 }
 
 export function runtimeError(host: Component, error: Error) {
-	(host.root || host).dispatchEvent(new CustomEvent('runtime-error', {
+	host.dispatchEvent(new CustomEvent('runtime-error', {
 		bubbles: true,
 		cancelable: true,
 		detail: { error, host }
