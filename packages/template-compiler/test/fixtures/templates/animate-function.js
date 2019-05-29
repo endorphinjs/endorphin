@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, createComponent, mountComponent, unmountComponent, insert, domRemove, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { elemWithText, createInjector, createComponent, mountComponent, unmountComponent, insert, animate, domRemove, mountBlock, updateBlock, unmountBlock } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -14,13 +14,13 @@ function ifBody$0(host, injector, scope) {
 	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$0);
 	mountComponent(outerComponent$0);
-	host.componentModel.definition.expand(outerComponent$0);
+	animate(outerComponent$0, host.componentModel.definition.expand(outerComponent$0));
 }
 
 ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Unmount(scope, host) {
-	host.componentModel.definition.collapse(scope.outerComponent$0, { duration: host.state.duration, next$: () => animateOut$0(scope, host) });
+	animate(scope.outerComponent$0, host.componentModel.definition.collapse(scope.outerComponent$0, { duration: host.state.duration }), () => animateOut$0(scope, host));
 }
 
 function ifEntry$0(host) {
