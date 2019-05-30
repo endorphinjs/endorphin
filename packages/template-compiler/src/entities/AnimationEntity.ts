@@ -1,6 +1,6 @@
 import {
     CallExpression, Expression, MemberExpression, ArrowFunctionExpression,
-    ENDAttributeValue, ObjectExpression, ConditionalExpression, BinaryExpression
+    ENDAttributeValue, ObjectExpression
 } from '@endorphinjs/template-parser';
 import { compileAttributeValue } from './AttributeEntity';
 import ElementEntity from './ElementEntity';
