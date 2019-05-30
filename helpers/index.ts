@@ -23,7 +23,7 @@ export function emit<T extends Element>(elem: T, type: string, detail?: {}): T {
 /**
  * Subscribes on given `type` event on `elem` element
  */
-export function on<T extends Element>(elem: T, type: string, callback: EventListenerOrEventListenerObject, options: AddEventListenerOptions | boolean): T {
+export function on<T extends Element>(elem: T, type: string, callback: (this: T, ev: Event) => any, options?: AddEventListenerOptions | boolean): T {
 	elem.addEventListener(type, callback, options);
 	return elem;
 }
@@ -31,7 +31,7 @@ export function on<T extends Element>(elem: T, type: string, callback: EventList
 /**
  * Unsubscribes from given `type` event on `elem` element
  */
-export function off<T extends Element>(elem: T, type: string, callback: EventListenerOrEventListenerObject, options: AddEventListenerOptions | boolean): T {
+export function off<T extends Element>(elem: T, type: string, callback: EventListenerOrEventListenerObject, options?: AddEventListenerOptions | boolean): T {
 	elem.removeEventListener(type, callback, options);
 	return elem;
 }

@@ -8,7 +8,7 @@ import { ENDSyntaxError, ENDCompileError } from '../syntax-error';
 import { convert } from './getter';
 import { ParserOptions } from '../parse';
 
-export const jsGlobals = new Set(['Math', 'String', 'Boolean', 'Object']);
+export const jsGlobals = new Set(['Math', 'String', 'Number', 'Boolean', 'Object', 'Date']);
 
 export interface JSParserOptions extends ParserOptions {
     offset?: Position;
