@@ -6,6 +6,9 @@ import { createComponent, mountComponent } from '../src/runtime';
 // @ts-ignore
 import iterate from './samples/iterate.html';
 
+// @ts-ignore
+import iterateNested from './samples/iterate-nested.html';
+
 describe('Iterate', () => {
 	before(() => global['document'] = document);
 	after(() => delete global['document']);
@@ -74,5 +77,21 @@ describe('Iterate', () => {
 		strictEqual(component.innerHTML, read('fixtures/iterate2.html'));
 		strictEqual(cur[0], prev[0]);
 		strictEqual(cur[1], prev[1]);
+	});
+
+	it('nested', () => {
+		const component = createComponent('my-component', {
+			default: iterateNested,
+			state() {
+				return {
+					items: [
+						['one', 'two', 'three'],
+						[1, 2]
+					]
+				};
+			}
+		});
+		mountComponent(component);
+		strictEqual(component.innerHTML, read('fixtures/iterate-nested1.html'));
 	});
 });
