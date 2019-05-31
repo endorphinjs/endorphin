@@ -3,6 +3,7 @@ import {
     Node, Identifier, Program, ENDElement, ENDAttributeStatement, LiteralValue,
     ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix
 } from '@endorphinjs/template-parser';
+import * as entities from 'entities';
 import { Chunk, ChunkList, HelpersMap, PlainObject } from '../types';
 
 /**
@@ -142,7 +143,7 @@ export function getControlName(name: string): string {
  * Returns quoted string
  */
 export function qStr(text: string): string {
-    return JSON.stringify(text);
+    return JSON.stringify(entities.decodeHTML(text));
 }
 
 /**
