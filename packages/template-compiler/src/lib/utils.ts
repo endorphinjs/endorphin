@@ -13,7 +13,7 @@ export const prefix = 'e';
 const nsPrefix = prefix + ':';
 
 const defaultHelpers = {
-    'endorphin/helpers': ['emit', 'setState', 'setStore']
+    'endorphin/helpers': ['emit', 'notify', 'count', 'contains', 'indexOf', 'replace', 'lowercase', 'uppercase', 'slice', 'log']
 } as HelpersMap;
 
 /**
