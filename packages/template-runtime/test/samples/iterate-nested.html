@@ -5,9 +5,9 @@ Test for bug https://github.com/endorphinjs/endorphin/issues/1
 <template>
 	<e:variable list={#items}/>
 	<e:for-each select={@list}>
-		<p>{`List count: ${count(@list)}, item count: ${count(@value)}`}</p>
+		<p>{`List count: ${@list.length}, item count: ${@value.length}`}</p>
 		<e:for-each select={@value}>
-			<span>{`${count(@list)}: ${@value}`}</span>
+			<span>{`${@list.length}: ${@value}`}</span>
 		</e:for-each>
 	</e:for-each>
 </template>
