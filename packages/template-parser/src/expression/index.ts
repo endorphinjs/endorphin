@@ -171,6 +171,9 @@ function upgradeContent(node: Expression | Statement, options: JSParserOptions =
         case 'CallExpression':
             node.arguments = node.arguments.map(n => convert(n, options));
             break;
+        case 'TemplateLiteral':
+            node.expressions = node.expressions.map(n => convert(n, options));
+            break;
     }
 }
 

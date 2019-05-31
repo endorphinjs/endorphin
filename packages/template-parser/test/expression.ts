@@ -63,6 +63,7 @@ describe('JS Parser', () => {
         equal(js('foo.bar[a => a.b.c]'), '$find($get($host.props.foo, "bar"), a => $get(a, "b", "c"));', 'Rewrite filters with deep getters');
         equal(js('foo.bar[[a => a > #c]]'), '$filter($get($host.props.foo, "bar"), a => a > $host.state.c);', 'Rewrite filters (multiple)');
         equal(js('`foo ${bar}`'), '`foo ${$host.props.bar}`;');
+        equal(js('`${count(@bar)}`'), '`${count(this, $scope.bar)}`;');
     });
 
     it('should upgrade to callers', () => {
