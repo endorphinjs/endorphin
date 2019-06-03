@@ -248,6 +248,10 @@ export default class ElementEntity extends Entity {
     animate() {
         if (this.animateIn || this.animateOut) {
             this.add(new AnimationEntity(this, this.state, this.animateIn, this.animateOut));
+            if (this.animateOut && !this.code.unmount) {
+                // Skip auto-null check in generated function
+                this.setUnmount(() => sn());
+            }
         }
     }
 
