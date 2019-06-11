@@ -10,6 +10,7 @@ import { Chunk, ChunkList } from '../types';
 import { isIdentifier, isExpression, isCallExpression, createFunction, sn, isValidChunk } from '../lib/utils';
 import CompileState from '../lib/CompileState';
 import { identifier, callExpr } from '../lib/ast-constructor';
+import InjectorEntity from './InjectorEntity';
 
 export default class AnimationEntity extends Entity {
     constructor(elem: ElementEntity, state: CompileState, inValue?: ENDAttributeValue, outValue?: ENDAttributeValue) {
@@ -38,24 +39,37 @@ export function animateOut(elem: ElementEntity, value: ENDAttributeValue, state:
  * Generates animation out callback
  */
 function animateOutCallback(elem: Entity): Chunk | null {
+    // NB: use empty source node to skip auto-null check in block unmount
     const empty = sn();
     const { state } = elem;
     const callback = state.globalSymbol('animateOut');
 
     // Always remove element from DOM in first place to skip inner animations
-    const code: ChunkList = [state.runtime('domRemove', [elem.getSymbol()])];
+    const code: ChunkList = [
+        sn([elem.getSymbol(), ' = ', state.runtime('domRemove', [elem.getSymbol()])])
+    ];
+
+    const toNull: Entity[] = [];
 
     const transfer = (item: Entity) => {
         item.children.forEach(transfer);
-        if (isValidChunk(item.code.unmount)) {
+
+        if (item instanceof InjectorEntity && item.symbolUsage.update) {
+            // We should explicitly null injector entities inside animation callback
+            toNull.push(item);
+            item.code.unmount = empty;
+        } else if (isValidChunk(item.code.unmount)) {
             code.push(item.code.unmount);
-            // NB: use empty source node to skip auto-null check
-            // in block unmount
             item.code.unmount = empty;
         }
     };
 
     transfer(elem);
+
+    if (toNull.length) {
+        const scope = state.options.scope;
+        code.push(sn(toNull.map(entity => `${scope}.${entity.name} = `).join('') + 'null'));
+    }
 
     if (code.length) {
         state.pushOutput(createFunction(callback, [state.scope], code));
