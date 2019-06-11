@@ -3,9 +3,10 @@ import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
 function animateOut$0(scope) {
-	domRemove(scope.outerComponent$0);
+	const _ref = scope.outerComponent$0;
 	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
 	scope.outerComponent$0 = unmountComponent(scope.outerComponent$0);
+	domRemove(_ref);
 }
 
 function ifBody$0(host, injector, scope) {

@@ -38,17 +38,12 @@ export function animateOut(elem: ElementEntity, value: ENDAttributeValue, state:
 /**
  * Generates animation out callback
  */
-function animateOutCallback(elem: Entity): Chunk | null {
+function animateOutCallback(elem: ElementEntity): Chunk | null {
     // NB: use empty source node to skip auto-null check in block unmount
     const empty = sn();
     const { state } = elem;
     const callback = state.globalSymbol('animateOut');
-
-    // Always remove element from DOM in first place to skip inner animations
-    const code: ChunkList = [
-        sn([elem.getSymbol(), ' = ', state.runtime('domRemove', [elem.getSymbol()])])
-    ];
-
+    const code: ChunkList = [];
     const toNull: Entity[] = [];
 
     const transfer = (item: Entity) => {
@@ -66,23 +61,30 @@ function animateOutCallback(elem: Entity): Chunk | null {
 
     transfer(elem);
 
+    // We have to detach animated element. If it’s a component, we have to store
+    // element reference first since it will be removed by `unmountComponent()` call
+    if (elem.isComponent) {
+        code.unshift(sn(['const _ref = ', elem.getSymbol()]));
+        code.push(state.runtime('domRemove', ['_ref']));
+    } else {
+        code.push(sn([
+            elem.getSymbol(), ' = ', state.runtime('domRemove', [elem.getSymbol()])
+        ]));
+    }
+
     if (toNull.length) {
         const scope = state.options.scope;
         code.push(sn(toNull.map(entity => `${scope}.${entity.name} = `).join('') + 'null'));
     }
 
-    if (code.length) {
-        state.pushOutput(createFunction(callback, [state.scope], code));
+    state.pushOutput(createFunction(callback, [state.scope], code));
 
-        return generateExpression({
-            type: 'ArrowFunctionExpression',
-            expression: true,
-            params: [],
-            body: callExpr(callback, [identifier(state.scope), identifier(state.host)])
-        } as ArrowFunctionExpression, state);
-    }
-
-    return null;
+    return generateExpression({
+        type: 'ArrowFunctionExpression',
+        expression: true,
+        params: [],
+        body: callExpr(callback, [identifier(state.scope), identifier(state.host)])
+    } as ArrowFunctionExpression, state);
 }
 
 /**

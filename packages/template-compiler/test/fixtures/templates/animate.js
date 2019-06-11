@@ -51,11 +51,12 @@ function forContent$0Unmount(scope) {
 }
 
 function animateOut$0(scope) {
-	domRemove(scope.div$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.html$0 = unmountInnerHTML(scope.html$0);
 	scope.for$0 = unmountIterator(scope.for$0);
 	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
+	scope.div$0 = domRemove(scope.div$0);
+	scope.inj$1 = null;
 }
 
 function ifBody$0(host, injector, scope) {
@@ -89,7 +90,6 @@ function ifBody$0Update(host, injector, scope) {
 
 function ifBody$0Unmount(scope, host) {
 	animate(scope.div$0, "hide", () => animateOut$0(scope, host));
-	scope.inj$1 = null;
 }
 
 function ifEntry$0(host) {
@@ -99,9 +99,10 @@ function ifEntry$0(host) {
 }
 
 function animateOut$1(scope) {
-	domRemove(scope.outerComponent$0);
+	const _ref = scope.outerComponent$0;
 	scope.innerComponent$1 = unmountComponent(scope.innerComponent$1);
 	scope.outerComponent$0 = unmountComponent(scope.outerComponent$0);
+	domRemove(_ref);
 }
 
 function ifBody$2(host, injector, scope) {
