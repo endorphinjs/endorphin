@@ -55,13 +55,6 @@ export default {
 
     ENDElement(node: ENDElement, state, next) {
         return state.runElement(node, element => {
-            if (node.ref) {
-                element.setRef(node.ref);
-            }
-
-            element.setContent(getContentAttributes(element), next);
-            element.setContent(node.directives, next);
-
             const isSlot = node.name.name === 'slot';
 
             // Edge case: element with single text child
@@ -72,13 +65,23 @@ export default {
             // Create element instance
             element.create(singleTextContent);
 
+            if (node.ref) {
+                element.setRef(node.ref);
+            }
+
+            element.setContent(getContentAttributes(element), next);
+            element.setContent(node.directives, next);
+
             if (isSlot) {
                 element.add(mountSlot(element, state, next));
             } else if (!singleTextContent) {
                 element.setContent(node.body, next);
             }
 
-            if (!element.isComponent) {
+            if (element.isComponent) {
+                element.markSlotUpdate();
+                element.mountComponent();
+            } else {
                 if (element.dynamicAttributes.size || element.hasPartials) {
                     element.finalizeAttributes();
                 }
@@ -86,11 +89,6 @@ export default {
                 if (element.dynamicEvents.size || element.hasPartials) {
                     element.finalizeEvents();
                 }
-            }
-
-            if (element.isComponent) {
-                element.markSlotUpdate();
-                element.mountComponent();
             }
 
             element.animate();

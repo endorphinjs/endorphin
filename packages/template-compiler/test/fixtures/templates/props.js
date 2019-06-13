@@ -1,4 +1,4 @@
-import { setAttribute, createComponent, mountComponent, unmountComponent, updateComponent } from "endorphin";
+import { createComponent, mountComponent, setAttribute, unmountComponent, updateComponent } from "endorphin";
 import * as SubComponent from "./sub-component.html";
 
 function ifAttr$0(host, injector) {

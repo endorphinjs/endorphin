@@ -1,4 +1,4 @@
-import { createInjector, setAttribute, elem, finalizeAttributes } from "endorphin";
+import { createInjector, elem, finalizeAttributes, setAttribute } from "endorphin";
 
 function ifAttr$0(host, injector) {
 	if (host.props.c1) {

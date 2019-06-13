@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, createComponent, mountComponent, unmountComponent, insert, animate, domRemove, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { animate, createComponent, createInjector, domRemove, elemWithText, insert, mountBlock, mountComponent, unmountBlock, unmountComponent, updateBlock } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 

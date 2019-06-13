@@ -1,4 +1,4 @@
-import { elem, text, updateText, createComponent, insert, updateIncomingSlot, mountComponent, unmountComponent } from "endorphin";
+import { createComponent, elem, insert, mountComponent, text, unmountComponent, updateIncomingSlot, updateText } from "endorphin";
 import * as SlotInner from "./slot-inner.html";
 
 export default function template$0(host, scope) {

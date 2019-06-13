@@ -1,4 +1,4 @@
-import { elem, createInjector, setAttribute, addClass, mountBlock, updateBlock, unmountBlock, finalizeAttributes } from "endorphin";
+import { addClass, createInjector, elem, finalizeAttributes, mountBlock, setAttribute, unmountBlock, updateBlock } from "endorphin";
 
 function ifAttr$0(host, injector, scope) {
 	if (((host.state.customBg && (host.state.customBg !== "default")) && !scope["pro-mode"])) {

@@ -1,4 +1,4 @@
-import { elem, mountPartial, updatePartial, unmountPartial, createInjector, mountIterator, updateIterator, unmountIterator, finalizeAttributes, finalizeEvents, finalizeRefs, addClass, text, updateText, insert } from "endorphin";
+import { addClass, createInjector, elem, finalizeAttributes, finalizeEvents, finalizeRefs, insert, mountIterator, mountPartial, text, unmountIterator, unmountPartial, updateIterator, updatePartial, updateText } from "endorphin";
 
 export const partials = {
 	button: {

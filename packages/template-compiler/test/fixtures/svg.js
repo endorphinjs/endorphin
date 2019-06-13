@@ -1,4 +1,4 @@
-import { elemWithText, elemNS, createInjector, setAttributeNS, finalizeAttributes } from "endorphin";
+import { createInjector, elemNS, elemWithText, finalizeAttributes, setAttributeNS } from "endorphin";
 const ns$0 = "http://www.w3.org/2000/svg";
 const ns$1 = "http://www.w3.org/1999/xlink";
 

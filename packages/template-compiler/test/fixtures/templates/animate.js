@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, unmountComponent, finalizeAttributes, finalizeEvents, animate, domRemove, finalizeRefs } from "endorphin";
+import { animate, createComponent, createInjector, domRemove, elem, elemWithText, finalizeAttributes, finalizeEvents, finalizeRefs, insert, mountBlock, mountComponent, mountInnerHTML, mountIterator, mountPartial, setAttribute, text, unmountBlock, unmountComponent, unmountInnerHTML, unmountIterator, unmountPartial, updateBlock, updateInnerHTML, updateIterator, updatePartial } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 

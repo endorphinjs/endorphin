@@ -20,12 +20,12 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
 
     // Import runtime symbols, used by template
     if (state.usedRuntime.size) {
-        body.push(`import { ${Array.from(state.usedRuntime).join(', ')} } from "${state.options.module}";`);
+        body.push(`import { ${sortedList(state.usedRuntime)} } from "${state.options.module}";`);
     }
 
     // Import helpers
     getUsedHelpers(state).forEach((helpers, url) => {
-        body.push(`import { ${helpers.join(', ')} } from ${qStr(url)};`);
+        body.push(`import { ${sortedList(helpers)} } from ${qStr(url)};`);
     });
 
     // Import child components
@@ -126,4 +126,8 @@ function getUsedHelpers(state: CompileState): Map <string, string[]> {
     });
 
     return result;
+}
+
+function sortedList(items: string[] | Set<string>): string {
+    return Array.from(items).sort().join(', ');
 }

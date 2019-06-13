@@ -1,4 +1,4 @@
-import { elem, createInjector, get, setAttribute, createComponent, mountComponent, unmountComponent, updateComponent, insert, elemWithText, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { createComponent, createInjector, elem, elemWithText, get, insert, mountBlock, mountComponent, setAttribute, unmountBlock, unmountComponent, updateBlock, updateComponent } from "endorphin";
 
 function chooseBody$0(host, injector, scope) {
 	const e_self$0 = scope.e_self$0 = insert(injector, createComponent(host.nodeName, host.componentModel.definition, host));

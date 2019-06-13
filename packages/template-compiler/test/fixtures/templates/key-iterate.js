@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, elem, setAttribute, text, get, insert, mountBlock, updateBlock, unmountBlock, finalizeAttributes, mountKeyIterator, updateKeyIterator, unmountKeyIterator } from "endorphin";
+import { createInjector, elem, elemWithText, finalizeAttributes, get, insert, mountBlock, mountKeyIterator, setAttribute, text, unmountBlock, unmountKeyIterator, updateBlock, updateKeyIterator } from "endorphin";
 
 function forSelect$0(host) {
 	return host.props.items;

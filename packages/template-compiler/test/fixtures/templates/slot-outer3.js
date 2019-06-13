@@ -1,4 +1,4 @@
-import { createComponent, mountComponent, unmountComponent, elem, insert, mountBlock, updateBlock, unmountBlock, updateIncomingSlot, updateComponent } from "endorphin";
+import { createComponent, elem, insert, mountBlock, mountComponent, unmountBlock, unmountComponent, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
 function ifBody$0(host, injector, scope) {
