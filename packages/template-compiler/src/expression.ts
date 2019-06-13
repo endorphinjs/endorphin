@@ -1,7 +1,6 @@
 import { Program, JSNode, Node } from '@endorphinjs/template-parser';
 import CompileState from './lib/CompileState';
 import baseVisitors from './visitors/expression';
-import { entity } from './entities/Entity';
 import { sn } from './lib/utils';
 import { ENDCompileError } from './lib/error';
 import { ExpressionContinue, ExpressionVisitorMap, ExpressionOutput } from './types';
@@ -18,9 +17,9 @@ export default function generateExpression(expr: JSNode, state: CompileState, vi
  */
 export function fn(prefix: string, state: CompileState, value: Program): string {
     return state.runBlock(prefix, () =>
-        entity('block', state, {
+        state.entity({
             mount: () => sn(['return ', generateExpression(value, state)])
-        }));
+        })).mountSymbol;
 }
 
 export function walk(node: Node, state: CompileState, visitors: ExpressionVisitorMap): ExpressionOutput {

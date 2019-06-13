@@ -20,6 +20,11 @@ export default class BlockContext {
     /** Slot symbols used in current block */
     slotSymbols: Set<string> = new Set();
 
+    // Symbols of generated functions, if any
+    mountSymbol?: string;
+    updateSymbol?: string;
+    unmountSymbol?: string;
+
     /**
      * @param name Name of the block, will be used as suffix in generated function
      * so it must be unique in its scope
@@ -37,6 +42,10 @@ export default class BlockContext {
         const mountChunks: ChunkList = [];
         const updateChunks: ChunkList = [];
         const unmountChunks: ChunkList = [];
+
+        const mountSymbol = name;
+        const updateSymbol = `${name}Update`;
+        const unmountSymbol = `${name}Unmount`;
 
         /** List of all entities rendered by block */
         const allEntities: Entity[] = [];
@@ -104,15 +113,15 @@ export default class BlockContext {
         }
 
         if (updateChunks.length) {
-            mountChunks.push(`return ${name}Update`);
+            mountChunks.push(`return ${updateSymbol}`);
         }
 
         const { indent } = state;
         const injectorArg = this.injector ? this.injector.name : '';
         const scopeArg = (count: number): string => count ? scope : '';
-        const mountFn = createFunction(name, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
-        const updateFn = createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent);
-        const unmountFn = createFunction(`${name}Unmount`,
+        const mountFn = createFunction(mountSymbol, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
+        const updateFn = createFunction(updateSymbol, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent);
+        const unmountFn = createFunction(unmountSymbol,
             [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
 
         if (this.exports) {
@@ -120,8 +129,12 @@ export default class BlockContext {
         }
 
         if (unmountFn) {
-            mountFn.add(`\n${name}.dispose = ${name}Unmount;\n`);
+            mountFn.add(`\n${name}.dispose = ${unmountSymbol};\n`);
         }
+
+        this.mountSymbol = name;
+        this.updateSymbol = updateFn ? updateSymbol : null;
+        this.unmountSymbol = unmountFn ? unmountSymbol : null;
 
         return [mountFn, updateFn, unmountFn];
     }

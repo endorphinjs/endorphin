@@ -156,12 +156,12 @@ export default {
     },
 
     ENDPartial(node: ENDPartial, state, next) {
-        const name = state.runChildBlock(`partial${nameToJS(node.id, true)}`, (block, elem) => {
+        const block = state.runChildBlock(`partial${nameToJS(node.id, true)}`, (b, elem) => {
             elem.setContent(node.body, next);
         });
 
         state.partialsMap.set(node.id, {
-            name,
+            name: block.name,
             defaults: generateObject(node.params, state, 2)
         });
     },
@@ -213,7 +213,7 @@ function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorCon
         : null;
 
     return state.entity('slot', {
-        mount: () => state.runtime('mountSlot', [state.host, qStr(state.slot), contentArg]),
+        mount: () => state.runtime('mountSlot', [state.host, qStr(state.slot), contentArg && contentArg.mountSymbol]),
         update: ent => contentArg ? state.runtime('updateDefaultSlot', [ent.getSymbol()]) : null,
         unmount: ent => ent.unmount('unmountSlot'),
     });
