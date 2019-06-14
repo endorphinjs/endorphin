@@ -2,26 +2,31 @@ import { animate, createComponent, createInjector, domRemove, elemWithText, inse
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
-function animateOut$0(scope) {
-	const _ref = scope.outerComponent$0;
-	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
-	scope.outerComponent$0 = unmountComponent(scope.outerComponent$0);
-	domRemove(_ref);
-}
-
-function ifBody$0(host, injector, scope) {
+function animatedOuterComponent$0(host, injector, scope) {
 	const outerComponent$0 = scope.outerComponent$0 = insert(injector, createComponent("outer-component", OuterComponent, host));
 	const inj$1 = outerComponent$0.componentModel.input;
 	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$0);
 	mountComponent(outerComponent$0);
-	animate(outerComponent$0, host.componentModel.definition.expand(outerComponent$0));
+}
+
+function animatedOuterComponent$0Unmount(scope) {
+	const { outerComponent$0 } = scope;
+	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
+	scope.outerComponent$0 = unmountComponent(outerComponent$0);
+	domRemove(outerComponent$0);
+}
+
+function ifBody$0(host, injector, scope) {
+	!scope.outerComponent$0 && animatedOuterComponent$0(host, injector, scope);
+	animate(scope.outerComponent$0, host.componentModel.definition.expand(scope.outerComponent$0));
 }
 
 ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Unmount(scope, host) {
-	animate(scope.outerComponent$0, host.componentModel.definition.collapse(scope.outerComponent$0, { duration: host.state.duration }), () => animateOut$0(scope, host));
+	const { outerComponent$0 } = scope;
+	animate(outerComponent$0, host.componentModel.definition.collapse(outerComponent$0, { duration: host.state.duration }), () => animatedOuterComponent$0Unmount(scope, host));
 }
 
 function ifEntry$0(host) {

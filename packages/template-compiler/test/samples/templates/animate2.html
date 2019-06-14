@@ -1,0 +1,14 @@
+<template>
+	<e:if test={#css}>
+		<div class="css-anim" animate:in="show 2s" animate:out="hide 2s">
+			<div {#title}>CSS Animation</div>
+			<e:if test={#something}>
+				<p>Something 1</p>
+			</e:if>
+		</div>
+		<div class="css-static">CSS static</div>
+		<e:if test={#something}>
+			<p>Something 2</p>
+		</e:if>
+	</e:if>
+</template>

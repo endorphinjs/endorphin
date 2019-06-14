@@ -8,7 +8,6 @@ import { compileAttributeValue } from './AttributeEntity';
 import ComponentMountEntity from './ComponentMountEntity';
 import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
-import AnimationEntity from './AnimationEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
 import { isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
@@ -240,19 +239,6 @@ export default class ElementEntity extends Entity {
                 return state.runtime('setRef', [state.host, ref, this.getSymbol()]);
             }
         }));
-    }
-
-    /**
-     * Adds entity to animate current element
-     */
-    animate() {
-        if (this.animateIn || this.animateOut) {
-            this.add(new AnimationEntity(this, this.state, this.animateIn, this.animateOut));
-            if (this.animateOut && !this.code.unmount) {
-                // Skip auto-null check in generated function
-                this.setUnmount(() => sn());
-            }
-        }
     }
 
     /**

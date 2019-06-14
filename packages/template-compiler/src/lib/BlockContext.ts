@@ -25,6 +25,9 @@ export default class BlockContext {
     updateSymbol?: string;
     unmountSymbol?: string;
 
+    /** Indicates that generated functions should be unlinked */
+    unlinked?: boolean;
+
     /**
      * @param name Name of the block, will be used as suffix in generated function
      * so it must be unique in its scope
@@ -92,15 +95,8 @@ export default class BlockContext {
         });
 
         // Destructure element refs for smaller code
-        const updateRefs = allEntities
-            .filter(ent => ent.symbolUsage.update > 1)
-            .map(ent => ent.name);
-
-        if (updateRefs.length) {
-            state.update(() => {
-                updateChunks.unshift(`const { ${updateRefs.join(', ')} } = ${state.scope}`);
-            });
-        }
+        state.update(() => destructureRefs(allEntities, 'update', updateChunks, state));
+        state.unmount(() => destructureRefs(allEntities, 'unmount', unmountChunks, state));
 
         if (this.slotSymbols.size) {
             // Mark used slot symbols as updated in mount and unmount context
@@ -112,7 +108,7 @@ export default class BlockContext {
             scopeUsage.use('unmount');
         }
 
-        if (updateChunks.length) {
+        if (updateChunks.length && !this.unlinked) {
             mountChunks.push(`return ${updateSymbol}`);
         }
 
@@ -128,7 +124,7 @@ export default class BlockContext {
             mountFn.prepend([`export `, this.exports === 'default' ? 'default ' : '']);
         }
 
-        if (unmountFn) {
+        if (mountFn && unmountFn && !this.unlinked) {
             mountFn.add(`\n${name}.dispose = ${unmountSymbol};\n`);
         }
 
@@ -137,5 +133,15 @@ export default class BlockContext {
         this.unmountSymbol = unmountFn ? unmountSymbol : null;
 
         return [mountFn, updateFn, unmountFn];
+    }
+}
+
+function destructureRefs(entities: Entity[], type: 'mount' | 'update' | 'unmount', chunks: ChunkList, state: CompileState) {
+    const refs = entities
+        .filter(ent => ent.symbolUsage[type] > 1 && (type !== 'mount' || ent.parent))
+        .map(ent => ent.name);
+
+    if (refs.length) {
+        chunks.unshift(`const { ${refs.join(', ')} } = ${state.options.scope}`);
     }
 }
