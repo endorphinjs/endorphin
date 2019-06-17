@@ -1,4 +1,4 @@
-import { elemWithText, setAttribute, createComponent, mountComponent, unmountComponent, updateComponent, assign, subscribeStore, elem, createInjector, text, updateText, finalizeAttributes, insert } from "endorphin";
+import { assign, createComponent, createInjector, elem, elemWithText, finalizeAttributes, insert, mountComponent, setAttribute, subscribeStore, text, unmountComponent, updateComponent, updateText } from "endorphin";
 import * as InnerComponent from "./inner-component.js";
 
 export const partials = {

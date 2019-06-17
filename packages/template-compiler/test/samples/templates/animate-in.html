@@ -1,0 +1,20 @@
+<link rel="import" href="my-component.html" />
+<template>
+    <!-- Shallow content -->
+    <div animate:in="show"></div>
+    <section animate:in="show" e:if={#cond}/>
+    <my-component animate:in="show" e:if={#cond}/>
+
+    <span>static</span>
+
+    <!-- Deep content -->
+    <div animate:in="show">
+        <p>Inner 1</p>
+    </div>
+    <section animate:in="show" e:if={#cond}>
+        <p>Inner 2</p>
+    </section>
+    <my-component animate:in="show" e:if={#cond}>
+        <p>Inner 3</p>
+    </my-component>
+</template>

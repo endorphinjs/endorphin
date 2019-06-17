@@ -1,5 +1,4 @@
 import { ENDAttribute, ENDAttributeName, ENDAttributeValue, Literal, Program } from '@endorphinjs/template-parser';
-import { SourceNode } from 'source-map';
 import Entity from './Entity';
 import compileExpression from '../expression';
 import CompileState from '../lib/CompileState';
@@ -99,11 +98,9 @@ export function compileAttributeValue(value: ENDAttributeValue, state: CompileSt
 
 export function createConcatFunction(prefix: string, state: CompileState, tokens: Array<string | Literal | Program>): string {
     return state.runBlock(prefix, () => {
-        return new Entity('concat', state)
-            .setMount(() => {
-                const body = new SourceNode();
-
-                body.add('return ');
+        return state.entity({
+            mount() {
+                const body = sn('return ');
                 tokens.forEach((token, i) => {
                     if (i !== 0) {
                         body.add(' + ');
@@ -119,8 +116,9 @@ export function createConcatFunction(prefix: string, state: CompileState, tokens
                 });
                 body.add(';');
                 return body;
-            });
-    });
+            }
+        });
+    }).mountSymbol;
 }
 
 /**

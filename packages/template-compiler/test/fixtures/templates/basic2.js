@@ -1,4 +1,4 @@
-import { elemWithText, elem, text, updateText } from "endorphin";
+import { elem, elemWithText, text, updateText } from "endorphin";
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;

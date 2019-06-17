@@ -7,7 +7,6 @@ import {
 import { SourceNode } from 'source-map';
 import { ChunkList, Chunk, AstVisitorMap, TemplateOutput, AstVisitorContinue } from '../types';
 import generateExpression from '../expression';
-import CompileState from '../lib/CompileState';
 import Entity, { entity } from '../entities/Entity';
 import AttributeEntity, { compileAttributeValue } from '../entities/AttributeEntity';
 import TextEntity from '../entities/TextEntity';
@@ -16,11 +15,13 @@ import IteratorEntity from '../entities/IteratorEntity';
 import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
+import ElementEntity from '../entities/ElementEntity';
+import CompileState from '../lib/CompileState';
+import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
 import {
     sn, qStr, isLiteral, toObjectLiteral, nameToJS, propGetter,
     propSetter, isExpression, isIdentifier
 } from '../lib/utils';
-import ElementEntity from '../entities/ElementEntity';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
@@ -54,46 +55,33 @@ export default {
     },
 
     ENDElement(node: ENDElement, state, next) {
+        if (hasAnimationOut(node, state)) {
+            let animatedElem: ElementEntity;
+            const block = state.runChildBlock(`animated${nameToJS(node.name.name, true)}`, (b, elem) => {
+                b.unlinked = true;
+                elem.add(state.runElement(node, element => {
+                    animatedElem = handleElement(element, state, next);
+
+                    if (animatedElem.code.unmount) {
+                        // NB: block generator will create local variable reference
+                        // to element so it can be properly unmounted
+                        animatedElem.add(state.entity({
+                            unmount: () => state.runtime('domRemove', [animatedElem.getSymbol()])
+                        }));
+                    } else {
+                        animatedElem.setUnmount(() => animatedElem.unmount('domRemove'));
+                    }
+                }));
+            });
+
+            return animateOut(animatedElem, block, state);
+        }
+
         return state.runElement(node, element => {
-            if (node.ref) {
-                element.setRef(node.ref);
+            handleElement(element, state, next);
+            if (element.animateIn) {
+                animateIn(element, state);
             }
-
-            element.setContent(getContentAttributes(element), next);
-            element.setContent(node.directives, next);
-
-            const isSlot = node.name.name === 'slot';
-
-            // Edge case: element with single text child
-            const singleTextContent = !element.isComponent && !isSlot && node.body.length === 1 && isLiteral(node.body[0])
-                ? node.body[0] as Literal
-                : null;
-
-            // Create element instance
-            element.create(singleTextContent);
-
-            if (isSlot) {
-                element.add(mountSlot(element, state, next));
-            } else if (!singleTextContent) {
-                element.setContent(node.body, next);
-            }
-
-            if (!element.isComponent) {
-                if (element.dynamicAttributes.size || element.hasPartials) {
-                    element.finalizeAttributes();
-                }
-
-                if (element.dynamicEvents.size || element.hasPartials) {
-                    element.finalizeEvents();
-                }
-            }
-
-            if (element.isComponent) {
-                element.markSlotUpdate();
-                element.mountComponent();
-            }
-
-            element.animate();
         });
     },
 
@@ -158,12 +146,12 @@ export default {
     },
 
     ENDPartial(node: ENDPartial, state, next) {
-        const name = state.runChildBlock(`partial${nameToJS(node.id, true)}`, (block, elem) => {
+        const block = state.runChildBlock(`partial${nameToJS(node.id, true)}`, (b, elem) => {
             elem.setContent(node.body, next);
         });
 
         state.partialsMap.set(node.id, {
-            name,
+            name: block.name,
             defaults: generateObject(node.params, state, 2)
         });
     },
@@ -215,7 +203,7 @@ function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorCon
         : null;
 
     return state.entity('slot', {
-        mount: () => state.runtime('mountSlot', [state.host, qStr(state.slot), contentArg]),
+        mount: () => state.runtime('mountSlot', [state.host, qStr(state.slot), contentArg && contentArg.mountSymbol]),
         update: ent => contentArg ? state.runtime('updateDefaultSlot', [ent.getSymbol()]) : null,
         unmount: ent => ent.unmount('unmountSlot'),
     });
@@ -264,4 +252,45 @@ function getContentAttributes(element: ElementEntity): ENDAttribute[] {
     }
 
     return node.attributes;
+}
+
+function handleElement(element: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): ElementEntity {
+    const node = element.node as ENDElement;
+    const isSlot = node.name.name === 'slot';
+
+    // Edge case: element with single text child
+    const singleTextContent = !element.isComponent && !isSlot && node.body.length === 1 && isLiteral(node.body[0])
+        ? node.body[0] as Literal
+        : null;
+
+    // Create element instance
+    element.create(singleTextContent);
+
+    if (node.ref) {
+        element.setRef(node.ref);
+    }
+
+    element.setContent(getContentAttributes(element), next);
+    element.setContent(node.directives, next);
+
+    if (isSlot) {
+        element.add(mountSlot(element, state, next));
+    } else if (!singleTextContent) {
+        element.setContent(node.body, next);
+    }
+
+    if (element.isComponent) {
+        element.markSlotUpdate();
+        element.mountComponent();
+    } else {
+        if (element.dynamicAttributes.size || element.hasPartials) {
+            element.finalizeAttributes();
+        }
+
+        if (element.dynamicEvents.size || element.hasPartials) {
+            element.finalizeEvents();
+        }
+    }
+
+    return element;
 }

@@ -1,11 +1,12 @@
-import { animatingKey, assign } from './utils';
+import { animatingKey, assign, safeCall } from './utils';
 
 export type EasingFunction = (t: number, b: number, c: number, d: number) => number;
 export type AnimationCallback = (elem: HTMLElement, options: TweenOptions) => void;
 export type AnimationStep = (elem: HTMLElement, pos: number, options: TweenOptions) => void;
 export type TweenFactory = (elem: HTMLElement, options?: TweenOptions) => TweenOptions;
 
-type Callback = () => void;
+type Callback = (cancel?: boolean) => void;
+type TweenCallbackKeys = 'start' | 'step' | 'complete';
 
 export interface TweenOptions {
 	/** Animation duration, ms */
@@ -45,21 +46,22 @@ const defaultTween: TweenOptions = {
 	}
 };
 
+// If `true` then no animations will be invoked
+let blocked = false;
+
 /**
  * Starts animation on given element
  */
 export function animate(elem: HTMLElement, animation: string | TweenFactory, callback?: Callback) {
-	// Stop previous animation, if any
-	stopAnimation(elem);
-
-	if (isAttached(elem) && animation) {
-		// We should run animation only if element is attached to DOM
+	if (!blocked && animation) {
 		if (typeof animation === 'function') {
 			tweenAnimate(elem, animation, callback);
 		} else {
 			cssAnimate(elem, animation, callback);
 		}
 	} else if (callback) {
+		// Stop previous animation, if any
+		stopAnimation(elem, true);
 		callback();
 	}
 }
@@ -68,12 +70,15 @@ export function animate(elem: HTMLElement, animation: string | TweenFactory, cal
  * Starts CSS animation on given element
  */
 export function cssAnimate(elem: HTMLElement, animation: string, callback?: Callback) {
+	// Stop previous animation, if any
+	stopAnimation(elem, true);
+
 	const prevAnimation = elem.style.animation;
-	elem[animatingKey] = () => {
+	elem[animatingKey] = (cancel?: boolean) => {
 		elem.removeEventListener('animationend', handler);
 		elem.removeEventListener('animationcancel', handler);
 		elem.style.animation = prevAnimation;
-		callback && callback();
+		!cancel && finalizeAnimation(callback);
 	};
 
 	const handler = (evt: AnimationEvent) => evt.target === elem && stopAnimation(elem);
@@ -87,6 +92,10 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
  * Starts JS animation on given element
  */
 export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callback?: () => void) {
+	// Stop previous animation, if any
+	const prevAnim = findTween(elem);
+	stopAnimation(elem, true);
+
 	let options = animation(elem);
 	if (options) {
 		options = assign({}, defaultTween, options);
@@ -96,7 +105,11 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 		}
 
 		const now = performance.now();
-		const start = now + options.delay!;
+		const offset = prevAnim
+			? 1 - (now - prevAnim.start) / (prevAnim.end - prevAnim.start)
+			: 0;
+
+		const start = now + options.delay! - (offset * options.duration!);
 		const anim: Animation = {
 			elem,
 			options,
@@ -106,10 +119,10 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 		};
 		pool.push(anim);
 
-		elem[animatingKey] = () => {
+		elem[animatingKey] = (cancel?: boolean) => {
 			pool.splice(pool.indexOf(anim), 1);
 			options.complete && options.complete(elem, options);
-			callback && callback();
+			!cancel && finalizeAnimation(callback);
 		};
 
 		if (pool.length === 1) {
@@ -148,7 +161,7 @@ export function createAnimation(animation: string, cssScope?: string): string {
  */
 export function composeTween(tween1?: TweenOptions, tween2?: TweenOptions): TweenOptions {
 	const next: TweenOptions = assign({}, tween1, tween2);
-	const callbacks: Array<keyof TweenOptions> = ['start', 'step', 'complete'];
+	const callbacks: TweenCallbackKeys[] = ['start', 'step', 'complete'];
 
 	for (let i = 0; i < callbacks.length; i++) {
 		const cbName = callbacks[i];
@@ -163,6 +176,18 @@ export function composeTween(tween1?: TweenOptions, tween2?: TweenOptions): Twee
 	}
 
 	return next;
+}
+
+/**
+ * Finalizes current animation: invokes given callback and blocks all nested
+ * animations
+ */
+function finalizeAnimation(callback?: () => void) {
+	if (callback) {
+		blocked = true;
+		safeCall(callback);
+		blocked = false;
+	}
 }
 
 function tweenLoop(now: number) {
@@ -191,12 +216,25 @@ function tweenLoop(now: number) {
 	}
 }
 
-function stopAnimation(elem: HTMLElement) {
-	const callback: Callback = elem[animatingKey];
+export function stopAnimation(elem: HTMLElement, cancel?: boolean) {
+	const callback: Callback = elem && elem[animatingKey];
 	if (callback) {
 		elem[animatingKey] = null;
-		callback();
+		callback(cancel);
 	}
+}
+
+/**
+ * Finds existing tween animation for given element, if any
+ */
+function findTween(elem: HTMLElement): Animation | null {
+	for (let i = 0; i < pool.length; i++) {
+		if (pool[i].elem === elem) {
+			return pool[i];
+		}
+	}
+
+	return null;
 }
 
 /**
@@ -207,12 +245,4 @@ function stopAnimation(elem: HTMLElement) {
 function concat(name: string, suffix: string) {
 	const sep = suffix[0] === '_' || suffix[0] === '-' ? '' : '-';
 	return name + sep + suffix;
-}
-
-/**
- * Check if given DOM element is still attached to document
- */
-function isAttached(elem: HTMLElement): boolean {
-	const root = elem.ownerDocument && elem.ownerDocument.documentElement;
-	return root ? root.contains(elem) : false;
 }

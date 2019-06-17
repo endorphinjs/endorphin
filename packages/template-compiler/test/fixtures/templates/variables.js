@@ -1,4 +1,4 @@
-import { createInjector, setAttribute, elem, text, updateText, finalizeAttributes } from "endorphin";
+import { createInjector, elem, finalizeAttributes, setAttribute, text, updateText } from "endorphin";
 
 function setVars$0(host, scope) {
 	scope.v1 = "bar";

@@ -1,4 +1,4 @@
-import { call, addStaticEvent, removeStaticEvent, elem, text, updateText, subscribeStore } from "endorphin";
+import { addStaticEvent, call, elem, removeStaticEvent, subscribeStore, text, updateText } from "endorphin";
 
 function onClick$0(evt) {
 	call(this.host.store, "update", [this.host.state.item]);

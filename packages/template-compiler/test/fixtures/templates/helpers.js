@@ -1,4 +1,4 @@
-import { createInjector, setAttribute, elem, finalizeAttributes } from "endorphin";
+import { createInjector, elem, finalizeAttributes, setAttribute } from "endorphin";
 import { count } from "main";
 
 export default function template$0(host, scope) {

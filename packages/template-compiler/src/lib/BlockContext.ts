@@ -20,6 +20,14 @@ export default class BlockContext {
     /** Slot symbols used in current block */
     slotSymbols: Set<string> = new Set();
 
+    // Symbols of generated functions, if any
+    mountSymbol?: string;
+    updateSymbol?: string;
+    unmountSymbol?: string;
+
+    /** Indicates that generated functions should be unlinked */
+    unlinked?: boolean;
+
     /**
      * @param name Name of the block, will be used as suffix in generated function
      * so it must be unique in its scope
@@ -37,6 +45,10 @@ export default class BlockContext {
         const mountChunks: ChunkList = [];
         const updateChunks: ChunkList = [];
         const unmountChunks: ChunkList = [];
+
+        const mountSymbol = name;
+        const updateSymbol = `${name}Update`;
+        const unmountSymbol = `${name}Unmount`;
 
         /** List of all entities rendered by block */
         const allEntities: Entity[] = [];
@@ -83,15 +95,8 @@ export default class BlockContext {
         });
 
         // Destructure element refs for smaller code
-        const updateRefs = allEntities
-            .filter(ent => ent.symbolUsage.update > 1)
-            .map(ent => ent.name);
-
-        if (updateRefs.length) {
-            state.update(() => {
-                updateChunks.unshift(`const { ${updateRefs.join(', ')} } = ${state.scope}`);
-            });
-        }
+        state.update(() => destructureRefs(allEntities, 'update', updateChunks, state));
+        state.unmount(() => destructureRefs(allEntities, 'unmount', unmountChunks, state));
 
         if (this.slotSymbols.size) {
             // Mark used slot symbols as updated in mount and unmount context
@@ -103,26 +108,40 @@ export default class BlockContext {
             scopeUsage.use('unmount');
         }
 
-        if (updateChunks.length) {
-            mountChunks.push(`return ${name}Update`);
+        if (updateChunks.length && !this.unlinked) {
+            mountChunks.push(`return ${updateSymbol}`);
         }
 
         const { indent } = state;
         const injectorArg = this.injector ? this.injector.name : '';
         const scopeArg = (count: number): string => count ? scope : '';
-        const mountFn = createFunction(name, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
-        const updateFn = createFunction(`${name}Update`, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent);
-        const unmountFn = createFunction(`${name}Unmount`,
+        const mountFn = createFunction(mountSymbol, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
+        const updateFn = createFunction(updateSymbol, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent);
+        const unmountFn = createFunction(unmountSymbol,
             [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
 
         if (this.exports) {
             mountFn.prepend([`export `, this.exports === 'default' ? 'default ' : '']);
         }
 
-        if (unmountFn) {
-            mountFn.add(`\n${name}.dispose = ${name}Unmount;\n`);
+        if (mountFn && unmountFn && !this.unlinked) {
+            mountFn.add(`\n${name}.dispose = ${unmountSymbol};\n`);
         }
 
+        this.mountSymbol = name;
+        this.updateSymbol = updateFn ? updateSymbol : null;
+        this.unmountSymbol = unmountFn ? unmountSymbol : null;
+
         return [mountFn, updateFn, unmountFn];
+    }
+}
+
+function destructureRefs(entities: Entity[], type: 'mount' | 'update' | 'unmount', chunks: ChunkList, state: CompileState) {
+    const refs = entities
+        .filter(ent => ent.symbolUsage[type] > 1 && (type !== 'mount' || ent.parent))
+        .map(ent => ent.name);
+
+    if (refs.length) {
+        chunks.unshift(`const { ${refs.join(', ')} } = ${state.options.scope}`);
     }
 }

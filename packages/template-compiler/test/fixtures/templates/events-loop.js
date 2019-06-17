@@ -1,4 +1,4 @@
-import { elem, addStaticEvent, removeStaticEvent, elemWithText, insert, createInjector, mountIterator, updateIterator, unmountIterator } from "endorphin";
+import { addStaticEvent, createInjector, elem, elemWithText, insert, mountIterator, removeStaticEvent, unmountIterator, updateIterator } from "endorphin";
 
 function setVars$0(host, scope) {
 	scope.foo = 1;

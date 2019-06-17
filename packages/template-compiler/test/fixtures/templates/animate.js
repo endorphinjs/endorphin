@@ -1,4 +1,4 @@
-import { elemWithText, createInjector, setAttribute, elem, text, insert, mountBlock, updateBlock, unmountBlock, mountInnerHTML, updateInnerHTML, unmountInnerHTML, mountPartial, updatePartial, unmountPartial, mountIterator, updateIterator, unmountIterator, createComponent, mountComponent, unmountComponent, finalizeAttributes, finalizeEvents, animate, domRemove, finalizeRefs } from "endorphin";
+import { animate, createComponent, createInjector, domRemove, elem, elemWithText, finalizeAttributes, finalizeEvents, finalizeRefs, insert, mountBlock, mountComponent, mountInnerHTML, mountIterator, mountPartial, setAttribute, stopAnimation, text, unmountBlock, unmountComponent, unmountInnerHTML, unmountIterator, unmountPartial, updateBlock, updateInnerHTML, updateIterator, updatePartial } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -50,15 +50,7 @@ function forContent$0Unmount(scope) {
 	scope.partial$0 = unmountPartial(scope.partial$0);
 }
 
-function animateOut$0(scope) {
-	domRemove(scope.div$0);
-	scope.if$1 = unmountBlock(scope.if$1);
-	scope.html$0 = unmountInnerHTML(scope.html$0);
-	scope.for$0 = unmountIterator(scope.for$0);
-	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
-}
-
-function ifBody$0(host, injector, scope) {
+function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
 	const inj$1 = scope.inj$1 = createInjector(div$0);
 	setAttribute(inj$1, "class", "overlay");
@@ -70,13 +62,9 @@ function ifBody$0(host, injector, scope) {
 	mountComponent(innerComponent$0);
 	finalizeAttributes(inj$1);
 	finalizeEvents(inj$1);
-	animate(div$0, "show");
-	return ifBody$0Update;
 }
 
-ifBody$0.dispose = ifBody$0Unmount;
-
-function ifBody$0Update(host, injector, scope) {
+function animatedDiv$0Update(host, injector, scope) {
 	const { inj$1 } = scope;
 	setAttribute(inj$1, "class", "overlay");
 	setAttribute(inj$1, "style", attrValue$1(host, scope));
@@ -87,9 +75,29 @@ function ifBody$0Update(host, injector, scope) {
 	finalizeEvents(inj$1);
 }
 
-function ifBody$0Unmount(scope, host) {
-	animate(scope.div$0, "hide", () => animateOut$0(scope, host));
+function animatedDiv$0Unmount(scope) {
+	scope.if$1 = unmountBlock(scope.if$1);
+	scope.html$0 = unmountInnerHTML(scope.html$0);
+	scope.for$0 = unmountIterator(scope.for$0);
+	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
+	scope.div$0 = domRemove(scope.div$0);
 	scope.inj$1 = null;
+}
+
+function ifBody$0(host, injector, scope) {
+	scope.div$0 ? animatedDiv$0Update(host, injector, scope) : animatedDiv$0(host, injector, scope);
+	animate(scope.div$0, "show");
+	return ifBody$0Update;
+}
+
+ifBody$0.dispose = ifBody$0Unmount;
+
+function ifBody$0Update(host, injector, scope) {
+	animatedDiv$0Update(host, injector, scope);
+}
+
+function ifBody$0Unmount(scope, host) {
+	animate(scope.div$0, "hide", () => animatedDiv$0Unmount(scope, host));
 }
 
 function ifEntry$0(host) {
@@ -98,13 +106,7 @@ function ifEntry$0(host) {
 	}
 }
 
-function animateOut$1(scope) {
-	domRemove(scope.outerComponent$0);
-	scope.innerComponent$1 = unmountComponent(scope.innerComponent$1);
-	scope.outerComponent$0 = unmountComponent(scope.outerComponent$0);
-}
-
-function ifBody$2(host, injector, scope) {
+function animatedOuterComponent$0(host, injector, scope) {
 	const outerComponent$0 = scope.outerComponent$0 = insert(injector, createComponent("outer-component", OuterComponent, host));
 	const inj$2 = outerComponent$0.componentModel.input;
 	const innerComponent$1 = scope.innerComponent$1 = insert(inj$2, createComponent("inner-component", InnerComponent, host), "");
@@ -112,10 +114,22 @@ function ifBody$2(host, injector, scope) {
 	mountComponent(outerComponent$0);
 }
 
+function animatedOuterComponent$0Unmount(scope) {
+	const { outerComponent$0 } = scope;
+	scope.innerComponent$1 = unmountComponent(scope.innerComponent$1);
+	scope.outerComponent$0 = unmountComponent(outerComponent$0);
+	domRemove(outerComponent$0);
+}
+
+function ifBody$2(host, injector, scope) {
+	!scope.outerComponent$0 && animatedOuterComponent$0(host, injector, scope);
+	stopAnimation(scope.outerComponent$0, true);
+}
+
 ifBody$2.dispose = ifBody$2Unmount;
 
 function ifBody$2Unmount(scope, host) {
-	animate(scope.outerComponent$0, "fade-out", () => animateOut$1(scope, host));
+	animate(scope.outerComponent$0, "fade-out", () => animatedOuterComponent$0Unmount(scope, host));
 }
 
 function ifEntry$2(host) {

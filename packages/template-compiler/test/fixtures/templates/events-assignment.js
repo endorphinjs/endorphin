@@ -1,4 +1,4 @@
-import { addStaticEvent, removeStaticEvent, elem } from "endorphin";
+import { addStaticEvent, elem, removeStaticEvent } from "endorphin";
 
 function onEvt1$0(evt) {
 	this.host.setState({ count: this.host.state.count + 1 });

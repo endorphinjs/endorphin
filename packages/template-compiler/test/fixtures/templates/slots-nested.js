@@ -1,4 +1,4 @@
-import { createComponent, elem, insert, mountBlock, updateBlock, unmountBlock, mountComponent, unmountComponent, createInjector, updateIncomingSlot, updateComponent } from "endorphin";
+import { createComponent, createInjector, elem, insert, mountBlock, mountComponent, unmountBlock, unmountComponent, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
 import * as MyComponent1 from "./my-component1.html";
 import * as MyComponent2 from "./my-component2.html";
 import * as InnerComponent from "./inner-component.html";

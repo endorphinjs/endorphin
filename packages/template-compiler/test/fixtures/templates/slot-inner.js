@@ -1,4 +1,4 @@
-import { elem, createSlot, elemWithText, insert, mountSlot, updateDefaultSlot, unmountSlot, createInjector, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { createInjector, createSlot, elem, elemWithText, insert, mountBlock, mountSlot, unmountBlock, unmountSlot, updateBlock, updateDefaultSlot } from "endorphin";
 
 function defaultSlotHeader$0(host, injector) {
 	insert(injector, elemWithText("h2", "Default header"), "header");

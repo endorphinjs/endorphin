@@ -56,13 +56,13 @@ function conditionEntry(name: string, conditions: Array<ENDIfStatement | ENDChoo
                     const blockContent = state.runChildBlock(`${name}Body`, (ctx, element) =>
                         element.setContent(block.consequent, next));
 
-                    body.add(`{\n${innerIndent}return ${blockContent};\n${indent}}`);
+                    body.add(`{\n${innerIndent}return ${blockContent.mountSymbol};\n${indent}}`);
                 });
 
                 return body;
             }
         });
-    });
+    }).mountSymbol;
 }
 
 function ifAttr(test: Program, statements: ENDStatement[], state: CompileState, next: TemplateContinue): { name: string, usesScope: boolean } {
@@ -83,7 +83,7 @@ function ifAttr(test: Program, statements: ENDStatement[], state: CompileState, 
         if (block.scopeUsage.mount) {
             usesScope = true;
         }
-    });
+    }).mountSymbol;
 
     return { name, usesScope };
 }

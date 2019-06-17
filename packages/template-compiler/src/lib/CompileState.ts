@@ -251,9 +251,8 @@ export default class CompileState {
      * Creates new block with `name` and runs `fn` function in its context.
      * Block context, accumulated during `fn` run, will be generates and JS code
      * and added into final output
-     * @returns Variable name for given block, generated from `name` argument
      */
-    runBlock(name: string, fn: (block: BlockContext) => Entity | Entity[]): string {
+    runBlock(name: string, fn: (block: BlockContext) => Entity | Entity[]): BlockContext {
         const prevBlock = this.blockContext;
         const block = new BlockContext(this.globalSymbol(name), this);
 
@@ -267,7 +266,7 @@ export default class CompileState {
         block.generate(entities)
             .forEach(chunk => this.pushOutput(chunk));
 
-        return block.name;
+        return block;
     }
 
     /**
@@ -325,7 +324,7 @@ export default class CompileState {
      * which updates contents of element in outer block. It always works via
      * injector, which must be passed as function argument
      */
-    runChildBlock(name: string, fn: (block: BlockContext, element: ElementEntity) => void): string {
+    runChildBlock(name: string, fn: (block: BlockContext, element: ElementEntity) => void): BlockContext {
         return this.runBlock(name, block => {
             const elem = this.runElement(null, element => fn(block, element));
             block.injector = elem.injectorEntity;
@@ -353,8 +352,8 @@ export default class CompileState {
     /**
      * Creates new entity with given name and render options
      */
-    entity(name?: string | RenderOptions, options?: RenderOptions): Entity {
-        if (typeof name !== 'string') {
+    entity(name?: string | Entity | RenderOptions, options?: RenderOptions): Entity {
+        if (typeof name !== 'string' && !(name instanceof Entity)) {
             options = name;
             name = '';
         }

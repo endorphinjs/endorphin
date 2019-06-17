@@ -1,4 +1,4 @@
-import { elem, text, updateText, createComponent, createInjector, insert, mountBlock, updateBlock, unmountBlock, elemWithText, updateIncomingSlot, mountComponent, unmountComponent } from "endorphin";
+import { createComponent, createInjector, elem, elemWithText, insert, mountBlock, mountComponent, text, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot, updateText } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
 function ifBody$0(host, injector, scope) {

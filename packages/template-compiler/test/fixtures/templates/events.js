@@ -1,4 +1,4 @@
-import { createInjector, addEvent, addStaticEvent, removeStaticEvent, get, elem, mountBlock, updateBlock, unmountBlock, finalizeEvents } from "endorphin";
+import { addEvent, addStaticEvent, createInjector, elem, finalizeEvents, get, mountBlock, removeStaticEvent, unmountBlock, updateBlock } from "endorphin";
 import { emit } from "endorphin/helpers";
 
 function onClick$0(evt) {

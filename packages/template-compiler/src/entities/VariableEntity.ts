@@ -12,7 +12,7 @@ export default class VariableEntity extends Entity {
                 mount: () => sn([`${state.scope}${propGetter(v.name)} = `, compileValue(v.value, state)])
             }));
         });
-        this.setShared(() => `${fn}(${state.host}, ${state.scope})`);
+        this.setShared(() => `${fn.mountSymbol}(${state.host}, ${state.scope})`);
     }
 }
 

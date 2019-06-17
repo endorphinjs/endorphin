@@ -1,4 +1,4 @@
-import { createInjector, text, insert, mountBlock, updateBlock, unmountBlock } from "endorphin";
+import { createInjector, insert, mountBlock, text, unmountBlock, updateBlock } from "endorphin";
 
 function ifBody$2(host, injector) {
 	insert(injector, text("\n                test\n            "));

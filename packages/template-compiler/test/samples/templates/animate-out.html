@@ -1,0 +1,20 @@
+<link rel="import" href="my-component.html" />
+<template>
+    <!-- Shallow content -->
+    <div animate:out="hide"></div>
+    <section animate:out="hide" e:if={#cond}/>
+    <my-component animate:out="hide" e:if={#cond}/>
+
+    <span>static</span>
+
+    <!-- Deep content -->
+    <div animate:out="hide">
+        <p>Inner 1</p>
+    </div>
+    <section animate:out="hide" e:if={#cond}>
+        <p>Inner 2</p>
+    </section>
+    <my-component animate:out="hide" e:if={#cond}>
+        <p>Inner 3</p>
+    </my-component>
+</template>
