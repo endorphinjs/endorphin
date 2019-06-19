@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { equal, deepEqual, throws, ok } from 'assert';
 import parse from '../src/index';
-import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement, Identifier, CallExpression } from '../src/ast';
+import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement, Identifier, CallExpression, ENDChooseStatement } from '../src/ast';
 
 describe('Template parser', () => {
     function read(fileName: string): string {
@@ -118,5 +118,17 @@ describe('Template parser', () => {
         equal(anim.prefix, 'animate');
         equal(anim.name, 'out');
         equal(expr.type, 'CallExpression');
+    });
+
+    it('should support both <e:choose> and <e:switch>', () => {
+        let node = parseTemplate(`<template><e:choose><e:when test={a}></e:when><e:otherwise></e:otherwise></e:choose></template>`)
+            .body[0] as ENDChooseStatement;
+        equal(node.type, 'ENDChooseStatement');
+        equal(node.cases.length, 2);
+
+        node = parseTemplate(`<template><e:switch><e:case test={a}></e:case><e:default></e:default></e:switch></template>`)
+            .body[0] as ENDChooseStatement;
+        equal(node.type, 'ENDChooseStatement');
+        equal(node.cases.length, 2);
     });
 });

@@ -32,8 +32,10 @@ const statements: StatementMap = {
     'attribute': attributeStatement,
     'add-class': addClassStatement,
     'variable': variableStatement,
+    'var': variableStatement,
     'if': ifStatement,
-    'choose': chooseStatement,
+    'choose': chooseStatement('when', 'otherwise'),
+    'switch': chooseStatement('case', 'default'),
     'for-each': forEachStatement,
     'partial': partialStatement
 };

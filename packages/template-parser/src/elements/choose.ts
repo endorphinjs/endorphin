@@ -3,12 +3,12 @@ import { openTag, closesTag, tagBody } from '../tag';
 import { ENDChooseStatement, Program, ParsedTag, ENDAttribute } from '../ast';
 import { ignored, getControlName, InnerStatement, prefix, expectAttributeExpression, tagName } from './utils';
 
-/**
- * Consumes <choose> statement
- * @param scanner
- * @param open
- */
-export default function chooseStatement(scanner: Scanner, open: ParsedTag, next: InnerStatement): ENDChooseStatement {
+export default function chooseStatement(conditionTag: string, fallbackTag: string) {
+    return (scanner: Scanner, open: ParsedTag, next: InnerStatement) =>
+        parse(scanner, open, conditionTag, fallbackTag, next);
+}
+
+function parse(scanner: Scanner, open: ParsedTag, conditionTag: string, fallbackTag: string, next: InnerStatement): ENDChooseStatement {
     if (open.selfClosing) {
         return;
     }
@@ -25,18 +25,20 @@ export default function chooseStatement(scanner: Scanner, open: ParsedTag, next:
         // Accept <when> and <otherwise> statements only
         if (tagEntry = openTag(scanner)) {
             const name = getControlName(tagName(tagEntry));
-            if (name !== 'when' && name !== 'otherwise') {
-                throw scanner.error(`Unexpected <${tagName(tagEntry)}> tag, expecting <${prefix}:when> or <${prefix}:otherwise>`, tagEntry);
+            if (name !== conditionTag && name !== fallbackTag) {
+                const tag1 = `<${prefix}:${conditionTag}>`;
+                const tag2 = `<${prefix}:${fallbackTag}>`;
+                throw scanner.error(`Unexpected <${tagName(tagEntry)}> tag, expecting ${tag1} or ${tag2}`, tagEntry);
             }
 
             if (finished) {
-                throw scanner.error(`Unexpected <${tagName(tagEntry)}> after <${prefix}:otherwise>`, tagEntry);
+                throw scanner.error(`Unexpected <${tagName(tagEntry)}> after <${prefix}:${fallbackTag}>`, tagEntry);
             }
 
             let test: ENDAttribute;
-            if (name === 'when') {
+            if (name === conditionTag) {
                 test = expectAttributeExpression(scanner, tagEntry, 'test');
-            } else if (name === 'otherwise') {
+            } else if (name === fallbackTag) {
                 finished = true;
             }
 
