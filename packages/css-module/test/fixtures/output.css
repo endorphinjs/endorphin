@@ -81,6 +81,22 @@ div [abc123].foo {
     font-size: 20px
 }
 
+[ref-foo-abc123] {
+    position: relative
+}
+
+[ref-foo-abc123] div[abc123] {
+    position: absolute
+}
+
+[ref-foo-abc123].item div[abc123] {
+    position: absolute
+}
+
+[abc123].parent [ref-foo-abc123] [abc123].child {
+    padding: 10px
+}
+
 .foo-global, .bar-global {
     padding: 10px
 }

@@ -82,6 +82,22 @@ span>a {
 	font-size: 20px;
 }
 
+ref:foo {
+	position: relative;
+}
+
+ref:foo div {
+	position: absolute;
+}
+
+ref:foo.item div {
+	position: absolute;
+}
+
+.parent ref:foo .child {
+	padding: 10px;
+}
+
 @media global {
 	.foo-global, .bar-global {
 		padding: 10px;

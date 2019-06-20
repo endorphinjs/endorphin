@@ -5,6 +5,7 @@ const { parse, walk, generate } = require('css-tree');
  * @property {boolean} sourceMap Generate output with source maps
  * @property {(scope: string) => string} element A function that should return token for scoping single element inside component
  * @property {(scope: string) => string} host A function that should return token for scoping component host
+ * @property {(name: string, scope: string) => string} ref A function that should return token for element ref
  */
 
 const defaultOptions = {
@@ -24,6 +25,16 @@ const defaultOptions = {
      */
     host(scope) {
         return `[${scope}-host]`;
+    },
+
+    /**
+     * Returns token for element ref
+     * @param {string} name
+     * @param {string} scope
+     * @returns {string}
+     */
+    ref(name, scope) {
+        return `[ref-${name}-${scope}]`;
     }
 };
 
@@ -48,6 +59,7 @@ module.exports = function rewriteCSS(code, scope, options) {
             if (scopeMedia === 'local' || scopeMedia === 'global') {
                 scopeStack.push(scopeMedia);
             } else if (node.type === 'Selector' && !this.function && !inKeyframe(this)) {
+                rewriteRefsInSelector(node, scope, options);
                 if (isSlotted(node)) {
                     // Rewrite ::slotted()
                     const slotted = node.children.first();
@@ -104,14 +116,14 @@ module.exports = function rewriteCSS(code, scope, options) {
 
 /**
  * Scopes given CSS selector
- * @param {Object} sel
+ * @param {import('css-tree').Selector} sel
  * @param {string} scope
  * @param {CSSModuleOptions} options
  */
 function rewriteSelector(sel, scope, options) {
     // To properly scope CSS selector, we have to rewrite fist and last part of it.
     // E.g. in `.foo .bar. > .baz` we have to scope `.foo` and `.baz` only
-    const parts = getParts(sel);
+    const parts = getCompound(sel);
     const localGlobal = [];
     const scopable = parts.filter(part => {
         if (part.type === 'PseudoElementSelector' && (part.name === 'global' || part.name === 'local')) {
@@ -185,11 +197,63 @@ function rewriteSelectorPart(selector, item, scope, options) {
 }
 
 /**
+ * Rewrites refs in given selector
+ * @param {import('css-tree').Selector} sel
+ * @param {string} scope
+ * @param {CSSModuleOptions} options
+ * @param {boolean} [compound] Rewrite until
+ * @returns {boolean}
+ */
+function rewriteRefsInSelector(sel, scope, options, compound) {
+    let updated = false;
+    sel.children.some((node, listItem, list) => {
+        if (isCompoundBoundary(node)) {
+            return compound;
+        }
+
+        const { prev } = listItem;
+        prev && rewriteRef(list, prev, scope, options);
+    });
+
+    return updated;
+}
+
+/**
+ * Rewrites ref for given CSS selector item, if available
+ * @param {import('css-tree').List<import('css-tree').CssNode>} list
+ * @param {import('css-tree').ListItem<import('css-tree').CssNode>} item
+ * @param {string} scope
+ * @param {CSSModuleOptions} options
+ * @returns {boolean}
+ */
+function rewriteRef(list, item, scope, options) {
+    if (isRef(item)) {
+        const { next } = item;
+        list.insertData(raw(options.ref(next.data.name, scope), 'ref'), item);
+        list.remove(item);
+        list.remove(next);
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Check if given node is a ref
+ * @param {import('css-tree').ListItem<import('css-tree').CssNode>} item
+ * @returns {boolean}
+ */
+function isRef(item) {
+    const { data, next } = item;
+    return data.type === 'TypeSelector' && data.name === 'ref' && next && next.data.type === 'PseudoClassSelector';
+}
+
+/**
  * Creates raw token with given value
  * @param {string} value
  */
-function raw(value) {
-    return { type: 'Raw', value };
+function raw(value, context) {
+    return { type: 'Raw', value, context };
 }
 
 /**
@@ -203,15 +267,15 @@ function concat(name, suffix) {
 }
 
 /**
- * Returns list of child items where selector part starts
+ * Returns array of selector list items where compound selectors starts
  * @param {AstNode} sel
  * @returns {object[]}
  */
-function getParts(sel) {
+function getCompound(sel) {
     const result = [];
     let part = null;
     sel.children.forEach((child, listItem) => {
-        if (child.type === 'Combinator' || child.type === 'WhiteSpace') {
+        if (isCompoundBoundary(child)) {
             part = null;
         } else if (!part) {
             result.push(part = listItem);
@@ -219,6 +283,15 @@ function getParts(sel) {
     });
 
     return result;
+}
+
+/**
+ * Check if given node is a compound selector boundary
+ * @param {import('css-tree').CssNode} node
+ * @returns {boolean}
+ */
+function isCompoundBoundary(node) {
+    return node && (node.type === 'Combinator' || node.type === 'WhiteSpace');
 }
 
 /**
