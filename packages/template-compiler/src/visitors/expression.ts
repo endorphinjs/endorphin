@@ -183,12 +183,11 @@ export default {
 } as AstVisitorMap<ExpressionOutput>;
 
 function property(node: Property, isPattern: boolean, next: AstVisitorContinue<ExpressionOutput>): SourceNode {
-    const key: Chunk = isIdentifier(node.key) ? node.key.name : next(node.key);
-
     if (node.computed) {
-        return sn(['[', key, ']: ', next(node.value)], node);
+        return sn(['[', next(node.key), ']: ', next(node.value)], node);
     }
 
+    const key: Chunk = isIdentifier(node.key) ? node.key.name : next(node.key);
     if (node.shorthand) {
         return isPattern
             ? sn(key, node)

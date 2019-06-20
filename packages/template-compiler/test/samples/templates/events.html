@@ -5,7 +5,8 @@
         on:mouseenter={emit('hover')}
         on:mouseleave={onLeave}
         on:keypress:stop
-        on:mousedown:prevent={e => emit('down', e.pageX, e.pageY)}>
+        on:mousedown:prevent={e => emit('down', e.pageX, e.pageY)}
+        on:event2={emit('update', { [name]: !open, key: value })}>
         <e:attribute on:click={method2(foo, bar)} e:if={c1} />
     </main>
 </template>
