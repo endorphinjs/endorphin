@@ -1,0 +1,32 @@
+{
+  "name": "@endorphinjs/element-stats",
+  "version": "0.4.5",
+  "description": "Collects stats about given AST Element",
+  "main": "./dist/element-stats.cjs.js",
+  "module": "./dist/element-stats.es.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "mocha",
+    "build": "rollup -c",
+    "watch": "rollup -wc",
+    "lint": "tslint ./src/*.ts",
+    "prepare": "npm run lint && npm run test && npm run clean && npm run build",
+    "clean": "rm -rf ./dist"
+  },
+  "keywords": [],
+  "author": "Sergey Chikuyonok <serge.che@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@endorphinjs/template-parser": "^0.4.5",
+    "mocha": "^6.1.4",
+    "rollup": "^1.15.6",
+    "rollup-plugin-typescript2": "^0.21.2",
+    "ts-node": "^8.3.0",
+    "tslint": "^5.18.0",
+    "typescript": "^3.5.2"
+  },
+  "mocha": {
+    "require": "ts-node/register",
+    "spec": "./test/*.ts"
+  }
+}

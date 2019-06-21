@@ -2,6 +2,7 @@
   "extends": "tslint:recommended",
   "rules":{
     "max-line-length": [true, 150],
+    "indent": [true, "spaces", 4],
     "quotemark": [true, "single"],
     "ordered-imports": false,
     "interface-name": false,
@@ -13,6 +14,7 @@
     "max-classes-per-file": false,
     "prefer-for-of": false,
     "no-bitwise": false,
-    "object-literal-key-quotes": false
+    "object-literal-key-quotes": false,
+    "array-type": false
   }
 }

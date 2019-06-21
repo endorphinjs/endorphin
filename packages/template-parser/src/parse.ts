@@ -112,6 +112,7 @@ function statement(scanner: Scanner, open: ParsedTag): ENDStatement {
                 consequent: [],
                 loc: dir.loc
             });
+            open.directives.splice(i, 1);
         }
     }
 
