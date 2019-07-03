@@ -8,9 +8,8 @@ export default class TextEntity extends Entity {
     constructor(readonly node: Literal | Program, readonly state: CompileState) {
         super('text', state);
         if (isExpression(node)) {
-            const expr = state.shared(() => generateExpression(node, state));
-            this.setMount(() => state.runtime('text', [expr], node));
-            this.setUpdate(() => state.runtime('updateText', [this.getSymbol(), expr], node));
+            this.setMount(() => state.runtime('text', [generateExpression(node, state)], node));
+            this.setUpdate(() => state.runtime('updateText', [this.getSymbol(), generateExpression(node, state)], node));
         } else {
             this.setMount(() => state.runtime('text', [qStr(node.value as string)], node));
         }

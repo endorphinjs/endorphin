@@ -6,7 +6,7 @@ export * from './iterate';
 export * from './key-iterate';
 export * from './injector';
 export * from './scope';
-export * from './attribute';
+export * from './attribute2';
 export * from './event';
 export * from './slot';
 export * from './ref';
@@ -16,7 +16,7 @@ export * from './dom';
 export * from './partial';
 export * from './store';
 export * from './animation';
-export { assign } from './utils';
+export { assign, obj, changeSet } from './utils';
 
 type FilterCallback<T> = (value: T, key: string | number) => boolean;
 

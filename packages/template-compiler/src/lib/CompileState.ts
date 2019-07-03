@@ -5,7 +5,7 @@ import Entity, { RenderOptions, entity } from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
 import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue } from './utils';
-import { Chunk, RenderContext, ComponentImport, RuntimeSymbols, ChunkList } from '../types';
+import { Chunk, ComponentImport, RuntimeSymbols, ChunkList, UsageContext } from '../types';
 import { CompileOptions } from '..';
 
 interface NamespaceMap {
@@ -73,7 +73,7 @@ export default class CompileState {
     }
 
     /** Current rendering context */
-    get renderContext(): RenderContext {
+    get renderContext(): UsageContext {
         return this._renderContext;
     }
 
@@ -143,7 +143,7 @@ export default class CompileState {
     /** Current namespaces */
     private namespaceMap: NamespaceMap = {};
 
-    private _renderContext?: RenderContext;
+    private _renderContext?: UsageContext;
     private _warned: Set<string> = new Set();
 
     constructor(options?: CompileOptions) {
@@ -261,11 +261,11 @@ export default class CompileState {
         const entities = Array.isArray(result)
             ? result.filter(Boolean)
             : (result ? [result] : []);
-        this.blockContext = prevBlock;
 
         block.generate(entities)
             .forEach(chunk => this.pushOutput(chunk));
 
+        this.blockContext = prevBlock;
         return block;
     }
 
@@ -383,13 +383,6 @@ export default class CompileState {
     }
 
     /**
-     * Runs given function in `shared` block context (both `mount` and `update`)
-     */
-    shared<T>(fn: (state: this) => T): T {
-        return this.runInContext('shared', fn);
-    }
-
-    /**
      * Check if given element is a *registered* component
      */
     isComponent(elem: ENDElement): boolean {
@@ -453,7 +446,7 @@ export default class CompileState {
     /**
      * Runs given function in given rendering context
      */
-    private runInContext<T>(ctx: RenderContext, fn: (state: this) => T): T {
+    private runInContext<T>(ctx: UsageContext, fn: (state: this) => T): T {
         const prev = this.renderContext;
         this._renderContext = ctx;
         const result = fn(this);

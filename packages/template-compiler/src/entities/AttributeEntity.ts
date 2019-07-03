@@ -1,24 +1,67 @@
 import { ENDAttribute, ENDAttributeName, ENDAttributeValue, Literal, Program } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import compileExpression from '../expression';
-import CompileState from '../lib/CompileState';
 import { Chunk, RenderChunk } from '../types';
+import CompileState from '../lib/CompileState';
 import { isIdentifier, isExpression, sn, qStr, isLiteral } from '../lib/utils';
 
 export default class AttributeEntity extends Entity {
+    /**
+     * A reference to receiver of pending attributes. Also indicates that current
+     * attribute will be added as "pending"
+     */
+    pendingReceiver?: Entity;
+
     constructor(readonly node: ENDAttribute, readonly state: CompileState) {
         super(isIdentifier(node.name) ? `${node.name.name}Attr` : 'exprAttr', state);
-        const { element } = state;
+        const { receiver } = state;
 
-        if (!element.node) {
-            // Set attribute in child block
-            this.setMount(mountDynamicAttribute);
-        } else if (element.isComponent || element.isDynamicAttribute(node)) {
-            // Attribute must be updated in runtime
-            this.setShared(mountDynamicAttribute);
-        } else {
-            // Attribute with literal value: set only once, no need to update
-            this.setMount(mountStaticAttribute);
+        if (isIdentifier(node.name) && receiver.stats) {
+            const name = node.name.name;
+            const { value } = node;
+
+            if (receiver.stats.isDynamicAttribute(name)) {
+                // Dynamic attributes must be collected into temp object
+                // and finalized later
+                this.pendingReceiver = receiver.pendingAttributes;
+                this.setShared(() => {
+                    // TODO handle namespaced attributes
+                    // TODO handle props for component
+                    // const ns = getAttributeNS(node, state);
+                    return state.runtime('setPendingAttribute', [
+                        receiver.pendingAttributes.getSymbol(),
+                        qStr(name),
+                        compileAttributeValue(value, state)
+                    ]);
+                });
+            } else if (isLiteral(value)) {
+                // Static value, mount once
+                // TODO handle namespaced attributes
+                // TODO handle props for component
+                this.setMount(() =>
+                    state.runtime('setAttribute', [receiver.getSymbol(), qStr(name), compileAttributeValue(value, state)]));
+            } else if (isExpression(value)) {
+                // Expression attribute, must be updated in runtime
+                // TODO handle namespaced attributes
+                // TODO handle props for component
+                // this.storeVariable();
+                this.setMount(() => {
+                    return state.runtime('setAttributeExpression', [
+                        receiver.getSymbol(),
+                        qStr(name),
+                        compileAttributeValue(value, state)
+                    ]);
+                });
+                this.setUpdate(() => {
+                    // const ns = getAttributeNS(node, state);
+                    return sn([this.scopeName, ' = ', state.runtime('updateAttributeExpression', [
+                        receiver.getSymbol(),
+                        qStr(name),
+                        compileAttributeValue(value, state),
+                        this.getSymbol()
+                    ])]);
+                });
+            }
         }
     }
 }

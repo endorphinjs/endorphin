@@ -8,7 +8,6 @@ import BlockContext from '../lib/BlockContext';
 
 export type RenderOptions = { [K in RenderContext]?: RenderChunk };
 type RenderContext = UsageContext | 'shared';
-type SymbolType = UsageContext | 'ref';
 
 /**
  * Factory function for shorter entity instance code
@@ -53,7 +52,6 @@ export default class Entity {
     /** Entity code chunks */
     code: { [K in UsageContext]?: Chunk };
     readonly symbolUsage = new UsageStats();
-    private symbols: { [K in SymbolType]?: SourceNode };
 
     constructor(name: string | Entity, readonly state: CompileState) {
         if (name instanceof Entity) {
@@ -73,12 +71,6 @@ export default class Entity {
             update: null,
             unmount: null
         };
-        this.symbols = {
-            mount: null,
-            update: null,
-            unmount: null,
-            ref: new SourceNode()
-        };
         this.block = state.blockContext;
     }
 
@@ -94,53 +86,21 @@ export default class Entity {
      * Note that node returned by current method is self-modified depending on entity usage
      */
     getSymbol(): SourceNode {
-        const { renderContext } = this.state;
-        const { symbols, symbolUsage, name } = this;
+        const { renderContext, blockContext } = this.state;
 
-        symbolUsage.use(renderContext);
-
-        if (renderContext === 'mount') {
-            // In `mount` context, we should always refer entity by local variable
-            if (symbolUsage.mount === 1 && !this.parent) {
-                symbols.ref.prepend(`const ${name} = `);
-            }
-
-            if (!symbols.mount) {
-                symbols.mount = sn(this.parent ? this.scopeName : name);
-            }
-
-            return symbols.mount;
+        if (!blockContext) {
+            throw new Error('No block context!');
         }
 
-        if (symbolUsage.update + symbolUsage.unmount === 1 && !this.parent) {
-            // First time use of entity in update or unmount scope:
-            // create reference in component scope
-            this.state.mount(() => symbols.ref.add(`${this.scopeName} = `));
-        }
-
-        const ctx: UsageContext = renderContext === 'shared' ? 'update' : renderContext;
-
-        if (symbolUsage[ctx] === 1) {
-            // First time access to non-mount context: use symbol from component scope
-            symbols[ctx] = sn(this.scopeName);
-        } else if (symbolUsage[ctx] === 2) {
-            // If we use symbol more than once in non-mount context, it’s more
-            // optimal to use local variable.
-            // NB: local variable should be created by block generator
-            symbols[ctx].children.length = 0;
-            symbols[ctx].add(`${name}`);
-        }
-
-        return symbols[ctx];
+        this.symbolUsage.use(renderContext);
+        return blockContext.getRefNode(this, renderContext);
     }
 
     /**
      * Returns mount code for current entity
      */
-    getMount(): SourceNode {
-        if (this.code.mount) {
-            return this.parent ? sn(this.code.mount) : sn([this.symbols.ref, this.code.mount]);
-        }
+    getMount(): Chunk {
+        return this.code.mount;
     }
 
     /**
@@ -148,6 +108,7 @@ export default class Entity {
      */
     setMount(fn: RenderChunk): this {
         this.code.mount = this.state.mount(() => fn(this));
+        this.state.blockContext.setMounted(this);
         return this;
     }
 

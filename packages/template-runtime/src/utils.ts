@@ -14,8 +14,6 @@ export function obj(proto: any = null): {} {
 
 /**
  * Check if given value id defined, e.g. not `null`, `undefined` or `NaN`
- * @param {*} value
- * @returns {boolean}
  */
 export function isDefined(value: any): boolean {
 	return value != null && value === value;
@@ -23,10 +21,7 @@ export function isDefined(value: any): boolean {
 
 /**
  * Finalizes updated items, defined in `items.prev` and `items.cur`
- * @param {object} items
- * @param {function} change
- * @param {*} [ctx]
- * @returns {number} Returns `1` if data was updated, `0` otherwise
+ * @returns Returns `1` if data was updated, `0` otherwise
  */
 export function finalizeItems(items: ChangeSet, change: ChangeCallback, ctx: any): number {
 	let updated = 0;

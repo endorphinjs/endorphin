@@ -34,12 +34,17 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock'
     | 'mountPartial' | 'updatePartial' | 'unmountPartial'
     | 'createSlot' | 'mountSlot' | 'updateIncomingSlot' | 'updateDefaultSlot' | 'unmountSlot'
     | 'createInjector' | 'unmountInjector' | 'block'
-    | 'setAttribute' | 'setAttributeNS' | 'addClass' | 'finalizeAttributes'
+
+    | 'setAttribute' | 'updateAttribute' | 'setAttributeExpression' | 'updateAttributeExpression'
+    | 'setAttributeNS' | 'updateAttributeNS' | 'setAttributeExpressionNS' | 'updateAttributeExpressionNS'
+    | 'addClass' | 'toggleClass' | 'addMultiClass' | 'toggleMultiClass'
+    | 'setPendingAttribute' | 'addPendingClass' | 'finalizeAttributes'
+
     | 'addEvent' | 'addStaticEvent' | 'removeStaticEvent' | 'finalizeEvents'
     | 'setRef' | 'finalizeRefs' | 'createComponent' | 'updateText'
     | 'insert' | 'get' | 'call' | 'assign' | 'elem' | 'elemWithText' | 'elemNS'
     | 'elemNSWithText' | 'text' | 'filter' | 'find' | 'subscribeStore'
-    | 'animate' | 'createAnimation' | 'stopAnimation' | 'domRemove';
+    | 'animate' | 'createAnimation' | 'stopAnimation' | 'domRemove' | 'obj' | 'changeSet';
 
 export interface ComponentImport {
     /** JS symbol for referencing imported module */

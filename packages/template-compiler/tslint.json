@@ -13,6 +13,7 @@
     "max-classes-per-file": false,
     "prefer-for-of": false,
     "no-bitwise": false,
-    "variable-name": false
+    "variable-name": false,
+    "array-type": false
   }
 }

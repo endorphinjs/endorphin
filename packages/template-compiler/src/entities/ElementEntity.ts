@@ -12,6 +12,7 @@ import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
 import { isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
 import { ENDCompileError } from '../lib/error';
+import ElementStats from '../lib/ElementStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 
@@ -20,6 +21,7 @@ const dynamicContent = new Set(['ENDIfStatement', 'ENDChooseStatement', 'ENDForE
 export default class ElementEntity extends Entity {
     injectorEntity: InjectorEntity;
     readonly injectorUsage = new UsageStats();
+    readonly stats?: ElementStats;
 
     /** Indicates current entity is a *registered* DOM component */
     isComponent: boolean = false;
@@ -46,10 +48,12 @@ export default class ElementEntity extends Entity {
     animateOut?: ENDAttributeValue;
 
     private slotMarks: { [slotName: string]: string } = {};
+    private dynAttrs?: Entity;
 
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
         if (node) {
+            this.stats = new ElementStats(node);
             this.isStaticContent = true;
             this.collectStats();
             if (isElement(node)) {
@@ -91,6 +95,20 @@ export default class ElementEntity extends Entity {
         return this.injectorEntity != null;
     }
 
+    /** Entity for receiving pending attributes */
+    get pendingAttributes(): Entity {
+        if (!this.dynAttrs) {
+            this.dynAttrs = this.state.entity('attrSet', {
+                mount: () => this.state.runtime('changeSet', []),
+                update: () => sn()
+            });
+
+            this.add(this.dynAttrs);
+        }
+
+        return this.dynAttrs;
+    }
+
     /**
      * Returns slot update symbol for given name
      */
@@ -107,17 +125,16 @@ export default class ElementEntity extends Entity {
      * statements
      */
     isDynamicAttribute(attr: ENDAttribute): boolean {
-        if (this.hasPartials || this.attributeExpressions) {
+        const { stats } = this;
+        if (stats.hasPartials) {
             return true;
         }
 
         if (isIdentifier(attr.name)) {
-            return this.dynamicAttributes.has(attr.name.name);
+            return stats.isDynamicAttribute(attr.name.name);
         }
 
-        return attr.value
-            ? isExpression(attr.value) || attr.value.type === 'ENDAttributeValueExpression'
-            : false;
+        return false;
     }
 
     add(item: Entity) {
@@ -205,12 +222,15 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeAttributes() {
-        const { state } = this;
-        const ent = state.entity({
-            shared: () => state.runtime('finalizeAttributes', [this.injector])
-        });
+        if (this.dynAttrs) {
+            // There are pending dynamic attributes
+            const { state } = this;
+            const ent = state.entity({
+                shared: () => state.runtime('finalizeAttributes', [this.getSymbol(), this.dynAttrs.getSymbol()])
+            });
 
-        this.add(state.markSlot(ent));
+            this.add(state.markSlot(ent));
+        }
     }
 
     /**

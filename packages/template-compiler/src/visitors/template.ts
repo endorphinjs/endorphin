@@ -183,11 +183,7 @@ function subscribeStore(state: CompileState): Entity {
 }
 
 function isSimpleConditionContent(node: ENDStatement): boolean {
-    if (node.type === 'ENDAttributeStatement') {
-        return node.directives.filter(dir => dir.prefix === 'on').length === 0;
-    }
-
-    return node.type === 'ENDAddClassStatement';
+    return node.type === 'ENDAddClassStatement' || node.type === 'ENDAttributeStatement';
 }
 
 /**
@@ -283,9 +279,7 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
         element.markSlotUpdate();
         element.mountComponent();
     } else {
-        if (element.dynamicAttributes.size || element.hasPartials) {
-            element.finalizeAttributes();
-        }
+        element.finalizeAttributes();
 
         if (element.dynamicEvents.size || element.hasPartials) {
             element.finalizeEvents();
