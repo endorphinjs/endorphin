@@ -161,7 +161,7 @@ export default class BlockContext {
         const injectorArg = this.injector ? this.injector.name : '';
         const scopeArg = (count: number): string => count ? scope : '';
         const mountFn = createFunction(mountSymbol, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
-        const updateFn = createFunction(updateSymbol, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent);
+        const updateFn = createFunction(updateSymbol, [state.host, scopeArg(scopeUsage.update)], updateChunks, indent);
         const unmountFn = createFunction(unmountSymbol,
             [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
 

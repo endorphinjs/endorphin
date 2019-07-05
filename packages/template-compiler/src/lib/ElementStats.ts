@@ -84,6 +84,14 @@ export default class ElementStats {
     }
 
     /**
+     * Check if context element has dynamic class names, e.g. classes which will
+     * be added or removed under some top level condition
+     */
+    hasDynamicClass(): boolean {
+        return this.isDynamicAttribute('class') || this.classNames.some(isConditionalRef);
+    }
+
+    /**
      * Check if given attribute is dynamic
      */
     isDynamicAttribute(name: string): boolean {

@@ -86,6 +86,25 @@ export function addClass(elem: HTMLElement, className: string) {
 }
 
 /**
+ * Adds class to given element if given condition is truthy
+ */
+export function addClassIf(elem: HTMLElement, className: string, condition: any): boolean {
+	condition && addClass(elem, className);
+	return condition;
+}
+
+/**
+ * Toggles class on given element if condition is changed
+ */
+export function toggleClassIf(elem: HTMLElement, className: string, condition: any, prevResult: boolean): boolean {
+	if (prevResult !== condition) {
+		condition ? addClass(elem, className) : elem.classList.remove(className);
+	}
+
+	return condition;
+}
+
+/**
  * Alias for `elem.classList.toggle()` with additional fast check if class should
  * be added or removed
  * @returns `true` if class was added, `false` if removed
@@ -141,7 +160,17 @@ export function setPendingAttribute(data: ChangeSet, name: string, value: any) {
  * Adds given class name to pending attribute set
  */
 export function addPendingClass(data: ChangeSet, className: string) {
-	data.cur.class = data.cur.class ? ' ' + className : String(className);
+	if (className != null) {
+		const prev = data.cur.class;
+		data.cur.class = prev ? prev + ' ' + className : String(className);
+	}
+}
+
+/**
+ * Adds given class name to pending attribute set if condition is truthy
+ */
+export function addPendingClassIf(data: ChangeSet, className: string, condition: any) {
+	condition && addPendingClass(data, className);
 }
 
 /**
@@ -195,15 +224,23 @@ function classNames(str: string): string[] {
  */
 function representedValue(value: any): string | number | null {
 	if (value === false || !isDefined(value)) {
-		value = null;
-	} else if (value === true) {
-		value = '';
-	} else if (Array.isArray(value)) {
-		value = '[]';
-	} else if (typeof value === 'function') {
-		value = '𝑓';
-	} else if (typeof value === 'object') {
-		value = '{}';
+		return null;
+	}
+
+	if (value === true) {
+		return '';
+	}
+
+	if (Array.isArray(value)) {
+		return '[]';
+	}
+
+	if (typeof value === 'function') {
+		return '𝑓';
+	}
+
+	if (typeof value === 'object') {
+		return '{}';
 	}
 
 	return value;

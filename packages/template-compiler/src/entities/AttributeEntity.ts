@@ -6,12 +6,6 @@ import CompileState from '../lib/CompileState';
 import { isIdentifier, isExpression, sn, qStr, isLiteral } from '../lib/utils';
 
 export default class AttributeEntity extends Entity {
-    /**
-     * A reference to receiver of pending attributes. Also indicates that current
-     * attribute will be added as "pending"
-     */
-    pendingReceiver?: Entity;
-
     constructor(readonly node: ENDAttribute, readonly state: CompileState) {
         super(isIdentifier(node.name) ? `${node.name.name}Attr` : 'exprAttr', state);
         const { receiver } = state;
@@ -23,7 +17,6 @@ export default class AttributeEntity extends Entity {
             if (receiver.stats.isDynamicAttribute(name)) {
                 // Dynamic attributes must be collected into temp object
                 // and finalized later
-                this.pendingReceiver = receiver.pendingAttributes;
                 this.setShared(() => {
                     // TODO handle namespaced attributes
                     // TODO handle props for component
@@ -44,7 +37,6 @@ export default class AttributeEntity extends Entity {
                 // Expression attribute, must be updated in runtime
                 // TODO handle namespaced attributes
                 // TODO handle props for component
-                // this.storeVariable();
                 this.setMount(() => {
                     return state.runtime('setAttributeExpression', [
                         receiver.getSymbol(),

@@ -32,7 +32,7 @@ function ifBody$2(host, injector, scope) {
 	return ifBody$2Update;
 }
 
-function ifBody$2Update(host, injector, scope) {
+function ifBody$2Update(host, scope) {
 	setPendingAttribute(scope.attrSet$1, "foo", host.props.baz);
 }
 

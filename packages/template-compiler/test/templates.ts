@@ -70,5 +70,6 @@ describe('Template compiler', () => {
 
     it.only('debug', () => {
         compare('attrs.html', null);
+        compare('class.html', null, true);
     });
 });

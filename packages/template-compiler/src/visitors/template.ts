@@ -16,6 +16,7 @@ import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
 import ElementEntity from '../entities/ElementEntity';
+import ClassEntity from '../entities/ClassEntity';
 import CompileState from '../lib/CompileState';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
 import {
@@ -98,6 +99,10 @@ export default {
     ENDDirective(dir: ENDDirective, state) {
         if (dir.prefix === 'on') {
             return new EventEntity(dir, state);
+        }
+
+        if (dir.prefix === 'class') {
+            return new ClassEntity(dir, state);
         }
     },
 
