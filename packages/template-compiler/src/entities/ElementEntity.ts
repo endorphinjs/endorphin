@@ -225,8 +225,32 @@ export default class ElementEntity extends Entity {
         if (this.dynAttrs) {
             // There are pending dynamic attributes
             const { state } = this;
+            let noNS = this.stats.hasDynamicClass();
+            let withNS = false;
+
+            this.stats.attributeNames().forEach(attrName => {
+                const m = attrName.match(/^([\w\-]+):/);
+                if (m && m[1] !== 'xmlns') {
+                    withNS = true;
+                } else {
+                    noNS = true;
+                }
+            });
+
+            // Check which types of attributes we have to finalize
             const ent = state.entity({
-                shared: () => state.runtime('finalizeAttributes', [this.dynAttrs.getSymbol()])
+                shared: () => {
+                    const output = sn();
+                    if (noNS) {
+                        output.add(state.runtime('finalizeAttributes', [this.dynAttrs.getSymbol()]));
+                    }
+
+                    if (withNS) {
+                        output.add(state.runtime('finalizeAttributesNS', [this.dynAttrs.getSymbol()]));
+                    }
+
+                    return output.join(' | ');
+                }
             });
 
             this.add(state.markSlot(ent));

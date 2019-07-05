@@ -1,15 +1,16 @@
-import { isDefined, obj } from './utils';
+import { isDefined, obj, changeSet } from './utils';
 import { ChangeSet } from './types';
 
 export interface AttributeChangeSet extends ChangeSet {
 	elem: Element;
+	ns: { [namespace: string]: ChangeSet } | null;
 }
 
 /**
  * Creates new attribute change set
  */
 export function attributeSet(elem: Element): AttributeChangeSet {
-	return { elem, cur: obj(), prev: obj() };
+	return { elem, ns: null, cur: obj(), prev: obj() };
 }
 
 /**
@@ -105,6 +106,21 @@ export function setPendingAttribute(data: AttributeChangeSet, name: string, valu
 }
 
 /**
+ * Sets pending namespaced attribute value which will be added to attribute later
+ */
+export function setPendingAttributeNS(data: AttributeChangeSet, ns: string, name: string, value: any) {
+	if (!data.ns) {
+		data.ns = obj();
+	}
+
+	if (!data.ns[ns]) {
+		data.ns[ns] = changeSet();
+	}
+
+	data.ns[ns].cur[name] = value;
+}
+
+/**
  * Adds given class name to pending attribute set
  */
 export function addPendingClass(data: AttributeChangeSet, className: string) {
@@ -122,7 +138,7 @@ export function addPendingClassIf(data: AttributeChangeSet, className: string, c
 }
 
 /**
- * Finalizes pending attributes for given element
+ * Finalizes pending attributes
  */
 export function finalizeAttributes(data: AttributeChangeSet): number {
 	let updated = 0;
@@ -130,18 +146,44 @@ export function finalizeAttributes(data: AttributeChangeSet): number {
 
 	for (const name in cur) {
 		const curValue = cur[name];
-		const prevValue = prev[name];
 
-		if (curValue !== prevValue) {
+		if (curValue !== prev[name]) {
 			updated = 1;
 			if (name === 'class') {
 				elem.className = classNames(curValue).join(' ');
 			} else {
 				setAttributeExpression(elem, name, curValue);
 			}
+			prev[name] = curValue;
 		}
-		prev[name] = curValue;
 		cur[name] = null;
+	}
+
+	return updated;
+}
+
+/**
+ * Finalizes pending namespaced attributes
+ */
+export function finalizeAttributesNS(data: AttributeChangeSet): number {
+	if (!data.ns) {
+		return 0;
+	}
+
+	let updated = 0;
+	const { elem } = data;
+	for (const ns in data.ns!) {
+		const { cur, prev } = data.ns[ns];
+		for (const name in cur) {
+			const curValue = cur[name];
+
+			if (curValue !== prev[name]) {
+				updated = 1;
+				setAttributeExpressionNS(elem, ns, name, curValue);
+				prev[name] = curValue;
+			}
+			cur[name] = null;
+		}
 	}
 
 	return updated;

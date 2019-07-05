@@ -1,9 +1,14 @@
 import { ENDAttribute, ENDAttributeName, ENDAttributeValue, Literal, Program } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import compileExpression from '../expression';
-import { Chunk, RenderChunk } from '../types';
+import { Chunk, RenderChunk, ChunkList } from '../types';
 import CompileState from '../lib/CompileState';
 import { isIdentifier, isExpression, sn, qStr, isLiteral } from '../lib/utils';
+
+interface NSData {
+    name: string;
+    ns: string;
+}
 
 export default class AttributeEntity extends Entity {
     constructor(readonly node: ENDAttribute, readonly state: CompileState) {
@@ -21,40 +26,43 @@ export default class AttributeEntity extends Entity {
                 // Dynamic attributes must be collected into temp object
                 // and finalized later
                 this.setShared(() => {
-                    // TODO handle namespaced attributes
                     // TODO handle props for component
-                    // const ns = getAttributeNS(node, state);
-                    return state.runtime('setPendingAttribute', [
-                        receiver.pendingAttributes.getSymbol(),
-                        qStr(name),
-                        compileAttributeValue(value, state)
-                    ]);
+                    const ns = getAttributeNS(node, state);
+                    const args = createArguments(name, value, state, true, ns);
+
+                    return ns
+                        ? state.runtime('setPendingAttributeNS', args)
+                        : state.runtime('setPendingAttribute', args);
                 });
             } else if (isLiteral(value)) {
                 // Static value, mount once
-                // TODO handle namespaced attributes
-                // TODO handle props for component
-                this.setMount(() =>
-                    state.runtime('setAttribute', [receiver.getSymbol(), qStr(name), compileAttributeValue(value, state)]));
-            } else if (isExpression(value)) {
-                // Expression attribute, must be updated in runtime
-                // TODO handle namespaced attributes
                 // TODO handle props for component
                 this.setMount(() => {
-                    return state.runtime('setAttributeExpression', [
-                        receiver.getSymbol(),
-                        qStr(name),
-                        compileAttributeValue(value, state)
-                    ]);
+                    const ns = getAttributeNS(node, state);
+                    const args = createArguments(name, value, state, false, ns);
+                    return ns
+                        ? state.runtime('setAttributeNS', args)
+                        : state.runtime('setAttribute', args);
+                });
+            } else if (isExpression(value)) {
+                // Expression attribute, must be updated in runtime
+                // TODO handle props for component
+                const ns = getAttributeNS(node, state);
+                this.setMount(() => {
+                    const args = createArguments(name, value, state, false, ns);
+                    return ns
+                        ? state.runtime('setAttributeExpressionNS', args)
+                        : state.runtime('setAttributeExpression', args);
                 });
                 this.setUpdate(() => {
-                    // const ns = getAttributeNS(node, state);
-                    return sn([this.scopeName, ' = ', state.runtime('updateAttributeExpression', [
-                        receiver.getSymbol(),
-                        qStr(name),
-                        compileAttributeValue(value, state),
-                        this.getSymbol()
-                    ])]);
+                    const args = createArguments(name, value, state, false, ns);
+                    args.push(this.getSymbol());
+
+                    const chunk = ns
+                        ? state.runtime('updateAttributeExpressionNS', args)
+                        : state.runtime('updateAttributeExpression', args);
+
+                    return sn([this.scopeName, ' = ', chunk]);
                 });
             }
         }
@@ -162,7 +170,7 @@ export function createConcatFunction(prefix: string, state: CompileState, tokens
 /**
  * Returns namespace URI for given attribute, if available
  */
-export function getAttributeNS(attr: ENDAttribute, state: CompileState): { name: string, ns: string } | void {
+export function getAttributeNS(attr: ENDAttribute, state: CompileState): NSData | undefined {
     if (isIdentifier(attr.name)) {
         const parts = String(attr.name.name).split(':');
         if (parts.length > 1 && parts[0] !== 'xmlns') {
@@ -174,4 +182,16 @@ export function getAttributeNS(attr: ENDAttribute, state: CompileState): { name:
             }
         }
     }
+}
+
+function createArguments(name: string, value: ENDAttributeValue, state: CompileState, pending: boolean, ns?: NSData): ChunkList {
+    const { receiver } = state;
+    const result: ChunkList = [pending ? receiver.pendingAttributes.getSymbol() : receiver.getSymbol()];
+    if (ns) {
+        result.push(ns.ns);
+    }
+
+    result.push(qStr(ns ? ns.name : name), compileAttributeValue(value, state));
+
+    return result;
 }
