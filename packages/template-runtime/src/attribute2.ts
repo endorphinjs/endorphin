@@ -1,5 +1,16 @@
-import { isDefined } from './utils';
+import { isDefined, obj } from './utils';
 import { ChangeSet } from './types';
+
+export interface AttributeChangeSet extends ChangeSet {
+	elem: Element;
+}
+
+/**
+ * Creates new attribute change set
+ */
+export function attributeSet(elem: Element): AttributeChangeSet {
+	return { elem, cur: obj(), prev: obj() };
+}
 
 /**
  * Alias for `elem.setAttribute`
@@ -7,15 +18,6 @@ import { ChangeSet } from './types';
 export function setAttribute(elem: Element, name: string, value: any) {
 	elem.setAttribute(name, value);
 	return value;
-}
-
-/**
- * Updates attribute value only if it’s not equal to previous value
- */
-export function updateAttribute<T = any>(elem: Element, name: string, value: T, prevValue?: any): T {
-	return prevValue !== value
-		? setAttribute(elem, name, value)
-		: value;
 }
 
 /**
@@ -47,15 +49,6 @@ export function updateAttributeExpression<T = any>(elem: Element, name: string, 
 export function setAttributeNS(elem: Element, ns: string, name: string, value: any) {
 	elem.setAttributeNS(ns, name, value);
 	return value;
-}
-
-/**
- * Adds or removes (if value is `void`) attribute to given element
- */
-export function updateAttributeNS<T = any>(elem: Element, ns: string, name: string, value: T, prevValue?: any): T {
-	return prevValue !== value
-		? setAttributeNS(elem, ns, name, value)
-		: value;
 }
 
 /**
@@ -105,61 +98,16 @@ export function toggleClassIf(elem: HTMLElement, className: string, condition: a
 }
 
 /**
- * Alias for `elem.classList.toggle()` with additional fast check if class should
- * be added or removed
- * @returns `true` if class was added, `false` if removed
- */
-export function toggleClass(elem: HTMLElement, className: string, condition: any, prevResult?: boolean): boolean {
-	condition = !!condition;
-
-	if (prevResult !== condition) {
-		condition ? addClass(elem, className) : elem.classList.remove(className);
-	}
-
-	return condition;
-}
-
-/**
- * Adds potentially multiple class names to element
- */
-export function addMultiClass(elem: HTMLElement, className: string) {
-	const tokens = classNames(className);
-	for (let i = 0; i < tokens.length; i++) {
-		addClass(elem, tokens[i]);
-	}
-}
-
-/**
- * Toggles potentially multiple class names on given element
- */
-export function toggleMultiClass(elem: HTMLElement, className: string, condition: any, prevResult?: boolean): boolean {
-	condition = !!condition;
-
-	if (prevResult !== condition) {
-		if (condition) {
-			addMultiClass(elem, className);
-		} else {
-			const tokens = classNames(className);
-			for (let i = 0; i < tokens.length; i++) {
-				elem.classList.remove(tokens[i]);
-			}
-		}
-	}
-
-	return condition;
-}
-
-/**
  * Sets pending attribute value which will be added to attribute later
  */
-export function setPendingAttribute(data: ChangeSet, name: string, value: any) {
+export function setPendingAttribute(data: AttributeChangeSet, name: string, value: any) {
 	data.cur[name] = value;
 }
 
 /**
  * Adds given class name to pending attribute set
  */
-export function addPendingClass(data: ChangeSet, className: string) {
+export function addPendingClass(data: AttributeChangeSet, className: string) {
 	if (className != null) {
 		const prev = data.cur.class;
 		data.cur.class = prev ? prev + ' ' + className : String(className);
@@ -169,16 +117,16 @@ export function addPendingClass(data: ChangeSet, className: string) {
 /**
  * Adds given class name to pending attribute set if condition is truthy
  */
-export function addPendingClassIf(data: ChangeSet, className: string, condition: any) {
+export function addPendingClassIf(data: AttributeChangeSet, className: string, condition: any) {
 	condition && addPendingClass(data, className);
 }
 
 /**
  * Finalizes pending attributes for given element
  */
-export function finalizeAttributes(elem: Element, data: ChangeSet): number {
+export function finalizeAttributes(data: AttributeChangeSet): number {
 	let updated = 0;
-	const { cur, prev } = data;
+	const { elem, cur, prev } = data;
 
 	for (const name in cur) {
 		const curValue = cur[name];

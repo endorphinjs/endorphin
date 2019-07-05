@@ -216,7 +216,10 @@ function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceN
             ? qStr(token.value as string)
             : generateExpression(token, state);
     });
-    return state.runtime('addClass', [state.injector, sn(chunks).join(' + ')]);
+    return state.runtime('addPendingClass', [
+        state.receiver.pendingAttributes.getSymbol(),
+        sn(chunks).join(' + ')
+    ]);
 }
 
 /**

@@ -99,7 +99,7 @@ export default class ElementEntity extends Entity {
     get pendingAttributes(): Entity {
         if (!this.dynAttrs) {
             this.dynAttrs = this.state.entity('attrSet', {
-                mount: () => this.state.runtime('changeSet', []),
+                mount: () => this.state.runtime('attributeSet', [this.getSymbol()]),
                 update: () => sn()
             });
 
@@ -226,7 +226,7 @@ export default class ElementEntity extends Entity {
             // There are pending dynamic attributes
             const { state } = this;
             const ent = state.entity({
-                shared: () => state.runtime('finalizeAttributes', [this.getSymbol(), this.dynAttrs.getSymbol()])
+                shared: () => state.runtime('finalizeAttributes', [this.dynAttrs.getSymbol()])
             });
 
             this.add(state.markSlot(ent));

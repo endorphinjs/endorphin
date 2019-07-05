@@ -1,4 +1,4 @@
-import { changeSet, createInjector, elem, finalizeAttributes, insert, mountBlock, setAttribute, setAttributeExpression, setPendingAttribute, text, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
+import { attributeSet, createInjector, elem, finalizeAttributes, insert, mountBlock, setAttribute, setAttributeExpression, setPendingAttribute, text, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
 
 function ifBody$0(host, injector) {
 	insert(injector, text("aaa"));
@@ -56,17 +56,17 @@ export default function template$0(host, scope) {
 	const inj$1 = createInjector(e4$0);
 	scope.fooAttr$3 = setAttributeExpression(e4$0, "foo", host.props.bar4);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
-	const e5$0 = scope.e5$0 = target$0.appendChild(elem("e5"));
-	const attrSet$0 = scope.attrSet$0 = changeSet();
+	const e5$0 = target$0.appendChild(elem("e5"));
+	const attrSet$0 = scope.attrSet$0 = attributeSet(e5$0);
 	setPendingAttribute(attrSet$0, "foo", host.props.bar4);
 	ifAttr$0(host);
-	finalizeAttributes(e5$0, attrSet$0);
-	const e6$0 = scope.e6$0 = target$0.appendChild(elem("e6"));
+	finalizeAttributes(attrSet$0);
+	const e6$0 = target$0.appendChild(elem("e6"));
 	const inj$2 = createInjector(e6$0);
-	const attrSet$1 = scope.attrSet$1 = changeSet();
+	const attrSet$1 = scope.attrSet$1 = attributeSet(e6$0);
 	setPendingAttribute(attrSet$1, "foo", host.props.bar4);
 	scope.if$3 = mountBlock(host, inj$2, ifEntry$2);
-	finalizeAttributes(e6$0, attrSet$1);
+	finalizeAttributes(attrSet$1);
 	return template$0Update;
 }
 
@@ -80,15 +80,15 @@ function template$0Update(host, scope) {
 	updateBlock(scope.if$1);
 	setPendingAttribute(attrSet$0, "foo", host.props.bar4);
 	ifAttr$0(host);
-	finalizeAttributes(scope.e5$0, attrSet$0);
+	finalizeAttributes(attrSet$0);
 	setPendingAttribute(attrSet$1, "foo", host.props.bar4);
 	updateBlock(scope.if$3);
-	finalizeAttributes(scope.e6$0, attrSet$1);
+	finalizeAttributes(attrSet$1);
 }
 
 function template$0Unmount(scope) {
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.if$3 = unmountBlock(scope.if$3);
-	scope.fooAttr$2 = scope.e3$0 = scope.fooAttr$3 = scope.e4$0 = scope.attrSet$0 = scope.e5$0 = scope.attrSet$1 = scope.e6$0 = null;
+	scope.fooAttr$2 = scope.e3$0 = scope.fooAttr$3 = scope.e4$0 = scope.attrSet$0 = scope.attrSet$1 = null;
 }

@@ -13,8 +13,11 @@ export default class AttributeEntity extends Entity {
         if (isIdentifier(node.name) && receiver.stats) {
             const name = node.name.name;
             const { value } = node;
+            const isDynamic = name === 'class'
+                ? receiver.stats.hasDynamicClass()
+                : receiver.stats.isDynamicAttribute(name);
 
-            if (receiver.stats.isDynamicAttribute(name)) {
+            if (isDynamic) {
                 // Dynamic attributes must be collected into temp object
                 // and finalized later
                 this.setShared(() => {

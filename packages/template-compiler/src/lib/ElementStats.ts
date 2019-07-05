@@ -5,7 +5,7 @@ import {
 
 type VisitorCallback = (node: ENDStatement, content: ENDStatement[] | void, conditional: boolean) => any;
 
-interface Ref<T = any> {
+interface Ref<T = Node> {
     node: T;
     /**
      * Indicates that current ref is applied under some condition, e.g. inside
@@ -88,7 +88,8 @@ export default class ElementStats {
      * be added or removed under some top level condition
      */
     hasDynamicClass(): boolean {
-        return this.isDynamicAttribute('class') || this.classNames.some(isConditionalRef);
+        return this.isDynamicAttribute('class')
+            || this.classNames.some(isDynamicClass);
     }
 
     /**
@@ -208,6 +209,10 @@ function contentNode(node: Node): boolean {
 
 function isConditionalRef(ref: Ref): boolean {
     return ref.conditional;
+}
+
+function isDynamicClass(ref: Ref): boolean {
+    return ref.node.type === 'ENDAddClassStatement' || isConditionalRef(ref);
 }
 
 function unique<T>(items: T[]): T[] {

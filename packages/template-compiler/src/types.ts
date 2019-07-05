@@ -35,10 +35,9 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock'
     | 'createSlot' | 'mountSlot' | 'updateIncomingSlot' | 'updateDefaultSlot' | 'unmountSlot'
     | 'createInjector' | 'unmountInjector' | 'block'
 
-    | 'setAttribute' | 'updateAttribute' | 'setAttributeExpression' | 'updateAttributeExpression'
-    | 'setAttributeNS' | 'updateAttributeNS' | 'setAttributeExpressionNS' | 'updateAttributeExpressionNS'
-    | 'addClass' | 'toggleClass' | 'addMultiClass' | 'toggleMultiClass'
-    | 'addClassIf' | 'toggleClassIf'
+    | 'setAttribute' | 'setAttributeExpression' | 'updateAttributeExpression'
+    | 'setAttributeNS' | 'setAttributeExpressionNS' | 'updateAttributeExpressionNS'
+    | 'attributeSet' | 'addClass' | 'addClassIf' | 'toggleClassIf'
     | 'setPendingAttribute' | 'addPendingClass' | 'addPendingClassIf' | 'finalizeAttributes'
 
     | 'addEvent' | 'addStaticEvent' | 'removeStaticEvent' | 'finalizeEvents'
