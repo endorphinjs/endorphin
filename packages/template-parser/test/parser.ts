@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { equal, deepEqual, throws, ok } from 'assert';
-import parse from '../src/index';
+import parse, { ENDAttributeStatement } from '../src/index';
 import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement, Identifier, CallExpression, ENDChooseStatement } from '../src/ast';
 
 describe('Template parser', () => {
@@ -130,5 +130,23 @@ describe('Template parser', () => {
             .body[0] as ENDChooseStatement;
         equal(node.type, 'ENDChooseStatement');
         equal(node.cases.length, 2);
+    });
+
+    it('should support both <e:attribute> and <e:attr>', () => {
+        let node = parseTemplate(`<template><e:attribute test={a}/></template>`)
+            .body[0] as ENDAttributeStatement;
+        equal(node.type, 'ENDAttributeStatement');
+        equal(node.attributes[0].type, 'ENDAttribute');
+        equal(node.attributes[0].name.type, 'Identifier');
+        equal((node.attributes[0].name as Identifier).name, 'test');
+        equal(node.attributes[0].value.type, 'Program');
+
+        node = parseTemplate(`<template><e:attr test={a}/></template>`)
+            .body[0] as ENDAttributeStatement;
+        equal(node.type, 'ENDAttributeStatement');
+        equal(node.attributes[0].type, 'ENDAttribute');
+        equal(node.attributes[0].name.type, 'Identifier');
+        equal((node.attributes[0].name as Identifier).name, 'test');
+        equal(node.attributes[0].value.type, 'Program');
     });
 });
