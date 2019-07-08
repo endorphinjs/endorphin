@@ -1,9 +1,9 @@
 import { ENDAttribute, ENDAttributeName, ENDAttributeValue, Literal, Program } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import compileExpression from '../expression';
-import { Chunk, ChunkList } from '../types';
+import { Chunk, ChunkList, RenderChunk } from '../types';
 import CompileState from '../lib/CompileState';
-import { isIdentifier, isExpression, sn, qStr, isLiteral } from '../lib/utils';
+import { isIdentifier, isExpression, sn, qStr, isLiteral, propGetter } from '../lib/utils';
 
 interface NSData {
     name: string;
@@ -22,11 +22,19 @@ export default class AttributeEntity extends Entity {
                 ? receiver.stats.hasDynamicClass()
                 : receiver.stats.isDynamicAttribute(name);
 
-            if (isDynamic) {
+            if (receiver.isComponent) {
+                // For component, we should always use pending attributes
+                const render: RenderChunk = () =>
+                    sn([receiver.pendingAttributes.getSymbol(), propGetter(name), ' = ', compileAttributeValue(value, state)]);
+
+                this.setMount(render);
+                if (isDynamic || isExpression(value)) {
+                    this.setUpdate(render);
+                }
+            } else if (isDynamic) {
                 // Dynamic attributes must be collected into temp object
                 // and finalized later
                 this.setShared(() => {
-                    // TODO handle props for component
                     const ns = getAttributeNS(node, state);
                     const args = createArguments(name, value, state, true, ns);
 
@@ -36,7 +44,6 @@ export default class AttributeEntity extends Entity {
                 });
             } else if (isLiteral(value)) {
                 // Static value, mount once
-                // TODO handle props for component
                 this.setMount(() => {
                     const ns = getAttributeNS(node, state);
                     const args = createArguments(name, value, state, false, ns);
@@ -46,7 +53,6 @@ export default class AttributeEntity extends Entity {
                 });
             } else if (isExpression(value)) {
                 // Expression attribute, must be updated in runtime
-                // TODO handle props for component
                 const ns = getAttributeNS(node, state);
                 this.setMount(() => {
                     const args = createArguments(name, value, state, false, ns);

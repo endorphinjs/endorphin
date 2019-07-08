@@ -99,14 +99,17 @@ export default class ElementEntity extends Entity {
     get pendingAttributes(): Entity {
         if (!this.dynAttrs) {
             this.dynAttrs = this.state.entity('attrSet', {
-                mount: () => this.state.runtime('attributeSet', [this.getSymbol()]),
-                update: () => sn()
+                mount: () => this.state.runtime(this.isComponent ? 'pendingProps' : 'attributeSet', [this.getSymbol()]),
             });
 
             this.add(this.dynAttrs);
         }
 
         return this.dynAttrs;
+    }
+
+    get hasPendingAttributes(): boolean {
+        return !!this.dynAttrs;
     }
 
     /**
@@ -222,7 +225,7 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeAttributes() {
-        if (this.dynAttrs) {
+        if (this.hasPendingAttributes) {
             // There are pending dynamic attributes
             const { state } = this;
             let noNS = this.stats.hasDynamicClass();

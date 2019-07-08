@@ -71,6 +71,7 @@ describe('Template compiler', () => {
     it.only('debug', () => {
         compare('attrs.html', null);
         compare('class.html', null);
-        compare('ns-attrs.html', null, true);
+        compare('ns-attrs.html', null);
+        compare('props.html', null, true);
     });
 });

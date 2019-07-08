@@ -243,13 +243,6 @@ function objectKey(node: Identifier | Program, state: CompileState) {
  */
 function getContentAttributes(element: ElementEntity): ENDAttribute[] {
     const node = element.node as ENDElement;
-    if (element.isComponent) {
-        // In component, static attributes/props (e.g. ones which won’t change
-        // in runtime) must be added during component mount. Thus, we should
-        // process dynamic attributes only
-        return node.attributes.filter(attr => element.isDynamicAttribute(attr));
-    }
-
     if (node.name.name === 'slot') {
         // Do not return `name` attribute of slot: it will be added by runtime
         return node.attributes.filter(attr => !isIdentifier(attr.name) || attr.name.name !== 'name');

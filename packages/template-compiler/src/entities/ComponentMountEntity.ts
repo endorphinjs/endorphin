@@ -1,22 +1,24 @@
 import Entity from './Entity';
 import ElementEntity from './ElementEntity';
 import CompileState from '../lib/CompileState';
-import { toObjectLiteral } from '../lib/utils';
+import { ChunkList } from '../types';
 
 export default class ComponentMountEntity extends Entity {
     constructor(readonly element: ElementEntity, state: CompileState) {
         super('', state);
         this.setMount(() => {
-            const staticProps = element.getStaticProps();
-            const staticPropsArg = staticProps.size
-                ? toObjectLiteral(staticProps, state.indent, 1) : null;
-            return state.runtime('mountComponent', [element.getSymbol(), staticPropsArg]);
+            const args: ChunkList = [element.getSymbol()];
+            if (element.hasPendingAttributes) {
+                args.push(element.pendingAttributes.getSymbol());
+            }
+            return state.runtime('mountComponent', args);
         });
 
         this.setUnmount(() => element.unmount('unmountComponent'));
 
-        if (!element.isStaticContent || element.dynamicAttributes.size || element.dynamicEvents.size) {
-            this.setUpdate(() => state.runtime('updateComponent', [element.getSymbol()]));
+        if (element.hasPendingAttributes && element.pendingAttributes.symbolUsage.update) {
+            // Pending props receiver is used in update scope, should update component as well
+            this.setUpdate(() => state.runtime('updateComponent', [element.getSymbol(), element.pendingAttributes.getSymbol()]));
             state.markSlot(this);
         }
     }

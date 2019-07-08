@@ -217,8 +217,8 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 
 	const { props, state, extend, events } = prepare(element, definition);
 
-	element.refs = {};
-	element.props = obj(props);
+	element.refs = obj();
+	element.props = obj();
 	element.state = state;
 	element.componentView = element; // XXX Should point to Shadow Root in Web Components
 	root && (element.root = root);
@@ -261,20 +261,12 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 /**
  * Mounts given component
  */
-export function mountComponent(component: Component, initialProps?: object) {
+export function mountComponent(component: Component, props?: object) {
 	const { componentModel } = component;
-	const { input, definition, defaultProps } = componentModel;
-
-	let changes = setPropsInternal(component, obj(), assign(obj(defaultProps), initialProps));
-	const runtimeChanges = setPropsInternal(component, input.attributes.prev, input.attributes.cur);
-
-	if (changes && runtimeChanges) {
-		assign(changes, runtimeChanges);
-	} else if (runtimeChanges) {
-		changes = runtimeChanges;
-	}
-
+	const { input, definition } = componentModel;
+	const changes = setPropsInternal(component, props || componentModel.defaultProps);
 	const arg = changes || {};
+
 	finalizeEvents(input);
 
 	componentModel.rendering = true;
@@ -302,9 +294,9 @@ export function mountComponent(component: Component, initialProps?: object) {
 /**
  * Updates given mounted component
  */
-export function updateComponent(component: Component): number {
+export function updateComponent(component: Component, props?: object): number {
 	const { input } = component.componentModel;
-	const changes = setPropsInternal(component, input.attributes.prev, input.attributes.cur);
+	const changes = props && setPropsInternal(component, props);
 	finalizeEvents(input);
 
 	if (changes || component.componentModel.queued) {
@@ -353,6 +345,13 @@ export function subscribeStore(component: Component, keys?: string[]) {
 	}
 
 	component.store.watch(component, keys);
+}
+
+/**
+ * Create pending props accumulator object
+ */
+export function pendingProps(component: Component): object {
+	return assign(obj(), component.componentModel.defaultProps);
 }
 
 /**
@@ -419,18 +418,17 @@ function kebabCase(ch: string): string {
 	return '-' + ch.toLowerCase();
 }
 
-function setPropsInternal(component: Component, prevProps: object, nextProps: object): Changes | null {
-	const changes: Changes = {};
-	let didChanged = false;
+function setPropsInternal(component: Component, nextProps: object): Changes | undefined {
+	let changes: Changes | undefined;
 	const { props } = component;
 	const { defaultProps } = component.componentModel;
 
 	for (const p in nextProps) {
-		const prev = prevProps[p];
+		const prev = props[p];
 		let current = nextProps[p];
 
 		if (current == null) {
-			current = defaultProps[p];
+			nextProps[p] = current = defaultProps[p];
 		}
 
 		if (p === 'class' && current != null) {
@@ -438,19 +436,19 @@ function setPropsInternal(component: Component, prevProps: object, nextProps: ob
 		}
 
 		if (current !== prev) {
-			didChanged = true;
-			props[p] = prevProps[p] = current;
+			if (!changes) {
+				changes = {};
+			}
+			props[p] = current;
 			changes[p] = { current, prev };
 
 			if (!/^partial:/.test(p)) {
 				representAttributeValue(component, p.replace(/[A-Z]/g, kebabCase), current);
 			}
 		}
-
-		nextProps[p] = null;
 	}
 
-	return didChanged ? changes : null;
+	return changes;
 }
 
 /**
@@ -544,7 +542,7 @@ function addPropsState(element: Component) {
 		// In case of calling `setProps` after component was unmounted,
 		// check if `componentModel` is available
 		if (value != null && componentModel && componentModel.mounted) {
-			const changes = setPropsInternal(element, element.props, obj(value));
+			const changes = setPropsInternal(element, assign(obj(), element.props, value));
 			changes && renderNext(element, changes);
 		}
 	};
