@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { equal, deepEqual, throws, ok } from 'assert';
-import parse, { ENDAttributeStatement } from '../src/index';
-import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement, Identifier, CallExpression, ENDChooseStatement } from '../src/ast';
+import parse from '../src/index';
+import { ENDElement, Program, ExpressionStatement, ENDTemplate, ENDIfStatement, Identifier, CallExpression, ENDChooseStatement, ENDAttributeStatement } from '../src/ast';
 
 describe('Template parser', () => {
     function read(fileName: string): string {
