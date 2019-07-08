@@ -42,6 +42,16 @@ function ifEntry$2(host) {
 	}
 }
 
+function attrValue$0(host) {
+	return "a " + (host.props.bar4) + " b";
+}
+
+function ifAttr$1(host, scope) {
+	if (host.props.cond) {
+		setPendingAttribute(scope.attrSet$2, "foo", host.props.baz);
+	}
+}
+
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const e1$0 = target$0.appendChild(elem("e1"));
@@ -67,13 +77,18 @@ export default function template$0(host, scope) {
 	setPendingAttribute(attrSet$1, "foo", host.props.bar4);
 	scope.if$3 = mountBlock(host, inj$2, ifEntry$2);
 	finalizeAttributes(attrSet$1);
+	const e7$0 = target$0.appendChild(elem("e7"));
+	const attrSet$2 = scope.attrSet$2 = attributeSet(e7$0);
+	setPendingAttribute(attrSet$2, "foo", attrValue$0(host, scope));
+	ifAttr$1(host);
+	finalizeAttributes(attrSet$2);
 	return template$0Update;
 }
 
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { attrSet$0, attrSet$1 } = scope;
+	const { attrSet$0, attrSet$1, attrSet$2 } = scope;
 	updateBlock(scope.if$0);
 	scope.fooAttr$2 = updateAttributeExpression(scope.e3$0, "foo", host.props.bar3, scope.fooAttr$2);
 	scope.fooAttr$3 = updateAttributeExpression(scope.e4$0, "foo", host.props.bar4, scope.fooAttr$3);
@@ -84,11 +99,14 @@ function template$0Update(host, scope) {
 	setPendingAttribute(attrSet$1, "foo", host.props.bar4);
 	updateBlock(scope.if$3);
 	finalizeAttributes(attrSet$1);
+	setPendingAttribute(attrSet$2, "foo", attrValue$0(host, scope));
+	ifAttr$1(host);
+	finalizeAttributes(attrSet$2);
 }
 
 function template$0Unmount(scope) {
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.if$3 = unmountBlock(scope.if$3);
-	scope.fooAttr$2 = scope.e3$0 = scope.fooAttr$3 = scope.e4$0 = scope.attrSet$0 = scope.attrSet$1 = null;
+	scope.fooAttr$2 = scope.e3$0 = scope.fooAttr$3 = scope.e4$0 = scope.attrSet$0 = scope.attrSet$1 = scope.attrSet$2 = null;
 }

@@ -1,7 +1,7 @@
 import { ENDAttribute, ENDAttributeName, ENDAttributeValue, Literal, Program } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import compileExpression from '../expression';
-import { Chunk, RenderChunk, ChunkList } from '../types';
+import { Chunk, ChunkList } from '../types';
 import CompileState from '../lib/CompileState';
 import { isIdentifier, isExpression, sn, qStr, isLiteral } from '../lib/utils';
 
@@ -69,36 +69,6 @@ export default class AttributeEntity extends Entity {
     }
 }
 
-export const mountStaticAttribute: RenderChunk = (attr: AttributeEntity) => {
-    const { node, state } = attr;
-    const elem = state.element.getSymbol();
-    const ns = getAttributeNS(node, state);
-
-    return ns
-        ? sn([elem, `.setAttributeNS(${ns.ns}, `, attrName(node, state), ', ', attrValue(node, state), `)`], node)
-        : sn([elem, `.setAttribute(`, attrName(node, state), ', ', attrValue(node, state), `)`], node);
-};
-
-export const mountDynamicAttribute: RenderChunk = (attr: AttributeEntity) => {
-    const { node, state } = attr;
-    const { injector } = state.element;
-    const ns = getAttributeNS(node, state);
-
-    return ns
-        ? state.runtime('setAttributeNS', [injector, ns.ns, attrName(node, state), attrValue(node, state)])
-        : state.runtime('setAttribute', [injector, attrName(node, state), attrValue(node, state)]);
-};
-
-function attrName(attr: ENDAttribute, state: CompileState): Chunk {
-    const ns = getAttributeNS(attr, state);
-    return compileAttributeName(ns ? ns.name : attr.name, state);
-}
-
-function attrValue(attr: ENDAttribute, state: CompileState): Chunk {
-    const inComponent = state.element && state.element.isComponent;
-    return compileAttributeValue(attr.value, state, inComponent ? 'component' : null);
-}
-
 export function compileAttributeName(name: ENDAttributeName | string, state: CompileState): Chunk {
     if (typeof name === 'string') {
         return qStr(name);
@@ -137,7 +107,11 @@ export function compileAttributeValue(value: ENDAttributeValue, state: CompileSt
 
     if (value.type === 'ENDAttributeValueExpression') {
         // List of static and dynamic tokens, must be compiled to function
-        const fnName = createConcatFunction('attrValue', state, value.elements);
+        let fnName: string = state.getCache(value, 'attrValue');
+        if (!fnName) {
+            fnName = createConcatFunction('attrValue', state, value.elements);
+            state.putCache(value, 'attrValue', fnName);
+        }
         return `${fnName}(${state.host}, ${state.scope})`;
     }
 }

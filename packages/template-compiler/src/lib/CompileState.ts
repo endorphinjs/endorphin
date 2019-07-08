@@ -145,6 +145,7 @@ export default class CompileState {
 
     private _renderContext?: UsageContext;
     private _warned: Set<string> = new Set();
+    private cache: Map<Node, { [name: string]: any }> = new Map();
 
     constructor(options?: CompileOptions) {
         this.options = Object.assign({}, defaultOptions, options);
@@ -440,6 +441,26 @@ export default class CompileState {
         if (chunk) {
             this.output.add(chunk);
             this.output.add('\n');
+        }
+    }
+
+    /**
+     * Returns cached value for given node
+     */
+    getCache(node: Node, key: string): any {
+        if (this.cache.has(node)) {
+            return this.cache.get(node)[key];
+        }
+    }
+
+    /**
+     * Puts given value into cache
+     */
+    putCache(node: Node, key: string, value: any) {
+        if (!this.cache.has(node)) {
+            this.cache.set(node, { [key]: value });
+        } else {
+            this.cache.get(node)[key] = value;
         }
     }
 
