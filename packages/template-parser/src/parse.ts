@@ -30,6 +30,7 @@ interface StatementMap {
 
 const statements: StatementMap = {
     'attribute': attributeStatement,
+    'attr': attributeStatement,
     'add-class': addClassStatement,
     'variable': variableStatement,
     'var': variableStatement,
