@@ -17,15 +17,16 @@ export default class EventEntity extends Entity {
         super(node.name.split(':')[0], state);
 
         const eventType = this.rawName;
-        const { element } = state;
+        const { element, receiver } = state;
         const handler = createEventHandler(node, state);
 
-        if (!element.node || element.dynamicEvents.has(eventType) || element.hasPartials) {
-            this.setShared(() => state.runtime('addEvent', [element.injector, qStr(eventType), handler, state.host, state.scope]));
+        if (receiver!.stats && receiver.stats.isDynamicDirective(node.prefix, node.name)) {
+            // Event is dynamic, e.g. can be changed with condition
+            this.setShared(() =>
+                state.runtime('setPendingEvent', [receiver.pendingEvents.getSymbol(), qStr(eventType), handler, state.scope]));
         } else {
-            // Add as static event
-            this.setMount(() => state.runtime('addStaticEvent', [element.getSymbol(), qStr(eventType), handler, state.host, state.scope]));
-            this.setUnmount(() => this.unmount('removeStaticEvent'));
+            this.setMount(() => state.runtime('addEvent', [element.getSymbol(), qStr(eventType), handler, state.host, state.scope]));
+            this.setUnmount(() => sn([this.scopeName, ' = ', this.state.runtime('removeEvent', [qStr(eventType), this.getSymbol()])]));
         }
     }
 }

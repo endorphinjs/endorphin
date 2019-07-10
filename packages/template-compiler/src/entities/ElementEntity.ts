@@ -49,6 +49,7 @@ export default class ElementEntity extends Entity {
 
     private slotMarks: { [slotName: string]: string } = {};
     private dynAttrs?: Entity;
+    private dynEvents?: Entity;
 
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
@@ -108,8 +109,27 @@ export default class ElementEntity extends Entity {
         return this.dynAttrs;
     }
 
+    /** Entity for receiving pending events */
+    get pendingEvents(): Entity {
+        if (!this.dynEvents) {
+            const { state } = this;
+            this.dynEvents = state.entity('events', {
+                mount: () => state.runtime('pendingEvents', [this.state.host, this.getSymbol()]),
+                unmount: ent => ent.unmount('detachPendingEvents')
+            });
+
+            this.add(this.dynEvents);
+        }
+
+        return this.dynEvents;
+    }
+
     get hasPendingAttributes(): boolean {
         return !!this.dynAttrs;
+    }
+
+    get hasPendingEvents(): boolean {
+        return !!this.dynEvents;
     }
 
     /**
@@ -264,10 +284,12 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeEvents() {
-        const { state } = this;
-        this.add(state.entity({
-            shared: () => state.runtime('finalizeEvents', [this.injector])
-        }));
+        if (this.hasPendingEvents) {
+            const { state } = this;
+            this.add(state.entity({
+                shared: () => state.runtime('finalizePendingEvents', [this.dynEvents.getSymbol()]),
+            }));
+        }
     }
 
     /**

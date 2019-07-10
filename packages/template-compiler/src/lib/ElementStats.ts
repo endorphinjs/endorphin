@@ -101,6 +101,14 @@ export default class ElementStats {
     }
 
     /**
+     * Check if given directive is dynamic
+     */
+    isDynamicDirective(prefix: string, name: string): boolean {
+        const dir = this.directives.find(item => item.prefix === prefix && item.name === name);
+        return dir && dir.refs.some(isConditionalRef);
+    }
+
+    /**
      * Collects stats about attributes
      */
     private attributesStats(attributes: ENDAttribute[], conditional: boolean = false) {

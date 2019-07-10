@@ -1,6 +1,6 @@
 import { elem } from './dom';
 import { assign, obj, changeSet, representAttributeValue, getObjectDescriptors, captureError } from './utils';
-import { finalizeEvents, safeEventListener } from './event';
+import { safeEventListener } from './event';
 import { normalizeClassName } from './attribute';
 import { createInjector, Injector } from './injector';
 import { runHook, reverseWalkDefinitions } from './hooks';
@@ -267,8 +267,6 @@ export function mountComponent(component: Component, props?: object) {
 	const changes = setPropsInternal(component, props || componentModel.defaultProps);
 	const arg = changes || {};
 
-	finalizeEvents(input);
-
 	componentModel.rendering = true;
 
 	// Notify slot status
@@ -295,12 +293,10 @@ export function mountComponent(component: Component, props?: object) {
  * Updates given mounted component
  */
 export function updateComponent(component: Component, props?: object): number {
-	const { input } = component.componentModel;
 	const changes = props && setPropsInternal(component, props);
-	finalizeEvents(input);
 
 	if (changes || component.componentModel.queued) {
-		renderNext(component, changes!);
+		renderNext(component, changes);
 	}
 
 	return changes ? 1 : 0;
@@ -314,7 +310,6 @@ export function updateComponent(component: Component, props?: object): number {
 export function unmountComponent(component: Component): void {
 	const { componentModel } = component;
 	const { definition, events } = componentModel;
-	const scope = getScope(component);
 
 	runHook(component, 'willUnmount');
 
@@ -328,7 +323,7 @@ export function unmountComponent(component: Component): void {
 	}
 
 	const dispose = definition.default && definition.default.dispose;
-	captureError(component, dispose, scope);
+	captureError(component, dispose, getScope(component));
 
 	runHook(component, 'didUnmount');
 

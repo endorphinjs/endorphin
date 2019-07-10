@@ -276,15 +276,13 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
         element.setContent(node.body, next);
     }
 
+    element.finalizeEvents();
+
     if (element.isComponent) {
         element.markSlotUpdate();
         element.mountComponent();
     } else {
         element.finalizeAttributes();
-
-        if (element.dynamicEvents.size || element.hasPartials) {
-            element.finalizeEvents();
-        }
     }
 
     return element;

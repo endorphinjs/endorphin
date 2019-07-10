@@ -44,6 +44,7 @@ export type Changes<T = any> = {
 export interface EventBinding extends EventListenerObject {
 	host: Component;
 	scope: Scope;
-	type: string;
 	target: Element;
+	listener?: EventListener;
+	bound: boolean;
 }

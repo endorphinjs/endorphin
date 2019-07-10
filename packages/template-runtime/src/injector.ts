@@ -1,7 +1,7 @@
 import { listInsertValueAfter, listPrependValue, listMoveFragmentAfter, listMoveFragmentFirst, listDetachFragment, LinkedList, LinkedListItem } from './linked-list';
-import { changeSet, animatingKey } from './utils';
+import { animatingKey } from './utils';
 import { domInsert, domRemove } from './dom';
-import { ChangeSet, EventBinding, Scope, MountBlock, UpdateBlock } from './types';
+import { Scope, MountBlock, UpdateBlock } from './types';
 import { Component } from './component';
 import { SlotContext } from './slot';
 
@@ -15,21 +15,8 @@ export interface Injector extends LinkedList {
 	/** Current insertion pointer */
 	ptr: LinkedListItem | null;
 
-	/**
-	 * Slots container
-	 */
-	slots?: {
-		[name: string]: SlotContext
-	} | null;
-
-	/** Pending attributes updates */
-	attributes: ChangeSet;
-
-	/** Pending namespace updates */
-	attributesNS?: { [uri: string]: ChangeSet };
-
-	/** Current event handlers */
-	events: ChangeSet<EventBinding>;
+	/** Slots container */
+	slots: { [name: string]: SlotContext } | null;
 }
 
 export interface Block {
@@ -56,10 +43,7 @@ export function createInjector(target: Element): Injector {
 		// NB create `slots` placeholder to promote object to hidden class.
 		// Do not use any additional function argument for adding value to `slots`
 		// to reduce runtime checks and keep functions in monomorphic state
-		slots: null,
-		attributes: changeSet(),
-		attributesNS: void 0,
-		events: changeSet()
+		slots: null
 	};
 }
 
