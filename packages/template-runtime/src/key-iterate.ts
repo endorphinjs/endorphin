@@ -63,7 +63,7 @@ export function updateKeyIterator(block: KeyIteratorBlock): number {
 	const collection = block.get(host, block.parentScope);
 	if (collection && typeof collection.forEach === 'function') {
 		const prevScope = getScope(host);
-		collection.forEach(iterator, block);
+		collection.forEach(keyIterator, block);
 		setScope(host, prevScope);
 	}
 
@@ -90,7 +90,7 @@ function getItem(listItem: LinkedListItem, bound: LinkedListItem): KeyIteratorIt
 	return listItem !== bound ? listItem.value : null;
 }
 
-function iterator(this: KeyIteratorBlock, value: any, key: any) {
+function keyIterator(this: KeyIteratorBlock, value: any, key: any) {
 	const { injector, index, rendered } = this;
 	const id = this.keyExpr(value, prepareScope(this.scope, index, key, value));
 	let entry = rendered && getLookup(rendered, id);
