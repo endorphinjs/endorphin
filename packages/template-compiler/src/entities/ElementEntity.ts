@@ -297,17 +297,31 @@ export default class ElementEntity extends Entity {
      */
     setRef(refName: string | Program) {
         const { state } = this;
-        this.add(state.entity({
-            shared: () => {
-                let ref: Chunk;
-                if (typeof refName === 'string') {
-                    ref = qStr(refName);
-                } else {
-                    ref = generateExpression(refName, state);
+        const { refStats } = state;
+
+        if (refStats.isDynamic || (typeof refName === 'string' && refStats.refs[refName].multiple)) {
+            // There are dynamic refs in current template or current ref is used
+            // for multiple element: must be added as pending
+            this.add(state.entity({
+                shared: () => {
+                    const ref: Chunk = typeof refName === 'string'
+                        ? qStr(refName)
+                        : generateExpression(refName, state);
+                    return state.runtime('setPendingRef', [state.pendingRefs.getSymbol(), ref, this.getSymbol()]);
                 }
-                return state.runtime('setRef', [state.host, ref, this.getSymbol()]);
+            }));
+        } else if (typeof refName === 'string') {
+            // NB if `refName` is a program, it will be rendered via dynamic branch
+            const nameArg = qStr(refName);
+            const ent = state.entity({
+                mount: () => state.runtime('setRef', [state.host, nameArg, this.getSymbol()])
+            });
+            if (refStats.refs[refName].conditional) {
+                ent.setUnmount(() => state.runtime('removeRef', [state.host, nameArg]));
             }
-        }));
+
+            this.add(ent);
+        }
     }
 
     /**

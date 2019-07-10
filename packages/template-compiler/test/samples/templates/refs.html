@@ -1,12 +1,12 @@
 <!-- Template with refs -->
 <link rel="import" href="./slot-inner.html" />
 <template>
-    <main ref="main">
+    <main ref:main>
         <div ref="header"></div>
         <e:if test={c1}>
             <span ref="header"></span>
+            <footer ref:footer></footer>
         </e:if>
-        <!-- <footer ref="{dynRef}"></footer> -->
         <slot-inner ref="addon"/>
     </main>
 </template>

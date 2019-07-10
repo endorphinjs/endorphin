@@ -1,16 +1,16 @@
 import { elem } from './dom';
-import { assign, obj, changeSet, representAttributeValue, getObjectDescriptors, captureError } from './utils';
+import { assign, obj, representAttributeValue, getObjectDescriptors, captureError } from './utils';
 import { safeEventListener } from './event';
 import { normalizeClassName } from './attribute';
 import { createInjector, Injector } from './injector';
 import { runHook, reverseWalkDefinitions } from './hooks';
 import { getScope } from './scope';
-import { Changes, Data, UpdateTemplate, ChangeSet, MountTemplate } from './types';
+import { Changes, Data, UpdateTemplate, MountTemplate } from './types';
 import { Store } from './store';
 import { notifySlotUpdate } from './slot';
 
 type DescriptorMap = object & { [x: string]: PropertyDescriptor };
-interface RefMap { [key: string]: Element; }
+export interface RefMap { [key: string]: Element | null; }
 
 export type ComponentEventHandler = (component: Component, event: Event, target: HTMLElement) => void;
 export type StaticEventHandler = (evt: Event) => void;
@@ -70,9 +70,6 @@ interface ComponentModel {
 	/** Injector for incoming component data */
 	input: Injector;
 
-	/** Change set for component refs */
-	refs: ChangeSet;
-
 	/** Runtime variables */
 	vars: object;
 
@@ -93,9 +90,6 @@ interface ComponentModel {
 
 	/** Indicates that component is currently rendering */
 	rendering: boolean;
-
-	/** Indicates that component is currently in finalization state (calling `did*` hooks) */
-	finalizing: boolean;
 
 	/** Default props values */
 	defaultProps: object;
@@ -243,10 +237,8 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 		definition,
 		input,
 		vars: obj(),
-		refs: changeSet(),
 		mounted: false,
 		rendering: false,
-		finalizing: false,
 		update: void 0,
 		queued: false,
 		events,
@@ -283,10 +275,8 @@ export function mountComponent(component: Component, props?: object) {
 	componentModel.update = captureError(component, definition.default, component, getScope(component));
 	componentModel.mounted = true;
 	componentModel.rendering = false;
-	componentModel.finalizing = true;
 	runHook(component, 'didRender', arg);
 	runHook(component, 'didMount', arg);
-	componentModel.finalizing = false;
 }
 
 /**
@@ -393,10 +383,8 @@ export function renderComponent(component: Component, changes?: Changes) {
 	runHook(component, 'willRender', arg);
 	captureError(component, componentModel.update, component, getScope(component));
 	componentModel.rendering = false;
-	componentModel.finalizing = true;
 	runHook(component, 'didRender', arg);
 	runHook(component, 'didUpdate', arg);
-	componentModel.finalizing = false;
 }
 
 /**

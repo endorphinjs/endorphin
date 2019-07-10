@@ -7,6 +7,7 @@ import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
 import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue } from './utils';
 import { Chunk, ComponentImport, RuntimeSymbols, ChunkList, UsageContext } from '../types';
 import { CompileOptions } from '..';
+import { RefStats } from './RefStats';
 
 interface NamespaceMap {
     [prefix: string]: string;
@@ -85,6 +86,22 @@ export default class CompileState {
         return this.options.cssScope ? this.cssScopeSymbol : null;
     }
 
+    /** Returns entity for collecting pending refs */
+    get pendingRefs(): Entity {
+        if (!this.dynRefs) {
+            this.dynRefs = this.entity('refs', {
+                mount: () => this.runtime('obj', [])
+            });
+        }
+
+        return this.dynRefs;
+    }
+
+    /** Check if scope contains pending refs entity */
+    get hasPendingRefs(): boolean {
+        return !!this.dynRefs;
+    }
+
     /** Actual content receiver */
     receiver?: ElementEntity;
 
@@ -137,6 +154,9 @@ export default class CompileState {
     /** List of all registered slot update symbols */
     readonly slotSymbols: string[] = [];
 
+    /** Stats about `ref` usage in template */
+    refStats?: RefStats;
+
     /** Symbol for referencing CSS isolation scope */
     private readonly cssScopeSymbol = 'cssScope';
 
@@ -146,6 +166,7 @@ export default class CompileState {
     private _renderContext?: UsageContext;
     private _warned: Set<string> = new Set();
     private cache: Map<Node, { [name: string]: any }> = new Map();
+    private dynRefs?: Entity;
 
     constructor(options?: CompileOptions) {
         this.options = Object.assign({}, defaultOptions, options);

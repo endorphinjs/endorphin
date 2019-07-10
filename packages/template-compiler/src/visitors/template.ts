@@ -18,6 +18,7 @@ import EventEntity from '../entities/EventEntity';
 import ElementEntity from '../entities/ElementEntity';
 import ClassEntity from '../entities/ClassEntity';
 import CompileState from '../lib/CompileState';
+import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
 import {
     sn, qStr, isLiteral, toObjectLiteral, nameToJS, propGetter,
@@ -28,6 +29,7 @@ export default {
     ENDTemplate(node: ENDTemplate, state, next) {
         state.runBlock('template', block => {
             block.exports = 'default';
+            state.refStats = refStats(node);
 
             return state.runElement(node, element => {
                 element.setMount(() => `${state.host}.componentView`);
@@ -44,11 +46,12 @@ export default {
                     element.add(subscribeStore(state));
                 }
 
-                if (state.usedRuntime.has('setRef') || state.usedRuntime.has('mountPartial')) {
+                if (state.hasPendingRefs) {
+                    element.prepend(state.pendingRefs);
                     // Template sets refs or contains partials which may set
                     // refs as well
                     element.add(entity('refs', state, {
-                        shared: () => state.runtime('finalizeRefs', [state.host])
+                        shared: () => state.runtime('finalizePendingRefs', [state.host, state.pendingRefs.getSymbol()])
                     }));
                 }
             });
