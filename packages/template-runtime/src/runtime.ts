@@ -6,7 +6,7 @@ export * from './iterate';
 export * from './key-iterate';
 export * from './injector';
 export * from './scope';
-export * from './attribute2';
+export * from './attribute';
 export * from './event';
 export * from './slot';
 export * from './ref';

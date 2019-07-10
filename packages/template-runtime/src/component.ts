@@ -1,7 +1,7 @@
 import { elem } from './dom';
 import { assign, obj, representAttributeValue, getObjectDescriptors, captureError } from './utils';
 import { safeEventListener } from './event';
-import { normalizeClassName } from './attribute';
+import { classNames } from './attribute';
 import { createInjector, Injector } from './injector';
 import { runHook, reverseWalkDefinitions } from './hooks';
 import { getScope } from './scope';
@@ -415,7 +415,7 @@ function setPropsInternal(component: Component, nextProps: object): Changes | un
 		}
 
 		if (p === 'class' && current != null) {
-			current = normalizeClassName(current);
+			current = classNames(current).join(' ');
 		}
 
 		if (current !== prev) {
