@@ -358,7 +358,7 @@ export default class ElementEntity extends Entity {
      * Attaches given DOM entity to current element via DOM
      */
     private addDOM(entity: Entity): SourceNode {
-        return sn([this.getSymbol(), `.appendChild(`, entity.code.mount, `)`]);
+        return this.state.runtime('appendChild', [this.getSymbol(), entity.code.mount]);
     }
 
     /**

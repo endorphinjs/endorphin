@@ -1,6 +1,13 @@
 type TextNode = Text & { $value: any };
 
 /**
+ * Shorthand for `elem.appendChild()` for better minification
+ */
+export function appendChild(element: Element, node: Node): Node {
+	return element.appendChild(node);
+}
+
+/**
  * Creates element with given tag name
  * @param cssScope Scope for CSS isolation
  */
