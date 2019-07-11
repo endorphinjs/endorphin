@@ -1,4 +1,4 @@
-import { addEvent, detachPendingEvents, elem, finalizePendingEvents, get, pendingEvents, removeEvent, setPendingEvent } from "endorphin";
+import { addEvent, appendChild, detachPendingEvents, elem, finalizePendingEvents, get, pendingEvents, removeEvent, setPendingEvent } from "endorphin";
 import { emit } from "endorphin/helpers";
 
 function onClick$0(evt) {
@@ -38,7 +38,7 @@ function ifAttr$0(host, scope) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const main$0 = target$0.appendChild(elem("main"));
+	const main$0 = appendChild(target$0, elem("main"));
 	const events$0 = scope.events$0 = pendingEvents(host, main$0);
 	setPendingEvent(events$0, "click", onClick$0, scope);
 	scope.mouseenter$0 = addEvent(main$0, "mouseenter", onMouseenter$0, host, scope);

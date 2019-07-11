@@ -1,4 +1,4 @@
-import { addClass, addClassIf, addPendingClass, addPendingClassIf, attributeSet, createInjector, elem, finalizeAttributes, insert, mountBlock, setPendingAttribute, toggleClassIf, unmountBlock, updateBlock } from "endorphin";
+import { addClass, addClassIf, addPendingClass, addPendingClassIf, appendChild, attributeSet, createInjector, elem, finalizeAttributes, insert, mountBlock, setPendingAttribute, toggleClassIf, unmountBlock, updateBlock } from "endorphin";
 
 function ifAttr$0(host, scope) {
 	const { attrSet$0 } = scope;
@@ -58,28 +58,28 @@ function ifEntry$1(host) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const e1$0 = scope.e1$0 = target$0.appendChild(elem("e1"));
+	const e1$0 = scope.e1$0 = appendChild(target$0, elem("e1"));
 	scope.class$0 = addClassIf(e1$0, "foo", host.props.enabled);
 	addClass(e1$0, "bar");
-	const e2$0 = target$0.appendChild(elem("e2"));
+	const e2$0 = appendChild(target$0, elem("e2"));
 	const attrSet$0 = scope.attrSet$0 = attributeSet(e2$0);
 	addPendingClass(attrSet$0, "foo");
 	ifAttr$0(host);
 	finalizeAttributes(attrSet$0);
-	const e3$0 = target$0.appendChild(elem("e3"));
+	const e3$0 = appendChild(target$0, elem("e3"));
 	const attrSet$1 = scope.attrSet$1 = attributeSet(e3$0);
 	setPendingAttribute(attrSet$1, "class", "test");
 	addPendingClass(attrSet$1, "foo");
 	ifAttr$1(host);
 	finalizeAttributes(attrSet$1);
-	const e4$0 = target$0.appendChild(elem("e4"));
+	const e4$0 = appendChild(target$0, elem("e4"));
 	const inj$0 = createInjector(e4$0);
 	const attrSet$2 = scope.attrSet$2 = attributeSet(e4$0);
 	setPendingAttribute(attrSet$2, "class", "test");
 	scope.if$2 = mountBlock(host, inj$0, ifEntry$0);
 	scope.if$3 = mountBlock(host, inj$0, ifEntry$1);
 	finalizeAttributes(attrSet$2);
-	const e5$0 = target$0.appendChild(elem("e5"));
+	const e5$0 = appendChild(target$0, elem("e5"));
 	const attrSet$3 = scope.attrSet$3 = attributeSet(e5$0);
 	setPendingAttribute(attrSet$3, "class", "foo");
 	addPendingClass(attrSet$3, "bar");

@@ -1,4 +1,4 @@
-import { createComponent, createInjector, elem, finalizePendingRefs, insert, mountBlock, mountComponent, obj, removeRef, setPendingRef, setRef, unmountBlock, unmountComponent, updateBlock } from "endorphin";
+import { appendChild, createComponent, createInjector, elem, finalizePendingRefs, insert, mountBlock, mountComponent, obj, removeRef, setPendingRef, setRef, unmountBlock, unmountComponent, updateBlock } from "endorphin";
 import * as SlotInner from "./slot-inner.html";
 
 function ifBody$0(host, injector, scope) {
@@ -29,7 +29,7 @@ function ifEntry$0(host) {
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const refs$0 = scope.refs$0 = obj();
-	const main$0 = target$0.appendChild(elem("main"));
+	const main$0 = appendChild(target$0, elem("main"));
 	const inj$0 = createInjector(main$0);
 	setRef(host, "main", main$0);
 	const div$0 = scope.div$0 = insert(inj$0, elem("div"));

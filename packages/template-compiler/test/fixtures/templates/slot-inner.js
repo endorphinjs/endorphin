@@ -1,4 +1,4 @@
-import { createInjector, createSlot, elem, elemWithText, insert, mountBlock, mountSlot, unmountBlock, unmountSlot, updateBlock, updateDefaultSlot } from "endorphin";
+import { appendChild, createInjector, createSlot, elem, elemWithText, insert, mountBlock, mountSlot, setAttribute, unmountBlock, unmountSlot, updateBlock, updateDefaultSlot } from "endorphin";
 
 function defaultSlotHeader$0(host, injector) {
 	insert(injector, elemWithText("h2", "Default header"), "header");
@@ -33,7 +33,7 @@ function ifBody$1(host, injector, scope) {
 
 ifBody$1.dispose = ifBody$1Unmount;
 
-function ifBody$1Update(host, injector, scope) {
+function ifBody$1Update(host, scope) {
 	updateDefaultSlot(scope.slot$7);
 }
 
@@ -49,9 +49,9 @@ function ifEntry$1(host) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const div$0 = target$0.appendChild(elem("div"));
+	const div$0 = appendChild(target$0, elem("div"));
 	const inj$0 = createInjector(div$0);
-	div$0.setAttribute("class", "container");
+	setAttribute(div$0, "class", "container");
 	insert(inj$0, createSlot(host, "header"));
 	scope.slot$1 = mountSlot(host, "header", defaultSlotHeader$0);
 	insert(inj$0, elemWithText("p", "content"));

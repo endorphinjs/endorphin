@@ -1,4 +1,4 @@
-import { attributeSet, createInjector, elem, finalizeAttributes, insert, mountBlock, setAttribute, setAttributeExpression, setPendingAttribute, text, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
+import { appendChild, attributeSet, createInjector, elem, finalizeAttributes, insert, mountBlock, setAttribute, setAttributeExpression, setPendingAttribute, text, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
 
 function ifBody$0(host, injector) {
 	insert(injector, text("aaa"));
@@ -54,30 +54,30 @@ function ifAttr$1(host, scope) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const e1$0 = target$0.appendChild(elem("e1"));
+	const e1$0 = appendChild(target$0, elem("e1"));
 	setAttribute(e1$0, "foo", "bar1");
-	const e2$0 = target$0.appendChild(elem("e2"));
+	const e2$0 = appendChild(target$0, elem("e2"));
 	const inj$0 = createInjector(e2$0);
 	setAttribute(e2$0, "foo", "bar2");
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
-	const e3$0 = scope.e3$0 = target$0.appendChild(elem("e3"));
+	const e3$0 = scope.e3$0 = appendChild(target$0, elem("e3"));
 	scope.fooAttr$2 = setAttributeExpression(e3$0, "foo", host.props.bar3);
-	const e4$0 = scope.e4$0 = target$0.appendChild(elem("e4"));
+	const e4$0 = scope.e4$0 = appendChild(target$0, elem("e4"));
 	const inj$1 = createInjector(e4$0);
 	scope.fooAttr$3 = setAttributeExpression(e4$0, "foo", host.props.bar4);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
-	const e5$0 = target$0.appendChild(elem("e5"));
+	const e5$0 = appendChild(target$0, elem("e5"));
 	const attrSet$0 = scope.attrSet$0 = attributeSet(e5$0);
 	setPendingAttribute(attrSet$0, "foo", host.props.bar4);
 	ifAttr$0(host);
 	finalizeAttributes(attrSet$0);
-	const e6$0 = target$0.appendChild(elem("e6"));
+	const e6$0 = appendChild(target$0, elem("e6"));
 	const inj$2 = createInjector(e6$0);
 	const attrSet$1 = scope.attrSet$1 = attributeSet(e6$0);
 	setPendingAttribute(attrSet$1, "foo", host.props.bar4);
 	scope.if$3 = mountBlock(host, inj$2, ifEntry$2);
 	finalizeAttributes(attrSet$1);
-	const e7$0 = target$0.appendChild(elem("e7"));
+	const e7$0 = appendChild(target$0, elem("e7"));
 	const attrSet$2 = scope.attrSet$2 = attributeSet(e7$0);
 	setPendingAttribute(attrSet$2, "foo", attrValue$0(host, scope));
 	ifAttr$1(host);

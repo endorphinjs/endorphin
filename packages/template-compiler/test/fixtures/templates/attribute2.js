@@ -1,55 +1,52 @@
-import { addClass, createInjector, elem, finalizeAttributes, setAttribute } from "endorphin";
+import { addPendingClass, appendChild, attributeSet, elem, finalizeAttributes, setAttributeExpression, setPendingAttribute, updateAttributeExpression } from "endorphin";
 
-function ifAttr$0(host, injector) {
+function ifAttr$0(host, scope) {
 	if (host.props.c1) {
-		setAttribute(injector, "a2", "1");
+		setPendingAttribute(scope.attrSet$0, "a2", "1");
 	}
-	return 0;
 }
 
-function ifAttr$1(host, injector) {
+function ifAttr$1(host, scope) {
 	if (host.props.c2) {
-		addClass(injector, "foo bar");
+		addPendingClass(scope.attrSet$0, "foo bar");
 	}
-	return 0;
 }
 
-function ifAttr$2(host, injector) {
+function ifAttr$2(host, scope) {
 	if (host.props.c3) {
-		setAttribute(injector, "class", ("bam" + host.props.id));
+		setPendingAttribute(scope.attrSet$0, "class", ("bam" + host.props.id));
 	}
-	return 0;
 }
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const main$0 = target$0.appendChild(elem("main"));
-	const inj$0 = scope.inj$0 = createInjector(main$0);
-	setAttribute(inj$0, "a1", host.props.id);
-	setAttribute(inj$0, "a2", "0");
-	setAttribute(inj$0, "class", "foo");
-	ifAttr$0(host, inj$0);
-	ifAttr$1(host, inj$0);
-	ifAttr$2(host, inj$0);
-	addClass(inj$0, "baz");
-	finalizeAttributes(inj$0);
+	const main$0 = scope.main$0 = appendChild(target$0, elem("main"));
+	const attrSet$0 = scope.attrSet$0 = attributeSet(main$0);
+	scope.a1Attr$0 = setAttributeExpression(main$0, "a1", host.props.id);
+	setPendingAttribute(attrSet$0, "a2", "0");
+	setPendingAttribute(attrSet$0, "class", "foo");
+	ifAttr$0(host);
+	ifAttr$1(host);
+	ifAttr$2(host);
+	addPendingClass(attrSet$0, "baz");
+	finalizeAttributes(attrSet$0);
 	return template$0Update;
 }
 
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { inj$0 } = scope;
-	setAttribute(inj$0, "a1", host.props.id);
-	setAttribute(inj$0, "a2", "0");
-	setAttribute(inj$0, "class", "foo");
-	ifAttr$0(host, inj$0);
-	ifAttr$1(host, inj$0);
-	ifAttr$2(host, inj$0);
-	addClass(inj$0, "baz");
-	finalizeAttributes(inj$0);
+	const { attrSet$0 } = scope;
+	scope.a1Attr$0 = updateAttributeExpression(scope.main$0, "a1", host.props.id, scope.a1Attr$0);
+	setPendingAttribute(attrSet$0, "a2", "0");
+	setPendingAttribute(attrSet$0, "class", "foo");
+	ifAttr$0(host);
+	ifAttr$1(host);
+	ifAttr$2(host);
+	addPendingClass(attrSet$0, "baz");
+	finalizeAttributes(attrSet$0);
 }
 
 function template$0Unmount(scope) {
-	scope.inj$0 = null;
+	scope.attrSet$0 = scope.a1Attr$0 = scope.main$0 = null;
 }

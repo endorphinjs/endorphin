@@ -1,55 +1,53 @@
-import { createInjector, elem, finalizeAttributes, setAttribute } from "endorphin";
+import { appendChild, attributeSet, elem, finalizeAttributes, setPendingAttribute } from "endorphin";
 
-function ifAttr$0(host, injector) {
+function ifAttr$0(host, scope) {
 	if (host.props.c1) {
-		setAttribute(injector, "a2", "1");
+		setPendingAttribute(scope.attrSet$0, "a2", "1");
 	}
-	return 0;
 }
 
-function ifAttr$1(host, injector) {
+function ifAttr$1(host, scope) {
 	if (host.props.c2) {
-		setAttribute(injector, "a2", "2");
+		setPendingAttribute(scope.attrSet$0, "a2", "2");
 	}
-	return 0;
 }
 
-function ifAttr$2(host, injector) {
+function ifAttr$2(host, scope) {
+	const { attrSet$0 } = scope;
 	if (host.props.c3) {
-		setAttribute(injector, "a2", "3");
-		setAttribute(injector, "a1", "3");
-		setAttribute(injector, "a3", "3");
+		setPendingAttribute(attrSet$0, "a2", "3");
+		setPendingAttribute(attrSet$0, "a1", "3");
+		setPendingAttribute(attrSet$0, "a3", "3");
 	}
-	return 0;
 }
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const main$0 = target$0.appendChild(elem("main"));
-	const inj$0 = scope.inj$0 = createInjector(main$0);
-	setAttribute(inj$0, "a1", host.props.id);
-	setAttribute(inj$0, "a2", "0");
-	ifAttr$0(host, inj$0);
-	ifAttr$1(host, inj$0);
-	ifAttr$2(host, inj$0);
-	setAttribute(inj$0, "a3", "4");
-	finalizeAttributes(inj$0);
+	const main$0 = appendChild(target$0, elem("main"));
+	const attrSet$0 = scope.attrSet$0 = attributeSet(main$0);
+	setPendingAttribute(attrSet$0, "a1", host.props.id);
+	setPendingAttribute(attrSet$0, "a2", "0");
+	ifAttr$0(host);
+	ifAttr$1(host);
+	ifAttr$2(host);
+	setPendingAttribute(attrSet$0, "a3", "4");
+	finalizeAttributes(attrSet$0);
 	return template$0Update;
 }
 
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { inj$0 } = scope;
-	setAttribute(inj$0, "a1", host.props.id);
-	setAttribute(inj$0, "a2", "0");
-	ifAttr$0(host, inj$0);
-	ifAttr$1(host, inj$0);
-	ifAttr$2(host, inj$0);
-	setAttribute(inj$0, "a3", "4");
-	finalizeAttributes(inj$0);
+	const { attrSet$0 } = scope;
+	setPendingAttribute(attrSet$0, "a1", host.props.id);
+	setPendingAttribute(attrSet$0, "a2", "0");
+	ifAttr$0(host);
+	ifAttr$1(host);
+	ifAttr$2(host);
+	setPendingAttribute(attrSet$0, "a3", "4");
+	finalizeAttributes(attrSet$0);
 }
 
 function template$0Unmount(scope) {
-	scope.inj$0 = null;
+	scope.attrSet$0 = null;
 }

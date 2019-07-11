@@ -3,7 +3,7 @@ import Entity from './Entity';
 import compileExpression from '../expression';
 import { Chunk, ChunkList, RenderChunk } from '../types';
 import CompileState from '../lib/CompileState';
-import { isIdentifier, isExpression, sn, qStr, isLiteral, propGetter } from '../lib/utils';
+import { isIdentifier, isExpression, sn, qStr, isLiteral, propGetter, isInterpolatedLiteral } from '../lib/utils';
 
 interface NSData {
     name: string;
@@ -51,7 +51,7 @@ export default class AttributeEntity extends Entity {
                         ? state.runtime('setAttributeNS', args)
                         : state.runtime('setAttribute', args);
                 });
-            } else if (isExpression(value)) {
+            } else if (isExpression(value) || isInterpolatedLiteral(value)) {
                 // Expression attribute, must be updated in runtime
                 const ns = getAttributeNS(node, state);
                 this.setMount(() => {
@@ -111,7 +111,7 @@ export function compileAttributeValue(value: ENDAttributeValue, state: CompileSt
         return compileExpression(value, state);
     }
 
-    if (value.type === 'ENDAttributeValueExpression') {
+    if (isInterpolatedLiteral(value)) {
         // List of static and dynamic tokens, must be compiled to function
         let fnName: string = state.getCache(value, 'attrValue');
         if (!fnName) {

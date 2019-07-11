@@ -1,4 +1,4 @@
-import { createInjector, elem, elemWithText, finalizeAttributes, get, insert, mountBlock, mountKeyIterator, setAttribute, text, unmountBlock, unmountKeyIterator, updateBlock, updateKeyIterator } from "endorphin";
+import { createInjector, elem, elemWithText, get, insert, mountBlock, mountKeyIterator, setAttributeExpression, text, unmountBlock, unmountKeyIterator, updateAttributeExpression, updateBlock, updateKeyIterator } from "endorphin";
 
 function forSelect$0(host) {
 	return host.props.items;
@@ -19,27 +19,24 @@ function ifEntry$1(host, scope) {
 }
 
 function forContent$0(host, injector, scope) {
-	const li$0 = insert(injector, elem("li"));
-	const inj$1 = scope.inj$1 = createInjector(li$0);
-	setAttribute(inj$1, "id", host.props.id);
+	const li$0 = scope.li$0 = insert(injector, elem("li"));
+	const inj$1 = createInjector(li$0);
+	scope.idAttr$0 = setAttributeExpression(li$0, "id", host.props.id);
 	insert(inj$1, text("\n                    item\n                    "));
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
-	finalizeAttributes(inj$1);
 	return forContent$0Update;
 }
 
 forContent$0.dispose = forContent$0Unmount;
 
-function forContent$0Update(host, injector, scope) {
-	const { inj$1 } = scope;
-	setAttribute(inj$1, "id", host.props.id);
+function forContent$0Update(host, scope) {
+	scope.idAttr$0 = updateAttributeExpression(scope.li$0, "id", host.props.id, scope.idAttr$0);
 	updateBlock(scope.if$1);
-	finalizeAttributes(inj$1);
 }
 
 function forContent$0Unmount(scope) {
 	scope.if$1 = unmountBlock(scope.if$1);
-	scope.inj$1 = null;
+	scope.idAttr$0 = scope.li$0 = null;
 }
 
 function ifBody$0(host, injector, scope) {
@@ -52,7 +49,7 @@ function ifBody$0(host, injector, scope) {
 
 ifBody$0.dispose = ifBody$0Unmount;
 
-function ifBody$0Update(host, injector, scope) {
+function ifBody$0Update(host, scope) {
 	updateKeyIterator(scope.for$0);
 }
 

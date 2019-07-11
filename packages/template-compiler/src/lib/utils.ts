@@ -1,7 +1,7 @@
 import { SourceNode } from 'source-map';
 import {
     Node, Identifier, Program, ENDElement, ENDAttributeStatement, LiteralValue,
-    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix
+    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix, ENDAttributeValueExpression
 } from '@endorphinjs/template-parser';
 import * as entities from 'entities';
 import { Chunk, ChunkList, HelpersMap, PlainObject } from '../types';
@@ -85,6 +85,13 @@ export function isLiteral(node: Node): node is Literal {
  */
 export function isExpression(node: Node): node is Program {
     return node.type === 'Program';
+}
+
+/**
+ * Check if given AST node is a an interpolated literal like `foo{bar}`
+ */
+export function isInterpolatedLiteral(node: Node): node is ENDAttributeValueExpression {
+    return node.type === 'ENDAttributeValueExpression';
 }
 
 /**

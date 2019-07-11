@@ -1,4 +1,4 @@
-import { addStaticEvent, createInjector, elem, elemWithText, insert, mountIterator, removeStaticEvent, unmountIterator, updateIterator } from "endorphin";
+import { addEvent, appendChild, createInjector, elem, elemWithText, insert, mountIterator, removeEvent, unmountIterator, updateIterator } from "endorphin";
 
 function setVars$0(host, scope) {
 	scope.foo = 1;
@@ -19,18 +19,18 @@ function onClick$0(evt) {
 function forContent$0(host, injector, scope) {
 	setVars$1(host, scope);
 	const li$0 = insert(injector, elemWithText("li", "item"));
-	scope.click$0 = addStaticEvent(li$0, "click", onClick$0, host, scope);
+	scope.click$0 = addEvent(li$0, "click", onClick$0, host, scope);
 	return forContent$0Update;
 }
 
 forContent$0.dispose = forContent$0Unmount;
 
-function forContent$0Update(host, injector, scope) {
+function forContent$0Update(host, scope) {
 	setVars$1(host, scope);
 }
 
 function forContent$0Unmount(scope) {
-	scope.click$0 = removeStaticEvent(scope.click$0);
+	scope.click$0 = removeEvent("click", scope.click$0);
 }
 
 function setVars$2(host, scope) {
@@ -39,7 +39,7 @@ function setVars$2(host, scope) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const ul$0 = target$0.appendChild(elem("ul"));
+	const ul$0 = appendChild(target$0, elem("ul"));
 	const inj$0 = createInjector(ul$0);
 	setVars$0(host, scope);
 	scope.for$0 = mountIterator(host, inj$0, forSelect$0, forContent$0);

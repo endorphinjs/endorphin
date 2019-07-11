@@ -1,4 +1,4 @@
-import { createComponent, mountComponent, unmountComponent } from "endorphin";
+import { appendChild, createComponent, mountComponent, unmountComponent } from "endorphin";
 import * as MyComponent from "./my-component/";
 import * as MyComponent2 from "./my-component2/index.html";
 import * as OtherComponent from "./some-component.html";
@@ -6,13 +6,13 @@ import * as SomeComponent2 from "./some-component2.html";
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const myComponent$0 = scope.myComponent$0 = target$0.appendChild(createComponent("my-component", MyComponent, host));
+	const myComponent$0 = scope.myComponent$0 = appendChild(target$0, createComponent("my-component", MyComponent, host));
 	mountComponent(myComponent$0);
-	const myComponent2$0 = scope.myComponent2$0 = target$0.appendChild(createComponent("my-component2", MyComponent2, host));
+	const myComponent2$0 = scope.myComponent2$0 = appendChild(target$0, createComponent("my-component2", MyComponent2, host));
 	mountComponent(myComponent2$0);
-	const otherComponent$0 = scope.otherComponent$0 = target$0.appendChild(createComponent("other-component", OtherComponent, host));
+	const otherComponent$0 = scope.otherComponent$0 = appendChild(target$0, createComponent("other-component", OtherComponent, host));
 	mountComponent(otherComponent$0);
-	const someComponent2$0 = scope.someComponent2$0 = target$0.appendChild(createComponent("some-component2", SomeComponent2, host));
+	const someComponent2$0 = scope.someComponent2$0 = appendChild(target$0, createComponent("some-component2", SomeComponent2, host));
 	mountComponent(someComponent2$0);
 }
 

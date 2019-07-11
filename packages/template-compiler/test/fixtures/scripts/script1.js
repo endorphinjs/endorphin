@@ -1,4 +1,4 @@
-import { elemWithText } from "endorphin";
+import { appendChild, elemWithText } from "endorphin";
 
 export function willRender(component) {
 	console.log('rendered', component.nodeName);
@@ -7,5 +7,5 @@ export function willRender(component) {
 
 export default function template$0(host) {
 	const target$0 = host.componentView;
-	target$0.appendChild(elemWithText("h1", "Hello world"));
+	appendChild(target$0, elemWithText("h1", "Hello world"));
 }

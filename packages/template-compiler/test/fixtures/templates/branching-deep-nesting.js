@@ -17,7 +17,7 @@ function ifBody$1(host, injector, scope) {
 
 ifBody$1.dispose = ifBody$1Unmount;
 
-function ifBody$1Update(host, injector, scope) {
+function ifBody$1Update(host, scope) {
 	updateBlock(scope.if$2);
 }
 
@@ -38,7 +38,7 @@ function ifBody$0(host, injector, scope) {
 
 ifBody$0.dispose = ifBody$0Unmount;
 
-function ifBody$0Update(host, injector, scope) {
+function ifBody$0Update(host, scope) {
 	updateBlock(scope.if$1);
 }
 

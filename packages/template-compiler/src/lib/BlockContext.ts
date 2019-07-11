@@ -101,17 +101,18 @@ export default class BlockContext {
                 // If entity is mounted in current block, check if entity should
                 // be referred in other blocks
                 const ref = sn(chunk);
-                const { symbolUsage } = entity;
+                if (!entity.parent) {
+                    const { symbolUsage } = entity;
 
-                if (symbolUsage.update || symbolUsage.unmount) {
-                    ref.prepend(`${entity.scopeName} = `);
-                    scopeUsage.use('mount');
+                    if (symbolUsage.update || symbolUsage.unmount) {
+                        ref.prepend(`${entity.scopeName} = `);
+                        scopeUsage.use('mount');
+                    }
+
+                    if (symbolUsage.mount) {
+                        ref.prepend(`const ${entity.name} = `);
+                    }
                 }
-
-                if (symbolUsage.mount) {
-                    ref.prepend(`const ${entity.name} = `);
-                }
-
                 mountChunks.push(ref);
             }
 
@@ -208,7 +209,7 @@ export default class BlockContext {
                 // If entity was mounted in current block we should use local
                 // variable for referencing entity. Also use local var if entity
                 // is used more than once, otherwise use scoped var
-                if (data.mounted || usage.mount > 1) {
+                if (!entity.parent && (data.mounted || usage.mount > 1)) {
                     refs.mount.add(entity.name);
                 } else {
                     refs.mount.add(entity.scopeName);

@@ -1,4 +1,4 @@
-import { createInjector, elem, finalizeAttributes, setAttribute, text, updateText } from "endorphin";
+import { appendChild, elem, setAttributeExpression, text, updateAttributeExpression, updateText } from "endorphin";
 
 function setVars$0(host, scope) {
 	scope.v1 = "bar";
@@ -9,27 +9,24 @@ function setVars$0(host, scope) {
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	setVars$0(host, scope);
-	const div$0 = target$0.appendChild(elem("div"));
-	const inj$0 = scope.inj$0 = createInjector(div$0);
-	setAttribute(inj$0, "class", scope.v1);
-	setAttribute(inj$0, "title", host.props.v3);
-	div$0.appendChild(text("Sum: "));
-	scope.text$1 = div$0.appendChild(text(scope.v2));
-	finalizeAttributes(inj$0);
+	const div$0 = scope.div$0 = appendChild(target$0, elem("div"));
+	scope.classAttr$0 = setAttributeExpression(div$0, "class", scope.v1);
+	scope.titleAttr$0 = setAttributeExpression(div$0, "title", host.props.v3);
+	appendChild(div$0, text("Sum: "));
+	scope.text$1 = appendChild(div$0, text(scope.v2));
 	return template$0Update;
 }
 
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { inj$0 } = scope;
+	const { div$0 } = scope;
 	setVars$0(host, scope);
-	setAttribute(inj$0, "class", scope.v1);
-	setAttribute(inj$0, "title", host.props.v3);
+	scope.classAttr$0 = updateAttributeExpression(div$0, "class", scope.v1, scope.classAttr$0);
+	scope.titleAttr$0 = updateAttributeExpression(div$0, "title", host.props.v3, scope.titleAttr$0);
 	updateText(scope.text$1, scope.v2);
-	finalizeAttributes(inj$0);
 }
 
 function template$0Unmount(scope) {
-	scope.inj$0 = scope.text$1 = null;
+	scope.classAttr$0 = scope.titleAttr$0 = scope.text$1 = scope.div$0 = null;
 }
