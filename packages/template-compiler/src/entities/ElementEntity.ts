@@ -57,6 +57,10 @@ export default class ElementEntity extends Entity {
             this.stats = new ElementStats(node);
             this.isStaticContent = true;
             this.collectStats();
+            if (this.stats.hasPartials) {
+                this.mountPendingAttributes();
+                this.mountPendingEvents();
+            }
             if (isElement(node)) {
                 this.isComponent = state.isComponent(node)
                     || getControlName(node.name.name) === 'self';
@@ -99,11 +103,7 @@ export default class ElementEntity extends Entity {
     /** Entity for receiving pending attributes */
     get pendingAttributes(): Entity {
         if (!this.dynAttrs) {
-            this.dynAttrs = this.state.entity('attrSet', {
-                mount: () => this.state.runtime(this.isComponent ? 'pendingProps' : 'attributeSet', [this.getSymbol()]),
-            });
-
-            this.add(this.dynAttrs);
+            this.mountPendingAttributes();
         }
 
         return this.dynAttrs;
@@ -112,13 +112,7 @@ export default class ElementEntity extends Entity {
     /** Entity for receiving pending events */
     get pendingEvents(): Entity {
         if (!this.dynEvents) {
-            const { state } = this;
-            this.dynEvents = state.entity('events', {
-                mount: () => state.runtime('pendingEvents', [this.state.host, this.getSymbol()]),
-                unmount: ent => ent.unmount('detachPendingEvents')
-            });
-
-            this.add(this.dynEvents);
+            this.mountPendingEvents();
         }
 
         return this.dynEvents;
@@ -149,15 +143,33 @@ export default class ElementEntity extends Entity {
      */
     isDynamicAttribute(attr: ENDAttribute): boolean {
         const { stats } = this;
+
         if (stats.hasPartials) {
             return true;
         }
 
         if (isIdentifier(attr.name)) {
-            return stats.isDynamicAttribute(attr.name.name);
+            const name = attr.name.name;
+            return name === 'class'
+                ? this.hasDynamicClass()
+                : stats.isDynamicAttribute(attr.name.name);
         }
 
         return false;
+    }
+
+    /**
+     * Check if given directive is dynamic
+     */
+    isDynamicDirective(prefix: string, name: string): boolean {
+        return this.stats.isDynamicDirective(prefix, name);
+    }
+
+    /**
+     * Check if current element contains dynamic class names
+     */
+    hasDynamicClass(): boolean {
+        return this.stats.hasDynamicClass();
     }
 
     add(item: Entity) {
@@ -251,14 +263,18 @@ export default class ElementEntity extends Entity {
             let noNS = this.stats.hasDynamicClass();
             let withNS = false;
 
-            this.stats.attributeNames().forEach(attrName => {
-                const m = attrName.match(/^([\w\-]+):/);
-                if (m && m[1] !== 'xmlns') {
-                    withNS = true;
-                } else {
-                    noNS = true;
-                }
-            });
+            if (this.stats.hasPartials) {
+                noNS = withNS = true;
+            } else {
+                this.stats.attributeNames().forEach(attrName => {
+                    const m = attrName.match(/^([\w\-]+):/);
+                    if (m && m[1] !== 'xmlns') {
+                        withNS = true;
+                    } else {
+                        noNS = true;
+                    }
+                });
+            }
 
             // Check which types of attributes we have to finalize
             const ent = state.entity({
@@ -459,6 +475,24 @@ export default class ElementEntity extends Entity {
                 }
             }
         });
+    }
+
+    private mountPendingAttributes() {
+        this.dynAttrs = this.state.entity('attrSet', {
+            mount: () => this.state.runtime(this.isComponent ? 'pendingProps' : 'attributeSet', [this.getSymbol()]),
+        });
+
+        this.add(this.dynAttrs);
+    }
+
+    private mountPendingEvents() {
+        const { state } = this;
+        this.dynEvents = state.entity('events', {
+            mount: () => state.runtime('pendingEvents', [this.state.host, this.getSymbol()]),
+            unmount: ent => ent.unmount('detachPendingEvents')
+        });
+
+        this.add(this.dynEvents);
     }
 }
 

@@ -1,4 +1,4 @@
-import { createComponent, createInjector, elem, insert, mountBlock, mountComponent, unmountBlock, unmountComponent, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
+import { appendChild, createComponent, createInjector, elem, insert, mountBlock, mountComponent, pendingProps, setAttribute, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot } from "endorphin";
 import * as MyComponent1 from "./my-component1.html";
 import * as MyComponent2 from "./my-component2.html";
 import * as InnerComponent from "./inner-component.html";
@@ -39,19 +39,19 @@ function ifEntry$1(host) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const myComponent1$0 = scope.myComponent1$0 = target$0.appendChild(createComponent("my-component1", MyComponent1, host));
+	const myComponent1$0 = scope.myComponent1$0 = appendChild(target$0, createComponent("my-component1", MyComponent1, host));
 	const inj$0 = myComponent1$0.componentModel.input;
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	const myComponent2$0 = scope.myComponent2$0 = insert(inj$0, createComponent("my-component2", MyComponent2, host), "header");
 	const inj$1 = myComponent2$0.componentModel.input;
+	const attrSet$0 = pendingProps(myComponent2$0);
+	attrSet$0.slot = "header";
 	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$0);
-	mountComponent(myComponent2$0, {
-		slot: "header"
-	});
+	mountComponent(myComponent2$0, attrSet$0);
 	const div$0 = insert(inj$0, elem("div"), "footer");
 	const inj$2 = createInjector(div$0);
-	div$0.setAttribute("slot", "footer");
+	setAttribute(div$0, "slot", "footer");
 	scope.if$1 = mountBlock(host, inj$2, ifEntry$1);
 	mountComponent(myComponent1$0);
 	return template$0Update;
@@ -66,7 +66,6 @@ function template$0Update(host, scope) {
 	updateBlock(scope.if$1);
 	updateIncomingSlot(myComponent1$0, "", scope.su$0);
 	updateIncomingSlot(myComponent1$0, "footer", scope.su$1);
-	updateComponent(myComponent1$0);
 }
 
 function template$0Unmount(scope) {

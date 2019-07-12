@@ -3,7 +3,7 @@ import Entity from './Entity';
 import compileExpression from '../expression';
 import { Chunk, ChunkList, RenderChunk } from '../types';
 import CompileState from '../lib/CompileState';
-import { isIdentifier, isExpression, sn, qStr, isLiteral, propGetter, isInterpolatedLiteral } from '../lib/utils';
+import { isIdentifier, isExpression, sn, qStr, isLiteral, propGetter, isInterpolatedLiteral, pendingAttributes } from '../lib/utils';
 
 interface NSData {
     name: string;
@@ -15,20 +15,19 @@ export default class AttributeEntity extends Entity {
         super(isIdentifier(node.name) ? `${node.name.name}Attr` : 'exprAttr', state);
         const { receiver } = state;
 
-        if (isIdentifier(node.name) && receiver.stats) {
+        if (isIdentifier(node.name)) {
             const name = node.name.name;
             const { value } = node;
-            const isDynamic = name === 'class'
-                ? receiver.stats.hasDynamicClass()
-                : receiver.stats.isDynamicAttribute(name);
+            const isDynamic = !receiver || receiver.isDynamicAttribute(node);
 
-            if (receiver.isComponent) {
-                // For component, we should always use pending attributes
+            if (!receiver || receiver.isComponent) {
+                // For components and partials (empty receiver), we should always
+                // use pending attributes
                 const render: RenderChunk = () =>
-                    sn([receiver.pendingAttributes.getSymbol(), propGetter(name), ' = ', compileAttributeValue(value, state)]);
+                    sn([pendingAttributes(state), propGetter(name), ' = ', compileAttributeValue(value, state)]);
 
                 this.setMount(render);
-                if (isDynamic || isExpression(value)) {
+                if (isDynamic || isExpression(value) || isInterpolatedLiteral(value)) {
                     this.setUpdate(render);
                 }
             } else if (isDynamic) {
@@ -166,7 +165,7 @@ export function getAttributeNS(attr: ENDAttribute, state: CompileState): NSData 
 
 function createArguments(name: string, value: ENDAttributeValue, state: CompileState, pending: boolean, ns?: NSData): ChunkList {
     const { receiver } = state;
-    const result: ChunkList = [pending ? receiver.pendingAttributes.getSymbol() : receiver.getSymbol()];
+    const result: ChunkList = [pending ? pendingAttributes(state) : receiver.getSymbol()];
     if (ns) {
         result.push(ns.ns);
     }

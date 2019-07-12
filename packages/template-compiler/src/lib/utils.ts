@@ -5,6 +5,7 @@ import {
 } from '@endorphinjs/template-parser';
 import * as entities from 'entities';
 import { Chunk, ChunkList, HelpersMap, PlainObject } from '../types';
+import CompileState from './CompileState';
 
 /**
  * A prefix for Endorphin element and attribute names
@@ -172,6 +173,26 @@ export function propSetter(key: Chunk): Chunk {
         return isPropKey(key) ? key : qStr(key);
     }
     return sn(['[', key, ']']);
+}
+
+/**
+ * Returns symbol for referencing pending attributes
+ */
+export function pendingAttributes(state: CompileState): Chunk {
+    const { receiver } = state;
+    return receiver
+        ? receiver.pendingAttributes.getSymbol()
+        : `${state.scope}.$$_attrs`;
+}
+
+/**
+ * Returns symbol fo referencing pending events
+ */
+export function pendingEvents(state: CompileState): Chunk {
+    const { receiver } = state;
+    return receiver
+        ? receiver.pendingEvents.getSymbol()
+        : `${state.scope}.$$_events`;
 }
 
 export function toObjectLiteral(map: Map<Chunk, Chunk>, indent: string = '\t', level: number = 0): SourceNode {

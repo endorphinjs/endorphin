@@ -21,8 +21,8 @@ import CompileState from '../lib/CompileState';
 import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
 import {
-    sn, qStr, isLiteral, toObjectLiteral, nameToJS, propGetter,
-    propSetter, isExpression, isIdentifier
+    sn, qStr, isLiteral, toObjectLiteral, nameToJS,
+    propSetter, isExpression, isIdentifier, pendingAttributes, propGetter
 } from '../lib/utils';
 
 export default {
@@ -107,6 +107,18 @@ export default {
         if (dir.prefix === 'class') {
             return new ClassEntity(dir, state);
         }
+
+        if (dir.prefix === 'partial' && state.receiver && state.receiver.isComponent) {
+            // For components and partials (empty receiver), we should always
+            // use pending attributes
+            return state.entity({
+                mount() {
+                    const value = compileAttributeValue(dir.value, state, 'component');
+                    return sn([pendingAttributes(state), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
+                        state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
+                }
+            });
+        }
     },
 
     ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
@@ -165,10 +177,27 @@ export default {
     },
 
     ENDPartialStatement(node: ENDPartialStatement, state) {
-        const getter = `${state.prefix('property')}['partial:${node.id}'] || ${state.partials}${propGetter(node.id)}`;
+        const getter = state.runtime('getPartial', [state.host, qStr(node.id), state.partials]);
 
         return entity('partial', state, {
-            mount: () => state.runtime('mountPartial', [state.host, state.injector, getter, generateObject(node.params, state, 1)]),
+            mount: () => {
+                const { receiver } = state;
+                const params = attributeMap(node.params, state);
+                const attrsSymbol = sn(receiver.pendingAttributes.getSymbol());
+                if (!receiver.isComponent) {
+                    attrsSymbol.add('.cur');
+                }
+
+                params.set('$$_attrs', attrsSymbol);
+                params.set('$$_events', receiver.pendingEvents.getSymbol());
+
+                return state.runtime('mountPartial', [
+                    state.host,
+                    state.injector,
+                    getter,
+                    toObjectLiteral(params, state.indent, 1)
+                ]);
+            },
             update: ent => state.runtime('updatePartial', [ent.getSymbol(), getter, generateObject(node.params, state, 1)]),
             unmount: ent => ent.unmount('unmountPartial')
         });
@@ -229,12 +258,15 @@ function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceN
  * Generates object literal from given attributes
  */
 function generateObject(params: ENDAttribute[], state: CompileState, level: number = 0): SourceNode {
+    return toObjectLiteral(attributeMap(params, state), state.indent, level);
+}
+
+function attributeMap(params: ENDAttribute[], state: CompileState): Map<Chunk, Chunk> {
     const map: Map<Chunk, Chunk> = new Map();
     params.forEach(param => {
         map.set(objectKey(param.name, state), compileAttributeValue(param.value, state, 'params'));
     });
-
-    return toObjectLiteral(map, state.indent, level);
+    return map;
 }
 
 function objectKey(node: Identifier | Program, state: CompileState) {

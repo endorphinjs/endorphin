@@ -166,6 +166,9 @@ export function finalizeAttributes(data: AttributeChangeSet): number {
  * Finalizes pending namespaced attributes
  */
 export function finalizeAttributesNS(data: AttributeChangeSet): number {
+	// NB use it as a separate function to use explicitly inside generated content.
+	// It there’s no pending namespace attributes, this method will not be included
+	// into final bundle
 	if (!data.ns) {
 		return 0;
 	}

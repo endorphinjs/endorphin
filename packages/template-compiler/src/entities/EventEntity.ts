@@ -7,7 +7,7 @@ import Entity from './Entity';
 import CompileState from '../lib/CompileState';
 import generateExpression from '../expression';
 import baseVisitors from '../visitors/expression';
-import { sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction, isCallExpression, isPrefix } from '../lib/utils';
+import { sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction, isCallExpression, isPrefix, pendingEvents } from '../lib/utils';
 import { ENDCompileError } from '../lib/error';
 import { ExpressionVisitorMap } from '../types';
 import { thisExpr, identifier, member, callExpr } from '../lib/ast-constructor';
@@ -20,10 +20,10 @@ export default class EventEntity extends Entity {
         const { element, receiver } = state;
         const handler = createEventHandler(node, state);
 
-        if (receiver!.stats && receiver.stats.isDynamicDirective(node.prefix, node.name)) {
+        if (!receiver || receiver.isDynamicDirective(node.prefix, node.name)) {
             // Event is dynamic, e.g. can be changed with condition
             this.setShared(() =>
-                state.runtime('setPendingEvent', [receiver.pendingEvents.getSymbol(), qStr(eventType), handler, state.scope]));
+                state.runtime('setPendingEvent', [pendingEvents(state), qStr(eventType), handler, state.scope]));
         } else {
             this.setMount(() => state.runtime('addEvent', [element.getSymbol(), qStr(eventType), handler, state.host, state.scope]));
             this.setUnmount(() => sn([this.scopeName, ' = ', this.state.runtime('removeEvent', [qStr(eventType), this.getSymbol()])]));

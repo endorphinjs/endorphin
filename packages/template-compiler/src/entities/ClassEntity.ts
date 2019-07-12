@@ -1,7 +1,7 @@
 import { ENDDirective } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import CompileState from '../lib/CompileState';
-import { qStr, sn } from '../lib/utils';
+import { qStr, sn, pendingAttributes } from '../lib/utils';
 import { compileAttributeValue } from './AttributeEntity';
 
 export default class ClassEntity extends Entity {
@@ -9,19 +9,19 @@ export default class ClassEntity extends Entity {
         super('class', state);
         const { receiver } = state;
 
-        if (receiver.stats) {
-            if (receiver.stats.hasDynamicClass()) {
+        if (receiver) {
+            if (!receiver || receiver.hasDynamicClass()) {
                 this.setShared(() => {
                     if (node.value) {
                         return state.runtime('addPendingClassIf', [
-                            receiver.pendingAttributes.getSymbol(),
+                            pendingAttributes(state),
                             qStr(node.name),
                             compileAttributeValue(node.value, state)
                         ]);
                     }
 
                     return state.runtime('addPendingClass', [
-                        receiver.pendingAttributes.getSymbol(),
+                        pendingAttributes(state),
                         qStr(node.name)
                     ]);
                 });

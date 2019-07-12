@@ -31,7 +31,7 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock'
     | 'mountKeyIterator' | 'updateKeyIterator' | 'unmountKeyIterator'
     | 'mountComponent' | 'updateComponent' | 'unmountComponent'
     | 'mountInnerHTML' | 'updateInnerHTML' | 'unmountInnerHTML'
-    | 'mountPartial' | 'updatePartial' | 'unmountPartial'
+    | 'mountPartial' | 'updatePartial' | 'unmountPartial' | 'getPartial'
     | 'createSlot' | 'mountSlot' | 'updateIncomingSlot' | 'updateDefaultSlot' | 'unmountSlot'
     | 'createInjector' | 'unmountInjector' | 'block'
 

@@ -14,6 +14,14 @@ interface PartialDefinition {
 	defaults: object;
 }
 
+interface PartialsMap {
+	[name: string]: PartialDefinition;
+}
+
+export function getPartial(host: Component, name: string, componentPartials: PartialsMap): PartialDefinition | undefined {
+	return host.props['partial:' + name] || componentPartials[name];
+}
+
 /**
  * Mounts given partial into injector context
  */
