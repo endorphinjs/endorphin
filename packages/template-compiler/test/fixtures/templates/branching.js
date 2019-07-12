@@ -12,7 +12,7 @@ function ifEntry$1(host) {
 
 function ifBody$2(host, injector) {
 	insert(injector, elemWithText("div", "top 3"));
-	insert(injector, text("\n            top 3.1\n        "));
+	insert(injector, text("top 3.1"));
 }
 
 function ifEntry$2(host) {
