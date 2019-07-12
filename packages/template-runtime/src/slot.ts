@@ -89,7 +89,7 @@ export function updateDefaultSlot(ctx: SlotContext) {
 	if (ctx.isDefault) {
 		const block = ctx.defaultContent!;
 		if (block.update) {
-			block.update(block.host, block.injector, block.scope);
+			block.update(block.host, block.scope);
 		}
 	}
 }

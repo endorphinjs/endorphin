@@ -67,7 +67,7 @@ export function updatePartial(block: PartialBlock, partial: PartialDefinition, a
 	} else if (block.update) {
 		// Update rendered partial
 		const scope = setScope(host, assign(block.scope, args));
-		if (block.update(host, injector, scope)) {
+		if (block.update(host, scope)) {
 			updated = 1;
 		}
 		setScope(host, prevScope);

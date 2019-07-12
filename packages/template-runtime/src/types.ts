@@ -15,7 +15,7 @@ export interface MountBlock<D = Scope> {
 	dispose?: UnmountBlock;
 }
 
-export type UpdateBlock<D = Scope> = (host: Component, injector: Injector, data: D) => number | void;
+export type UpdateBlock<D = Scope> = (host: Component, data: D) => number | void;
 // NB: unlike in `MountBlock` and `UpdateBlock` types, use `host` as last argument
 // since it’s used in rare cases (for example, in `animate:out`) and can be safely
 // ignored by compiler in most cases to produce smaller bundle

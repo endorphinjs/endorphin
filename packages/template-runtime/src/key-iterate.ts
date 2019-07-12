@@ -132,10 +132,10 @@ function mountEntry(block: KeyIteratorBlock, value: any, key: any, index: number
 
 function updateEntry(entry: KeyIteratorItemBlock, value: any, key: any, index: number): number {
 	if (entry.update) {
-		const { host, injector } = entry;
+		const { host } = entry;
 		const scope = prepareScope(entry.scope, index, key, value);
 		setScope(host, scope);
-		if (entry.update(host, injector, scope)) {
+		if (entry.update(host, scope)) {
 			return 1;
 		}
 	}
