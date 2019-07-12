@@ -25,9 +25,9 @@ export default function template$0(host, scope) {
 	scope.a1Attr$0 = setAttributeExpression(main$0, "a1", host.props.id);
 	setPendingAttribute(attrSet$0, "a2", "0");
 	setPendingAttribute(attrSet$0, "class", "foo");
-	ifAttr$0(host);
-	ifAttr$1(host);
-	ifAttr$2(host);
+	ifAttr$0(host, scope);
+	ifAttr$1(host, scope);
+	ifAttr$2(host, scope);
 	addPendingClass(attrSet$0, "baz");
 	finalizeAttributes(attrSet$0);
 	return template$0Update;
@@ -40,9 +40,9 @@ function template$0Update(host, scope) {
 	scope.a1Attr$0 = updateAttributeExpression(scope.main$0, "a1", host.props.id, scope.a1Attr$0);
 	setPendingAttribute(attrSet$0, "a2", "0");
 	setPendingAttribute(attrSet$0, "class", "foo");
-	ifAttr$0(host);
-	ifAttr$1(host);
-	ifAttr$2(host);
+	ifAttr$0(host, scope);
+	ifAttr$1(host, scope);
+	ifAttr$2(host, scope);
 	addPendingClass(attrSet$0, "baz");
 	finalizeAttributes(attrSet$0);
 }

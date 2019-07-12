@@ -52,6 +52,12 @@ function ifAttr$1(host, scope) {
 	}
 }
 
+function ifAttr$2(host, scope) {
+	if (host.props.cond) {
+		setPendingAttribute(scope.attrSet$3, "foo", host.props.baz);
+	}
+}
+
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const e1$0 = appendChild(target$0, elem("e1"));
@@ -69,7 +75,7 @@ export default function template$0(host, scope) {
 	const e5$0 = appendChild(target$0, elem("e5"));
 	const attrSet$0 = scope.attrSet$0 = attributeSet(e5$0);
 	setPendingAttribute(attrSet$0, "foo", host.props.bar4);
-	ifAttr$0(host);
+	ifAttr$0(host, scope);
 	finalizeAttributes(attrSet$0);
 	const e6$0 = appendChild(target$0, elem("e6"));
 	const inj$2 = createInjector(e6$0);
@@ -80,8 +86,12 @@ export default function template$0(host, scope) {
 	const e7$0 = appendChild(target$0, elem("e7"));
 	const attrSet$2 = scope.attrSet$2 = attributeSet(e7$0);
 	setPendingAttribute(attrSet$2, "foo", attrValue$0(host, scope));
-	ifAttr$1(host);
+	ifAttr$1(host, scope);
 	finalizeAttributes(attrSet$2);
+	const e8$0 = appendChild(target$0, elem("e8"));
+	const attrSet$3 = scope.attrSet$3 = attributeSet(e8$0);
+	ifAttr$2(host, scope);
+	finalizeAttributes(attrSet$3);
 	return template$0Update;
 }
 
@@ -94,19 +104,21 @@ function template$0Update(host, scope) {
 	scope.fooAttr$3 = updateAttributeExpression(scope.e4$0, "foo", host.props.bar4, scope.fooAttr$3);
 	updateBlock(scope.if$1);
 	setPendingAttribute(attrSet$0, "foo", host.props.bar4);
-	ifAttr$0(host);
+	ifAttr$0(host, scope);
 	finalizeAttributes(attrSet$0);
 	setPendingAttribute(attrSet$1, "foo", host.props.bar4);
 	updateBlock(scope.if$3);
 	finalizeAttributes(attrSet$1);
 	setPendingAttribute(attrSet$2, "foo", attrValue$0(host, scope));
-	ifAttr$1(host);
+	ifAttr$1(host, scope);
 	finalizeAttributes(attrSet$2);
+	ifAttr$2(host, scope);
+	finalizeAttributes(scope.attrSet$3);
 }
 
 function template$0Unmount(scope) {
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.if$3 = unmountBlock(scope.if$3);
-	scope.fooAttr$2 = scope.e3$0 = scope.fooAttr$3 = scope.e4$0 = scope.attrSet$0 = scope.attrSet$1 = scope.attrSet$2 = null;
+	scope.fooAttr$2 = scope.e3$0 = scope.fooAttr$3 = scope.e4$0 = scope.attrSet$0 = scope.attrSet$1 = scope.attrSet$2 = scope.attrSet$3 = null;
 }

@@ -7,7 +7,7 @@ function ifAttr$0(host, scope) {
 }
 
 function ifBody$0(host, injector, scope) {
-	setPendingAttribute(attrSet$0, "style", host.state.css);
+	setPendingAttribute(scope.attrSet$0, "style", host.state.css);
 	ifAttr$0(host, scope);
 	return ifBody$0Update;
 }
@@ -27,8 +27,9 @@ export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const main$0 = appendChild(target$0, elem("main"));
 	const inj$0 = createInjector(main$0);
+	const attrSet$0 = scope.attrSet$0 = attributeSet(main$0);
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
-	finalizeAttributes(scope.attrSet$0);
+	finalizeAttributes(attrSet$0);
 	return template$0Update;
 }
 

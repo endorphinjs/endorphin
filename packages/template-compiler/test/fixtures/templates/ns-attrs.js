@@ -29,12 +29,12 @@ export default function template$0(host, scope) {
 	const image$0 = appendChild(svg$0, elemNS("image", ns$0));
 	const attrSet$0 = scope.attrSet$0 = attributeSet(image$0);
 	setPendingAttributeNS(attrSet$0, ns$1, "href", host.state.url);
-	ifAttr$0(host);
+	ifAttr$0(host, scope);
 	finalizeAttributesNS(attrSet$0);
 	const image2$0 = appendChild(svg$0, elemNS("image2", ns$0));
 	const attrSet$1 = scope.attrSet$1 = attributeSet(image2$0);
 	setPendingAttributeNS(attrSet$1, ns$1, "href", host.state.url);
-	ifAttr$1(host);
+	ifAttr$1(host, scope);
 	finalizeAttributes(attrSet$1) | finalizeAttributesNS(attrSet$1);
 	return template$0Update;
 }
@@ -44,10 +44,10 @@ template$0.dispose = template$0Unmount;
 function template$0Update(host, scope) {
 	const { attrSet$0, attrSet$1 } = scope;
 	setPendingAttributeNS(attrSet$0, ns$1, "href", host.state.url);
-	ifAttr$0(host);
+	ifAttr$0(host, scope);
 	finalizeAttributesNS(attrSet$0);
 	setPendingAttributeNS(attrSet$1, ns$1, "href", host.state.url);
-	ifAttr$1(host);
+	ifAttr$1(host, scope);
 	finalizeAttributes(attrSet$1) | finalizeAttributesNS(attrSet$1);
 }
 

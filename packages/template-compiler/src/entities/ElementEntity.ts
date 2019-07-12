@@ -1,7 +1,4 @@
-import {
-    ENDElement, ENDTemplate, ENDStatement, ENDAttribute, Literal, ENDAttributeValue,
-    ENDDirective, Identifier, Program
-} from '@endorphinjs/template-parser';
+import { ENDElement, ENDTemplate, ENDAttribute, Literal, ENDAttributeValue, Identifier, Program } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import Entity from './Entity';
 import { compileAttributeValue } from './AttributeEntity';
@@ -10,13 +7,11 @@ import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, isExpression, isLiteral, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
-import { ENDCompileError } from '../lib/error';
+import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
 import ElementStats from '../lib/ElementStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
-
-const dynamicContent = new Set(['ENDIfStatement', 'ENDChooseStatement', 'ENDForEachStatement']);
+import { ENDCompileError } from '../lib/error';
 
 export default class ElementEntity extends Entity {
     injectorEntity: InjectorEntity;
@@ -25,24 +20,6 @@ export default class ElementEntity extends Entity {
 
     /** Indicates current entity is a *registered* DOM component */
     isComponent: boolean = false;
-
-    /** Whether element contains partials */
-    hasPartials: boolean;
-
-    /** Whether element contents is static */
-    isStaticContent: boolean = true;
-
-    /**
-     * List of element’s attribute names whose values are expressions,
-     * e.g. `attr={foo}` or `attr="foo {bar}"`
-     */
-    dynamicAttributes: Set<string> = new Set();
-
-    /** List of element’s events which can be updated in runtime */
-    dynamicEvents: Set<string> = new Set();
-
-    /** Whether element contains attribute expressions, e.g. `{foo}="bar"` */
-    attributeExpressions: boolean;
 
     animateIn?: ENDAttributeValue;
     animateOut?: ENDAttributeValue;
@@ -54,23 +31,39 @@ export default class ElementEntity extends Entity {
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
         if (node) {
-            this.stats = new ElementStats(node);
-            this.isStaticContent = true;
-            this.collectStats();
-            if (this.stats.hasPartials) {
-                this.mountPendingAttributes();
-                this.mountPendingEvents();
-            }
+            const stats = this.stats = new ElementStats(node);
+
             if (isElement(node)) {
                 this.isComponent = state.isComponent(node)
                     || getControlName(node.name.name) === 'self';
+
+                node.directives.forEach(directive => {
+                    if (directive.prefix === 'animate') {
+                        // Currently, we allow animations in element only
+                        if (directive.name === 'in') {
+                            this.animateIn = directive.value;
+                        } else if (directive.name === 'out') {
+                            this.animateOut = directive.value;
+                        } else {
+                            throw new ENDCompileError(`Unknown "${directive.name}" animation directive`, directive);
+                        }
+                    }
+                });
+
+                // Mount pending attributes and events in same block as element
+                if (stats.hasPartials || stats.hasDynamicAttributes() || stats.hasDynamicClass()) {
+                    this.mountPendingAttributes();
+                }
+
+                if (stats.hasPartials || stats.hasDynamicEvents()) {
+                    this.mountPendingEvents();
+                }
             }
         } else {
             // Empty node means we’re in element defined in outer block
             // (for example, in conditional content block). In this case,
             // we should always use injector to fill contents, which shall be
             // passed as argument to block function
-            this.isStaticContent = false;
             this.injectorEntity = new InjectorEntity('injector', state, true);
         }
     }
@@ -126,6 +119,11 @@ export default class ElementEntity extends Entity {
         return !!this.dynEvents;
     }
 
+    /** Whether element contains partials */
+    get hasPartials(): boolean {
+        return this.stats && this.stats.hasPartials;
+    }
+
     /**
      * Returns slot update symbol for given name
      */
@@ -175,7 +173,9 @@ export default class ElementEntity extends Entity {
     add(item: Entity) {
         if ((item instanceof ElementEntity || item instanceof TextEntity) && item.code.mount) {
             item.setMount(() =>
-                this.isStaticContent && !this.isComponent ? this.addDOM(item) : this.addInjector(item));
+                !this.isComponent && this.stats && this.stats.isStaticContent
+                    ? this.addDOM(item)
+                    : this.addInjector(item));
         }
 
         super.add(item);
@@ -415,68 +415,6 @@ export default class ElementEntity extends Entity {
         return null;
     }
 
-    private collectStats() {
-        // Collect stats about given element
-        const { node } = this;
-
-        if (isElement(node)) {
-            this.attributesStats(node.attributes, true);
-            this.directiveStats(node.directives, true);
-        }
-
-        walk(node, child => {
-            if (child.type === 'ENDPartialStatement') {
-                this.hasPartials = true;
-                this.isStaticContent = false;
-            } else if (child.type === 'ENDAddClassStatement') {
-                this.dynamicAttributes.add('class');
-            } else if (child.type === 'ENDAttributeStatement') {
-                // Attribute statements in top-level element context are basically
-                // the same as immediate attributes of element
-                this.attributesStats(child.attributes);
-                this.directiveStats(child.directives);
-            }
-
-            if (dynamicContent.has(child.type)) {
-                this.isStaticContent = false;
-                return true;
-            }
-        });
-    }
-
-    private attributesStats(attributes: ENDAttribute[], isElem?: boolean) {
-        attributes.forEach(attr => {
-            if (isExpression(attr.name)) {
-                this.attributeExpressions = true;
-            } else if (!isElem || (attr.value && !isLiteral(attr.value))) {
-                this.dynamicAttributes.add(attr.name.name);
-            }
-        });
-    }
-
-    private directiveStats(directives: ENDDirective[], isElem?: boolean) {
-        directives.forEach(directive => {
-            if (directive.prefix === 'on' && !isElem) {
-                this.dynamicEvents.add(directive.name);
-            } else if (directive.prefix === 'class') {
-                this.dynamicAttributes.add('class');
-            } else if (directive.prefix === 'animate') {
-                // Currently, we allow animations in element only
-                if (isElem) {
-                    if (directive.name === 'in') {
-                        this.animateIn = directive.value;
-                    } else if (directive.name === 'out') {
-                        this.animateOut = directive.value;
-                    } else {
-                        throw new ENDCompileError(`Unknown "${directive.name}" animation directive`, directive);
-                    }
-                } else {
-                    throw new ENDCompileError(`Animations are allowed in element only`, directive);
-                }
-            }
-        });
-    }
-
     private mountPendingAttributes() {
         this.dynAttrs = this.state.entity('attrSet', {
             mount: () => this.state.runtime(this.isComponent ? 'pendingProps' : 'attributeSet', [this.getSymbol()]),
@@ -493,29 +431,6 @@ export default class ElementEntity extends Entity {
         });
 
         this.add(this.dynEvents);
-    }
-}
-
-/**
- * Walks over contents of given element and invokes `callback` for each body item.
- * A `callback` must return `true` if walker should visit contents of context node,
- * otherwise it will continue to next node
- */
-function walk(elem: ENDStatement | ENDTemplate, callback: (node: ENDStatement) => boolean): void {
-    const visit = (node: ENDStatement): void => {
-        if (callback(node) === true) {
-            walk(node, callback);
-        }
-    };
-
-    if (elem.type === 'ENDElement' || elem.type === 'ENDTemplate') {
-        elem.body.forEach(visit);
-    } else if (elem.type === 'ENDIfStatement') {
-        elem.consequent.forEach(visit);
-    } else if (elem.type === 'ENDChooseStatement') {
-        elem.cases.forEach(branch => branch.consequent.forEach(visit));
-    } else if (elem.type === 'ENDForEachStatement') {
-        elem.body.forEach(visit);
     }
 }
 

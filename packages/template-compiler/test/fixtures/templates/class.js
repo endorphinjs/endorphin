@@ -40,14 +40,14 @@ function ifAttr$2(host, scope) {
 	}
 }
 
-function ifBody$1(host, injector) {
-	ifAttr$2(host);
+function ifBody$1(host, injector, scope) {
+	ifAttr$2(host, scope);
 	insert(injector, elem("br"));
 	return ifBody$1Update;
 }
 
-function ifBody$1Update(host) {
-	ifAttr$2(host);
+function ifBody$1Update(host, scope) {
+	ifAttr$2(host, scope);
 }
 
 function ifEntry$1(host) {
@@ -64,13 +64,13 @@ export default function template$0(host, scope) {
 	const e2$0 = appendChild(target$0, elem("e2"));
 	const attrSet$0 = scope.attrSet$0 = attributeSet(e2$0);
 	addPendingClass(attrSet$0, "foo");
-	ifAttr$0(host);
+	ifAttr$0(host, scope);
 	finalizeAttributes(attrSet$0);
 	const e3$0 = appendChild(target$0, elem("e3"));
 	const attrSet$1 = scope.attrSet$1 = attributeSet(e3$0);
 	setPendingAttribute(attrSet$1, "class", "test");
 	addPendingClass(attrSet$1, "foo");
-	ifAttr$1(host);
+	ifAttr$1(host, scope);
 	finalizeAttributes(attrSet$1);
 	const e4$0 = appendChild(target$0, elem("e4"));
 	const inj$0 = createInjector(e4$0);
@@ -94,11 +94,11 @@ function template$0Update(host, scope) {
 	const { attrSet$0, attrSet$1, attrSet$2, attrSet$3 } = scope;
 	scope.class$0 = toggleClassIf(scope.e1$0, "foo", host.props.enabled, scope.class$0);
 	addPendingClass(attrSet$0, "foo");
-	ifAttr$0(host);
+	ifAttr$0(host, scope);
 	finalizeAttributes(attrSet$0);
 	setPendingAttribute(attrSet$1, "class", "test");
 	addPendingClass(attrSet$1, "foo");
-	ifAttr$1(host);
+	ifAttr$1(host, scope);
 	finalizeAttributes(attrSet$1);
 	setPendingAttribute(attrSet$2, "class", "test");
 	updateBlock(scope.if$2);

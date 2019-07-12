@@ -27,9 +27,9 @@ export default function template$0(host, scope) {
 	const attrSet$0 = scope.attrSet$0 = attributeSet(main$0);
 	setPendingAttribute(attrSet$0, "a1", host.props.id);
 	setPendingAttribute(attrSet$0, "a2", "0");
-	ifAttr$0(host);
-	ifAttr$1(host);
-	ifAttr$2(host);
+	ifAttr$0(host, scope);
+	ifAttr$1(host, scope);
+	ifAttr$2(host, scope);
 	setPendingAttribute(attrSet$0, "a3", "4");
 	finalizeAttributes(attrSet$0);
 	return template$0Update;
@@ -41,9 +41,9 @@ function template$0Update(host, scope) {
 	const { attrSet$0 } = scope;
 	setPendingAttribute(attrSet$0, "a1", host.props.id);
 	setPendingAttribute(attrSet$0, "a2", "0");
-	ifAttr$0(host);
-	ifAttr$1(host);
-	ifAttr$2(host);
+	ifAttr$0(host, scope);
+	ifAttr$1(host, scope);
+	ifAttr$2(host, scope);
 	setPendingAttribute(attrSet$0, "a3", "4");
 	finalizeAttributes(attrSet$0);
 }

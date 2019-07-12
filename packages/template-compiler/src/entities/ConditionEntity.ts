@@ -63,8 +63,7 @@ function conditionEntry(name: string, conditions: Array<ENDIfStatement | ENDChoo
 }
 
 function ifAttr(test: Program, statements: ENDStatement[], state: CompileState, next: TemplateContinue): { name: string, usesScope: boolean } {
-    let usesScope = false;
-    const name = state.runBlock('ifAttr', block => {
+    const block = state.runBlock('ifAttr', () => {
         return state.entity({
             mount() {
                 const body = sn();
@@ -81,17 +80,15 @@ function ifAttr(test: Program, statements: ENDStatement[], state: CompileState, 
                 }
 
                 body.add(`\n${state.indent}}`);
-
-                if (block.scopeUsage.mount) {
-                    usesScope = true;
-                }
-
                 return body;
             }
         });
-    }).mountSymbol;
+    });
 
-    return { name, usesScope };
+    return {
+        name: block.name,
+        usesScope: block.scopeUsage.mount > 0
+    };
 }
 
 function collectEntities(list: TemplateOutput[], dest: Entity[] = []): Entity[] {
