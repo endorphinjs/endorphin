@@ -46,5 +46,5 @@ export interface EventBinding extends EventListenerObject {
 	scope: Scope;
 	target: Element;
 	listener?: EventListener;
-	bound: boolean;
+	pending?: EventListener;
 }

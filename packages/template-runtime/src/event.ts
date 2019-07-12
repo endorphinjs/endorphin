@@ -5,7 +5,7 @@ import { Component } from './component';
 interface PendingEvents {
 	target: Element;
 	host: Component;
-	events: { [type: string]: EventBinding };
+	events: { [type: string]: EventBinding | void };
 }
 
 /**
@@ -13,7 +13,7 @@ interface PendingEvents {
  * object to unregister event
  */
 export function addEvent(target: Element, type: string, listener: EventListener, host: Component, scope: Scope): EventBinding {
-	return registerBinding(type, { host, scope, target, listener, handleEvent, bound: true });
+	return registerBinding(type, { host, scope, target, listener, handleEvent });
 }
 
 /**
@@ -21,7 +21,6 @@ export function addEvent(target: Element, type: string, listener: EventListener,
  */
 export function removeEvent(type: string, binding: EventBinding): void {
 	binding.target.removeEventListener(type, binding);
-	binding.bound = false;
 }
 
 /**
@@ -32,20 +31,14 @@ export function pendingEvents(host: Component, target: Element): PendingEvents {
 }
 
 export function setPendingEvent(pending: PendingEvents, type: string, listener: EventListener, scope: Scope) {
-	const { events } = pending;
-	if (type in events) {
-		events[type].listener = listener;
-		events[type].scope = scope;
+	let binding = pending.events[type];
+	if (binding) {
+		binding.listener = listener;
+		binding.scope = scope;
 	} else {
-		events[type] = {
-			host: pending.host,
-			target: pending.target,
-			scope,
-			listener,
-			handleEvent,
-			bound: false
-		};
+		binding = pending.events[type] = addEvent(pending.target, type, listener, pending.host, scope);
 	}
+	binding.pending = listener;
 }
 
 export function finalizePendingEvents(pending: PendingEvents) {
@@ -54,12 +47,13 @@ export function finalizePendingEvents(pending: PendingEvents) {
 	const { events } = pending;
 	for (const type in events) {
 		const binding = events[type];
-		if (binding.listener && !binding.bound) {
-			registerBinding(type, binding);
-		} else if (!binding.listener && binding.bound) {
-			removeEvent(type, binding);
+		if (binding) {
+			if (!binding.pending) {
+				events[type] = removeEvent(type, binding);
+			}
+
+			binding.pending = void 0;
 		}
-		binding.listener = void 0;
 	}
 }
 
@@ -67,7 +61,7 @@ export function detachPendingEvents(pending: PendingEvents) {
 	const { events } = pending;
 	for (const type in events) {
 		const binding = events[type];
-		if (binding.bound) {
+		if (binding) {
 			removeEvent(type, binding);
 		}
 	}
@@ -75,7 +69,7 @@ export function detachPendingEvents(pending: PendingEvents) {
 
 function handleEvent(this: EventBinding, event: Event) {
 	try {
-		this.listener && this.listener.call(this, event);
+		this.listener && this.listener(event);
 	} catch (error) {
 		runtimeError(this.host, error);
 		// tslint:disable-next-line:no-console
@@ -98,6 +92,5 @@ export function safeEventListener(host: Component, handler: EventListener): Even
 
 function registerBinding(type: string, binding: EventBinding): EventBinding {
 	binding.target.addEventListener(type, binding);
-	binding.bound = true;
 	return binding;
 }
