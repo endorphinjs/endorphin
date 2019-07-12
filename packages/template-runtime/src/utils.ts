@@ -170,9 +170,13 @@ export function captureError<T, U, Y>(host: Component, fn?: (p1?: T, p2?: U) => 
 }
 
 export function runtimeError(host: Component, error: Error) {
-	host.dispatchEvent(new CustomEvent('runtime-error', {
-		bubbles: true,
-		cancelable: true,
-		detail: { error, host }
-	}));
+	if (typeof CustomEvent !== 'undefined') {
+		host.dispatchEvent(new CustomEvent('runtime-error', {
+			bubbles: true,
+			cancelable: true,
+			detail: { error, host }
+		}));
+	} else {
+		throw error;
+	}
 }
