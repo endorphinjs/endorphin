@@ -66,6 +66,22 @@ class NodeShim {
 		this.setAttribute('class', value);
 	}
 
+	get classList() {
+		return {
+			add: (name: string) => {
+				const classNames = (this.className || '').trim().split(/\s+/);
+				if (!classNames.includes(name)) {
+					classNames.push(name);
+					this.className = classNames.filter(Boolean).join(' ');
+				}
+			},
+			remove: (name: string) => {
+				const classNames = (this.className || '').trim().split(/\s+/).filter(n => n !== name);
+				this.className = classNames.filter(Boolean).join(' ');
+			}
+		};
+	}
+
 	get firstChild(): NodeShim {
 		return this.childNodes[0];
 	}

@@ -1,4 +1,4 @@
-import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, pendingProps, text, unmountBlock, unmountComponent, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
+import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, pendingProps, resetPendingProps, text, unmountBlock, unmountComponent, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
 import * as E1 from "./attrs.html";
 
 function ifBody$0(host, injector, scope) {
@@ -101,17 +101,20 @@ export default function template$0(host, scope) {
 	attrSet$4.foo = host.props.bar4;
 	ifAttr$0(host, scope);
 	mountComponent(e1$4, attrSet$4);
+	resetPendingProps(host, attrSet$4, "foo");
 	const e1$5 = scope.e1$5 = appendChild(target$0, createComponent("e1", E1, host));
 	const inj$2 = e1$5.componentModel.input;
 	const attrSet$5 = scope.attrSet$5 = pendingProps(e1$5);
 	attrSet$5.foo = host.props.bar4;
 	scope.if$3 = mountBlock(host, inj$2, ifEntry$2);
 	mountComponent(e1$5, attrSet$5);
+	resetPendingProps(host, attrSet$5, "foo");
 	const e1$6 = scope.e1$6 = appendChild(target$0, createComponent("e1", E1, host));
 	const attrSet$6 = scope.attrSet$6 = pendingProps(e1$6);
 	attrSet$6.foo = attrValue$0(host, scope);
 	ifAttr$1(host, scope);
 	mountComponent(e1$6, attrSet$6);
+	resetPendingProps(host, attrSet$6, "foo");
 	return template$0Update;
 }
 
@@ -131,13 +134,16 @@ function template$0Update(host, scope) {
 	attrSet$4.foo = host.props.bar4;
 	ifAttr$0(host, scope);
 	updateComponent(scope.e1$4, attrSet$4);
+	resetPendingProps(host, attrSet$4, "foo");
 	attrSet$5.foo = host.props.bar4;
 	updateBlock(scope.if$3);
 	updateIncomingSlot(e1$5, "", scope.su$2);
 	updateComponent(e1$5, attrSet$5);
+	resetPendingProps(host, attrSet$5, "foo");
 	attrSet$6.foo = attrValue$0(host, scope);
 	ifAttr$1(host, scope);
 	updateComponent(scope.e1$6, attrSet$6);
+	resetPendingProps(host, attrSet$6, "foo");
 }
 
 function template$0Unmount(scope) {

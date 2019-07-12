@@ -10,6 +10,8 @@ interface NSData {
     ns: string;
 }
 
+type AttributeType = 'component' | 'params' | void;
+
 export default class AttributeEntity extends Entity {
     constructor(readonly node: ENDAttribute, readonly state: CompileState) {
         super(isIdentifier(node.name) ? `${node.name.name}Attr` : 'exprAttr', state);
@@ -23,8 +25,10 @@ export default class AttributeEntity extends Entity {
             if (!receiver || receiver.isComponent) {
                 // For components and partials (empty receiver), we should always
                 // use pending attributes
-                const render: RenderChunk = () =>
-                    sn([pendingAttributes(state), propGetter(name), ' = ', compileAttributeValue(value, state)]);
+                const render: RenderChunk = () => {
+                    const ctx: AttributeType = receiver && receiver.isComponent ? 'component' : null;
+                    return sn([pendingAttributes(state), propGetter(name), ' = ', compileAttributeValue(value, state, ctx)]);
+                };
 
                 this.setMount(render);
                 if (isDynamic || isExpression(value) || isInterpolatedLiteral(value)) {
@@ -82,7 +86,7 @@ export function compileAttributeName(name: ENDAttributeName | string, state: Com
     return isExpression(name) ? compileExpression(name, state) : qStr(name.name);
 }
 
-export function compileAttributeValue(value: ENDAttributeValue, state: CompileState, context?: 'component' | 'params'): Chunk {
+export function compileAttributeValue(value: ENDAttributeValue, state: CompileState, context?: AttributeType): Chunk {
     if (value === null) {
         // Attribute without value, decide how to output
         if (context === 'component') {

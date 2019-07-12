@@ -340,6 +340,17 @@ export function pendingProps(component: Component): object {
 }
 
 /**
+ * Resets given props to initial or empty value
+ */
+export function resetPendingProps(component: Component, props: {}) {
+	const { defaultProps } = component.componentModel;
+	for (let i = 2, prop: string; i < arguments.length; i++) {
+		prop = arguments[i];
+		props[prop] = prop in defaultProps ? defaultProps[prop] : null;
+	}
+}
+
+/**
  * Queues next component render
  */
 function renderNext(component: Component, changes?: Changes) {

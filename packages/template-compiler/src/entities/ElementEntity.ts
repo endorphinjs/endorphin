@@ -7,7 +7,7 @@ import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
+import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter, pendingAttributes } from '../lib/utils';
 import ElementStats from '../lib/ElementStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
@@ -235,6 +235,20 @@ export default class ElementEntity extends Entity {
      */
     mountComponent() {
         this.add(new ComponentMountEntity(this, this.state));
+
+        // In case if there are dynamic props, create function which will reset
+        // them after component was mounted|updated
+        const { stats, state } = this;
+        const dynamicAttrs = stats.attributeNames().filter(attr => {
+            return attr === 'class' ? stats.hasDynamicClass() : stats.isDynamicAttribute(attr);
+        });
+
+        if (dynamicAttrs.length) {
+            const symbols = dynamicAttrs.map(qStr);
+            this.add(state.entity({
+                shared: () => state.runtime('resetPendingProps', [state.host, pendingAttributes(state)].concat(symbols))
+            }));
+        }
 
         // Add empty source node to skip automatic symbol nulling
         // in unmount function
