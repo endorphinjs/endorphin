@@ -37,6 +37,14 @@ export function setAttribute(elem: Element, name: string, value: any) {
 }
 
 /**
+ * Alias for `elem.className`
+ */
+export function setClass(elem: Element, value: any) {
+	elem.className = value;
+	return value;
+}
+
+/**
  * Sets attribute value as expression. Unlike regular primitive attributes,
  * expression values must be represented, e.g. non-primitive values must be
  * converted to string representations. Also, expression resolved to `false`,

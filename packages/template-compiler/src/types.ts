@@ -35,7 +35,7 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock'
     | 'createSlot' | 'mountSlot' | 'updateIncomingSlot' | 'updateDefaultSlot' | 'unmountSlot'
     | 'createInjector' | 'unmountInjector' | 'block'
 
-    | 'setAttribute' | 'setAttributeExpression' | 'updateAttributeExpression'
+    | 'setAttribute' | 'setAttributeExpression' | 'updateAttributeExpression' | 'setClass'
     | 'setAttributeNS' | 'setAttributeExpressionNS' | 'updateAttributeExpressionNS'
     | 'attributeSet' | 'addClass' | 'addClassIf' | 'toggleClassIf'
     | 'setPendingAttribute' | 'setPendingAttributeNS' | 'addPendingClass' | 'addPendingClassIf'

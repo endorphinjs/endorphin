@@ -1,4 +1,4 @@
-import { animate, createInjector, domRemove, elem, elemWithText, insert, mountBlock, setAttribute, setAttributeExpression, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
+import { animate, createInjector, domRemove, elem, elemWithText, insert, mountBlock, setAttributeExpression, setClass, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
 
 function ifBody$1(host, injector) {
 	insert(injector, elemWithText("p", "Something 1"));
@@ -13,7 +13,7 @@ function ifEntry$1(host) {
 function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
 	const inj$1 = createInjector(div$0);
-	setAttribute(div$0, "class", "css-anim");
+	setClass(div$0, "css-anim");
 	const div$1 = scope.div$1 = insert(inj$1, elemWithText("div", "CSS Animation"));
 	scope.titleAttr$0 = setAttributeExpression(div$1, "title", host.state.title);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
@@ -44,7 +44,7 @@ function ifBody$0(host, injector, scope) {
 	scope.div$0 ? animatedDiv$0Update(host, scope) : animatedDiv$0(host, injector, scope);
 	animate(scope.div$0, "show 2s");
 	const div$2 = insert(injector, elemWithText("div", "CSS static"));
-	setAttribute(div$2, "class", "css-static");
+	setClass(div$2, "css-static");
 	scope.if$2 = mountBlock(host, injector, ifEntry$2);
 	return ifBody$0Update;
 }
