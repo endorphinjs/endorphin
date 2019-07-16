@@ -249,7 +249,7 @@ function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceN
             : generateExpression(token, state);
     });
     return state.runtime('addPendingClass', [
-        state.receiver.pendingAttributes.getSymbol(),
+        pendingAttributes(state),
         sn(chunks).join(' + ')
     ]);
 }

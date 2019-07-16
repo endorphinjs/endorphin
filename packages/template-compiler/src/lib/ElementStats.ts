@@ -64,7 +64,11 @@ export default class ElementStats {
      * Returns names of all available element attributes
      */
     attributeNames(): string[] {
-        return unique(this.attributes.map(attr => attr.name));
+        const attrs = this.attributes.map(attr => attr.name);
+        if (this.classNames.length) {
+            attrs.push('class');
+        }
+        return unique(attrs);
     }
 
     /**
