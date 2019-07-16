@@ -1,4 +1,4 @@
-import { animate, attributeSet, createComponent, createInjector, detachPendingEvents, domRemove, elem, elemWithText, finalizeAttributes, finalizeAttributesNS, finalizePendingEvents, getPartial, insert, mountBlock, mountComponent, mountInnerHTML, mountIterator, mountPartial, pendingEvents, setPendingAttribute, stopAnimation, text, unmountBlock, unmountComponent, unmountInnerHTML, unmountIterator, unmountPartial, updateBlock, updateInnerHTML, updateIterator, updatePartial } from "endorphin";
+import { animate, attributeSet, createComponent, createInjector, detachPendingEvents, domRemove, elem, elemWithText, finalizeAttributes, finalizeAttributesNS, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountBlock, mountComponent, mountInnerHTML, mountIterator, mountPartial, obj, pendingEvents, stopAnimation, text, unmountBlock, unmountComponent, unmountInnerHTML, unmountIterator, unmountPartial, updateBlock, updateInnerHTML, updateIterator, updatePartial } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -33,8 +33,8 @@ function forSelect$0(host) {
 
 function forContent$0(host, injector, scope) {
 	scope.partial$0 = mountPartial(host, injector, getPartial(host, "test", partials), {
-		$$_attrs: scope.attrSet$0.cur,
-		$$_events: scope.events$0
+		$$_attrs: scope._a$0,
+		$$_events: scope._e$0
 	});
 	return forContent$0Update;
 }
@@ -52,38 +52,38 @@ function forContent$0Unmount(scope) {
 function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
 	const inj$1 = createInjector(div$0);
-	const attrSet$0 = scope.attrSet$0 = attributeSet(div$0);
-	const events$0 = scope.events$0 = pendingEvents(host, div$0);
-	setPendingAttribute(attrSet$0, "class", "overlay");
-	setPendingAttribute(attrSet$0, "style", attrValue$0(host, scope));
+	const _a$0 = scope._a$0 = attributeSet();
+	const _e$0 = scope._e$0 = pendingEvents(host, div$0);
+	_a$0.c.class = "overlay";
+	_a$0.c.style = attrValue$0(host, scope);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 	scope.html$0 = mountInnerHTML(host, inj$1, html$0);
 	scope.for$0 = mountIterator(host, inj$1, forSelect$0, forContent$0);
 	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host));
 	mountComponent(innerComponent$0);
-	finalizePendingEvents(events$0);
-	finalizeAttributes(attrSet$0) | finalizeAttributesNS(attrSet$0);
+	finalizePendingEvents(_e$0);
+	finalizeAttributes(div$0, _a$0) | finalizeAttributesNS(div$0, _a$0);
 }
 
 function animatedDiv$0Update(host, scope) {
-	const { attrSet$0 } = scope;
-	setPendingAttribute(attrSet$0, "class", "overlay");
-	setPendingAttribute(attrSet$0, "style", attrValue$0(host, scope));
+	const { _a$0, div$0 } = scope;
+	_a$0.c.class = "overlay";
+	_a$0.c.style = attrValue$0(host, scope);
 	updateBlock(scope.if$1);
 	updateInnerHTML(scope.html$0);
 	updateIterator(scope.for$0);
-	finalizePendingEvents(scope.events$0);
-	finalizeAttributes(attrSet$0) | finalizeAttributesNS(attrSet$0);
+	finalizePendingEvents(scope._e$0);
+	finalizeAttributes(div$0, _a$0) | finalizeAttributesNS(div$0, _a$0);
 }
 
 function animatedDiv$0Unmount(scope) {
-	scope.events$0 = detachPendingEvents(scope.events$0);
+	scope._e$0 = detachPendingEvents(scope._e$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.html$0 = unmountInnerHTML(scope.html$0);
 	scope.for$0 = unmountIterator(scope.for$0);
 	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
 	scope.div$0 = domRemove(scope.div$0);
-	scope.attrSet$0 = null;
+	scope._a$0 = null;
 }
 
 function ifBody$0(host, injector, scope) {
@@ -143,9 +143,11 @@ function ifEntry$2(host) {
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const inj$0 = createInjector(target$0);
+	const refs$0 = scope.refs$0 = obj();
 	insert(inj$0, elemWithText("p", "test"));
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	scope.if$2 = mountBlock(host, inj$0, ifEntry$2);
+	finalizePendingRefs(host, refs$0);
 	return template$0Update;
 }
 
@@ -154,11 +156,13 @@ template$0.dispose = template$0Unmount;
 function template$0Update(host, scope) {
 	updateBlock(scope.if$0);
 	updateBlock(scope.if$2);
+	finalizePendingRefs(host, scope.refs$0);
 }
 
 function template$0Unmount(scope) {
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.if$2 = unmountBlock(scope.if$2);
+	scope.refs$0 = null;
 }
 
 function partialTest$0(host, injector) {

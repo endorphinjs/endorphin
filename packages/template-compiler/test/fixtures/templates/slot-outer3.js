@@ -1,17 +1,17 @@
-import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, pendingProps, setAttribute, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot } from "endorphin";
+import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, propsSet, setAttribute, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
 function ifBody$0(host, injector, scope) {
 	const slotInner$1 = scope.slotInner$1 = insert(injector, createComponent("slot-inner", SlotInner, host), "");
-	const attrSet$0 = pendingProps(slotInner$1);
-	attrSet$0.a = 1;
-	mountComponent(slotInner$1, attrSet$0);
+	const _p$0 = propsSet(slotInner$1);
+	_p$0.c.a = 1;
+	mountComponent(slotInner$1, _p$0.c);
 	const div$0 = insert(injector, elem("div"), "inner");
 	setAttribute(div$0, "slot", "inner");
 	const slotInner$2 = scope.slotInner$2 = appendChild(div$0, createComponent("slot-inner", SlotInner, host));
-	const attrSet$1 = pendingProps(slotInner$2);
-	attrSet$1.a = 2;
-	mountComponent(slotInner$2, attrSet$1);
+	const _p$1 = propsSet(slotInner$2);
+	_p$1.c.a = 2;
+	mountComponent(slotInner$2, _p$1.c);
 	scope.su$0 = scope.su$1 = 1;
 }
 

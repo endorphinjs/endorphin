@@ -1,0 +1,15 @@
+<template>
+    <main class:is-mine={@is-mine}>
+        <partial:button action="more" icon="menu" e:if={count(#actions) > 1} />
+    </main>
+
+    <msg-menu
+        ref="menu"
+        animate:out="global:msg-pop-out 0.15s ease-in"
+        e:if={#showMenu}>
+    </msg-menu>
+</template>
+
+<template partial:button action=null icon=null class=null tsid=null>
+    <msg-button class={@class}></msg-button>
+</template>

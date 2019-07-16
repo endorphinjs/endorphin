@@ -3,8 +3,6 @@ import { Component } from './component';
 
 export const animatingKey = '$$animating';
 
-type ChangeCallback = (name: string, prev: any, next: any, ctx?: any) => void;
-
 /**
  * Creates fast object
  */
@@ -17,27 +15,6 @@ export function obj(proto: any = null): {} {
  */
 export function isDefined(value: any): boolean {
 	return value != null && value === value;
-}
-
-/**
- * Finalizes updated items, defined in `items.prev` and `items.cur`
- * @returns Returns `1` if data was updated, `0` otherwise
- */
-export function finalizeItems(items: ChangeSet, change: ChangeCallback, ctx: any): number {
-	let updated = 0;
-	const { cur, prev } = items;
-
-	for (const name in cur) {
-		const curValue = cur[name];
-		const prevValue = prev[name];
-		if (curValue !== prevValue) {
-			updated = 1;
-			change(name, prevValue, prev[name] = curValue, ctx);
-		}
-		cur[name] = null;
-	}
-
-	return updated;
 }
 
 /**

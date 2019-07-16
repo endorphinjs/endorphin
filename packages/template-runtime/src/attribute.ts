@@ -1,16 +1,31 @@
-import { isDefined, obj, changeSet } from './utils';
-import { ChangeSet } from './types';
+import { isDefined, obj, assign } from './utils';
+import { Component } from './component';
+
+export interface ChangeSet {
+	p: { [name: string]: any };
+	c: { [name: string]: any };
+}
 
 export interface AttributeChangeSet extends ChangeSet {
-	elem: Element;
-	ns: { [namespace: string]: ChangeSet } | null;
+	n?: { [namespace: string]: ChangeSet };
 }
 
 /**
  * Creates new attribute change set
  */
-export function attributeSet(elem: Element): AttributeChangeSet {
-	return { elem, ns: null, cur: obj(), prev: obj() };
+export function attributeSet(): AttributeChangeSet {
+	return { c: obj(), p: obj() };
+}
+
+/**
+ * Create pending props change set
+ */
+export function propsSet(elem: Component): AttributeChangeSet {
+	const props = assign(obj(), elem.componentModel.defaultProps);
+	// NB in components, pending `c` props are tested against actual `.props`,
+	// the `p` property is not used. To keep up with the same hidden JS class,
+	// create `p` property as well and point it to `c` to reduce object allocations
+	return { c: props, p: props };
 }
 
 /**
@@ -102,22 +117,22 @@ export function toggleClassIf(elem: HTMLElement, className: string, condition: a
  * Sets pending attribute value which will be added to attribute later
  */
 export function setPendingAttribute(data: AttributeChangeSet, name: string, value: any) {
-	data.cur[name] = value;
+	data.c[name] = value;
 }
 
 /**
  * Sets pending namespaced attribute value which will be added to attribute later
  */
 export function setPendingAttributeNS(data: AttributeChangeSet, ns: string, name: string, value: any) {
-	if (!data.ns) {
-		data.ns = obj();
+	if (!data.n) {
+		data.n = obj();
 	}
 
-	if (!data.ns[ns]) {
-		data.ns[ns] = changeSet();
+	if (!data.n[ns]) {
+		data.n[ns] = attributeSet();
 	}
 
-	data.ns[ns].cur[name] = value;
+	data.n[ns].c[name] = value;
 }
 
 /**
@@ -125,8 +140,8 @@ export function setPendingAttributeNS(data: AttributeChangeSet, ns: string, name
  */
 export function addPendingClass(data: AttributeChangeSet, className: string) {
 	if (className != null) {
-		const prev = data.cur.class;
-		data.cur.class = prev ? prev + ' ' + className : String(className);
+		const prev = data.c.class;
+		data.c.class = prev ? prev + ' ' + className : String(className);
 	}
 }
 
@@ -140,23 +155,23 @@ export function addPendingClassIf(data: AttributeChangeSet, className: string, c
 /**
  * Finalizes pending attributes
  */
-export function finalizeAttributes(data: AttributeChangeSet): number {
+export function finalizeAttributes(elem: Element, data: AttributeChangeSet): number {
 	let updated = 0;
-	const { elem, cur, prev } = data;
+	const { c, p } = data;
 
-	for (const name in cur) {
-		const curValue = cur[name];
+	for (const name in c) {
+		const curValue = c[name];
 
-		if (curValue !== prev[name]) {
+		if (curValue !== p[name]) {
 			updated = 1;
 			if (name === 'class') {
 				elem.className = classNames(curValue).join(' ');
 			} else {
 				setAttributeExpression(elem, name, curValue);
 			}
-			prev[name] = curValue;
+			p[name] = curValue;
 		}
-		cur[name] = null;
+		c[name] = null;
 	}
 
 	return updated;
@@ -165,27 +180,26 @@ export function finalizeAttributes(data: AttributeChangeSet): number {
 /**
  * Finalizes pending namespaced attributes
  */
-export function finalizeAttributesNS(data: AttributeChangeSet): number {
+export function finalizeAttributesNS(elem: Element, data: AttributeChangeSet): number {
 	// NB use it as a separate function to use explicitly inside generated content.
 	// It there’s no pending namespace attributes, this method will not be included
 	// into final bundle
-	if (!data.ns) {
+	if (!data.n) {
 		return 0;
 	}
 
 	let updated = 0;
-	const { elem } = data;
-	for (const ns in data.ns!) {
-		const { cur, prev } = data.ns[ns];
-		for (const name in cur) {
-			const curValue = cur[name];
+	for (const ns in data.n!) {
+		const { c, p } = data.n[ns];
+		for (const name in c) {
+			const curValue = c[name];
 
-			if (curValue !== prev[name]) {
+			if (curValue !== p[name]) {
 				updated = 1;
 				setAttributeExpressionNS(elem, ns, name, curValue);
-				prev[name] = curValue;
+				p[name] = curValue;
 			}
-			cur[name] = null;
+			c[name] = null;
 		}
 	}
 

@@ -3,7 +3,10 @@ import Entity from './Entity';
 import compileExpression from '../expression';
 import { Chunk, ChunkList, RenderChunk } from '../types';
 import CompileState from '../lib/CompileState';
-import { isIdentifier, isExpression, sn, qStr, isLiteral, propGetter, isInterpolatedLiteral, pendingAttributes } from '../lib/utils';
+import {
+    isIdentifier, isExpression, sn, qStr, isLiteral, isInterpolatedLiteral,
+    pendingAttributes, pendingAttributesCur, propGetter
+} from '../lib/utils';
 
 interface NSData {
     name: string;
@@ -27,11 +30,11 @@ export default class AttributeEntity extends Entity {
                 // use pending attributes
                 const render: RenderChunk = () => {
                     const ctx: AttributeType = receiver && receiver.isComponent ? 'component' : null;
-                    return sn([pendingAttributes(state), propGetter(name), ' = ', compileAttributeValue(value, state, ctx)]);
+                    return sn([pendingAttributesCur(state), propGetter(name), ' = ', compileAttributeValue(value, state, ctx)]);
                 };
 
                 this.setMount(render);
-                if (isDynamic || isExpression(value) || isInterpolatedLiteral(value)) {
+                if (isDynamic || isDynamicValue(value)) {
                     this.setUpdate(render);
                 }
             } else if (isDynamic) {
@@ -39,13 +42,13 @@ export default class AttributeEntity extends Entity {
                 // and finalized later
                 this.setShared(() => {
                     const ns = getAttributeNS(node, state);
-                    const args = createArguments(name, value, state, true, ns);
+                    if (ns) {
+                        return state.runtime('setPendingAttributeNS', createArguments(name, value, state, true, ns));
+                    }
 
-                    return ns
-                        ? state.runtime('setPendingAttributeNS', args)
-                        : state.runtime('setPendingAttribute', args);
+                    return sn([pendingAttributesCur(state), propGetter(name), ' = ', compileAttributeValue(value, state)]);
                 });
-            } else if (isLiteral(value)) {
+            } else if (!value || isLiteral(value)) {
                 // Static value, mount once
                 this.setMount(() => {
                     const ns = getAttributeNS(node, state);
@@ -54,7 +57,7 @@ export default class AttributeEntity extends Entity {
                         ? state.runtime('setAttributeNS', args)
                         : state.runtime('setAttribute', args);
                 });
-            } else if (isExpression(value) || isInterpolatedLiteral(value)) {
+            } else if (isDynamicValue(value)) {
                 // Expression attribute, must be updated in runtime
                 const ns = getAttributeNS(node, state);
                 this.setMount(() => {
@@ -177,4 +180,8 @@ function createArguments(name: string, value: ENDAttributeValue, state: CompileS
     result.push(qStr(ns ? ns.name : name), compileAttributeValue(value, state));
 
     return result;
+}
+
+function isDynamicValue(value?: ENDAttributeValue): boolean {
+    return value && (isExpression(value) || isInterpolatedLiteral(value));
 }

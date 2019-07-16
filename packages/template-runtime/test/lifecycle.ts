@@ -1,9 +1,9 @@
-import { strictEqual, deepStrictEqual } from 'assert';
+import { strictEqual, deepEqual } from 'assert';
 import document from './assets/document';
 import {
 	createComponent, mountComponent, mountBlock, updateBlock, updateComponent,
 	insert, elem, text, updateText, mountSlot, elemWithText,
-	unmountComponent, disposeBlock, Component, Injector, createSlot, pendingProps
+	unmountComponent, disposeBlock, Component, Injector, createSlot, propsSet
 } from '../src/runtime';
 import { Scope, Changes, MountTemplate } from '../src/types';
 
@@ -55,7 +55,7 @@ describe('Component lifecycle', () => {
 		});
 
 		component.setProps({ p2: 'p2Value0' });
-		deepStrictEqual(dfn1.calls.willRender, [{
+		deepEqual(dfn1.calls.willRender, [{
 			p1: { current: 'p1Value0', prev: undefined }
 		}, {
 			p2: { current: 'p2Value0', prev: undefined}
@@ -117,20 +117,20 @@ describe('Component lifecycle', () => {
 	function mount1(host: Component, scope: Scope) {
 		const target0 = host.componentView;
 		const testInner10 = scope.$_testInner10 = target0.appendChild(createComponent('component2', dfn2, host));
-		const attrSet$0 = scope.attrSet$0 = pendingProps(testInner10);
+		const attrSet$0 = scope.attrSet$0 = propsSet(testInner10);
 		const injector0 = scope.$_injector0 = testInner10.componentModel.input;
-		attrSet$0['p1'] = host.props.p1;
+		attrSet$0.c.p1 = host.props.p1;
 		scope.$_block0 = mountBlock(host, injector0, component1Entry0);
-		mountComponent(testInner10, attrSet$0);
+		mountComponent(testInner10, attrSet$0.c);
 		return update1;
 	}
 
 	mount1.dispose = dispose1;
 
 	function update1(host: Component, scope: Scope) {
-		scope.attrSet$0['p1'] = host.props.p1;
+		scope.attrSet$0.c.p1 = host.props.p1;
 		updateBlock(scope.$_block0);
-		updateComponent(scope.$_testInner10, scope.attrSet$0);
+		updateComponent(scope.$_testInner10, scope.attrSet$0.c);
 	}
 
 	function dispose1(scope: Scope) {
@@ -140,9 +140,9 @@ describe('Component lifecycle', () => {
 
 	function component1Content0(host: Component, injector: Injector, scope: Scope) {
 		const testInner20 = scope.$_testInner20 = insert(injector, createComponent('component3', dfn3, host));
-		const attrSet$1 = scope.attrSet$1 = pendingProps(testInner20);
-		attrSet$1['p3'] = host.props.p3;
-		mountComponent(testInner20, attrSet$1);
+		const attrSet$1 = scope.attrSet$1 = propsSet(testInner20);
+		attrSet$1.c.p3 = host.props.p3;
+		mountComponent(testInner20, attrSet$1.c);
 		return component1Content0Update;
 	}
 
@@ -150,8 +150,8 @@ describe('Component lifecycle', () => {
 
 	function component1Content0Update(host: Component, scope: Scope) {
 		const attrSet$1 = scope.attrSet$1;
-		attrSet$1['p3'] = host.props.p3;
-		updateComponent(scope.$_testInner20, attrSet$1);
+		attrSet$1.c.p3 = host.props.p3;
+		updateComponent(scope.$_testInner20, attrSet$1.c);
 	}
 
 	function component1Content0Dispose(scope: Scope) {

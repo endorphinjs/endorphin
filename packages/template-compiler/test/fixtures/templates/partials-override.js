@@ -1,4 +1,4 @@
-import { appendChild, assign, createComponent, elem, elemWithText, insert, mountComponent, pendingProps, setAttributeExpression, subscribeStore, text, unmountComponent, updateAttributeExpression, updateComponent, updateText } from "endorphin";
+import { appendChild, assign, createComponent, elem, elemWithText, insert, mountComponent, propsSet, setAttributeExpression, subscribeStore, text, unmountComponent, updateAttributeExpression, updateComponent, updateText } from "endorphin";
 import * as InnerComponent from "./inner-component.js";
 
 export const partials = {
@@ -15,15 +15,15 @@ export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	appendChild(target$0, elemWithText("h2", "Default partials"));
 	const innerComponent$0 = scope.innerComponent$0 = appendChild(target$0, createComponent("inner-component", InnerComponent, host));
-	const attrSet$0 = scope.attrSet$0 = pendingProps(innerComponent$0);
-	attrSet$0.items = host.store.data.items1;
-	mountComponent(innerComponent$0, attrSet$0);
+	const _p$0 = scope._p$0 = propsSet(innerComponent$0);
+	_p$0.c.items = host.store.data.items1;
+	mountComponent(innerComponent$0, _p$0.c);
 	appendChild(target$0, elemWithText("h2", "Override partials"));
 	const innerComponent$1 = scope.innerComponent$1 = appendChild(target$0, createComponent("inner-component", InnerComponent, host));
-	const attrSet$1 = scope.attrSet$1 = pendingProps(innerComponent$1);
-	attrSet$1.items = host.store.data.items2;
-	attrSet$1["partial:item"] = assign({ host }, partials["my-item"]);
-	mountComponent(innerComponent$1, attrSet$1);
+	const _p$1 = scope._p$1 = propsSet(innerComponent$1);
+	_p$1.c.items = host.store.data.items2;
+	_p$1.c["partial:item"] = assign({ host }, partials["my-item"]);
+	mountComponent(innerComponent$1, _p$1.c);
 	subscribeStore(host, ["items1", "items2"]);
 	return template$0Update;
 }
@@ -31,17 +31,17 @@ export default function template$0(host, scope) {
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { attrSet$0, attrSet$1 } = scope;
-	attrSet$0.items = host.store.data.items1;
-	updateComponent(scope.innerComponent$0, attrSet$0);
-	attrSet$1.items = host.store.data.items2;
-	updateComponent(scope.innerComponent$1, attrSet$1);
+	const { _p$0, _p$1 } = scope;
+	_p$0.c.items = host.store.data.items1;
+	updateComponent(scope.innerComponent$0, _p$0.c);
+	_p$1.c.items = host.store.data.items2;
+	updateComponent(scope.innerComponent$1, _p$1.c);
 }
 
 function template$0Unmount(scope) {
 	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
 	scope.innerComponent$1 = unmountComponent(scope.innerComponent$1);
-	scope.attrSet$0 = scope.attrSet$1 = null;
+	scope._p$0 = scope._p$1 = null;
 }
 
 function partialMyItem$0(host, injector, scope) {

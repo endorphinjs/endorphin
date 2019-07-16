@@ -333,24 +333,6 @@ export function subscribeStore(component: Component, keys?: string[]) {
 }
 
 /**
- * Create pending props accumulator object
- */
-export function pendingProps(component: Component): object {
-	return assign(obj(), component.componentModel.defaultProps);
-}
-
-/**
- * Resets given props to initial or empty value
- */
-export function resetPendingProps(component: Component, props: {}) {
-	const { defaultProps } = component.componentModel;
-	for (let i = 2, prop: string; i < arguments.length; i++) {
-		prop = arguments[i];
-		props[prop] = prop in defaultProps ? defaultProps[prop] : null;
-	}
-}
-
-/**
  * Queues next component render
  */
 function renderNext(component: Component, changes?: Changes) {
@@ -431,7 +413,7 @@ function setPropsInternal(component: Component, nextProps: object): Changes | un
 
 		if (current !== prev) {
 			if (!changes) {
-				changes = {};
+				changes = obj();
 			}
 			props[p] = current;
 			changes[p] = { current, prev };
@@ -536,8 +518,9 @@ function addPropsState(element: Component) {
 		// In case of calling `setProps` after component was unmounted,
 		// check if `componentModel` is available
 		if (value != null && componentModel && componentModel.mounted) {
-			const changes = setPropsInternal(element, assign(obj(), element.props, value));
+			const changes = setPropsInternal(element, assign(obj(), value));
 			changes && renderNext(element, changes);
+			return changes;
 		}
 	};
 

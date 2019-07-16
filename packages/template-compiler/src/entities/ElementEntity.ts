@@ -7,7 +7,7 @@ import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter, pendingAttributes } from '../lib/utils';
+import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter, propGetter } from '../lib/utils';
 import ElementStats from '../lib/ElementStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
@@ -236,20 +236,6 @@ export default class ElementEntity extends Entity {
     mountComponent() {
         this.add(new ComponentMountEntity(this, this.state));
 
-        // In case if there are dynamic props, create function which will reset
-        // them after component was mounted|updated
-        const { stats, state } = this;
-        const dynamicAttrs = stats.attributeNames().filter(attr => {
-            return attr === 'class' ? stats.hasDynamicClass() : stats.isDynamicAttribute(attr);
-        });
-
-        if (dynamicAttrs.length) {
-            const symbols = dynamicAttrs.map(qStr);
-            this.add(state.entity({
-                shared: () => state.runtime('resetPendingProps', [state.host, pendingAttributes(state)].concat(symbols))
-            }));
-        }
-
         // Add empty source node to skip automatic symbol nulling
         // in unmount function
         this.setUnmount(() => sn());
@@ -295,11 +281,11 @@ export default class ElementEntity extends Entity {
                 shared: () => {
                     const output = sn();
                     if (noNS) {
-                        output.add(state.runtime('finalizeAttributes', [this.dynAttrs.getSymbol()]));
+                        output.add(state.runtime('finalizeAttributes', [this.getSymbol(), this.dynAttrs.getSymbol()]));
                     }
 
                     if (withNS) {
-                        output.add(state.runtime('finalizeAttributesNS', [this.dynAttrs.getSymbol()]));
+                        output.add(state.runtime('finalizeAttributesNS', [this.getSymbol(), this.dynAttrs.getSymbol()]));
                     }
 
                     return output.join(' | ');
@@ -328,8 +314,11 @@ export default class ElementEntity extends Entity {
     setRef(refName: string | Program) {
         const { state } = this;
         const { refStats } = state;
+        const refStat = typeof refName === 'string'
+            ? refStats.refs[refName]
+            : void 0;
 
-        if (refStats.isDynamic || (typeof refName === 'string' && refStats.refs[refName].multiple)) {
+        if (refStats.isDynamic || (refStat && (refStat.multiple || refStat.conditional))) {
             // There are dynamic refs in current template or current ref is used
             // for multiple element: must be added as pending
             this.add(state.entity({
@@ -430,16 +419,39 @@ export default class ElementEntity extends Entity {
     }
 
     private mountPendingAttributes() {
-        this.dynAttrs = this.state.entity('attrSet', {
-            mount: () => this.state.runtime(this.isComponent ? 'pendingProps' : 'attributeSet', [this.getSymbol()]),
-        });
+        const { state, stats } = this;
+
+        if (this.isComponent) {
+            this.dynAttrs = state.entity('_p', {
+                mount: () => state.runtime('propsSet', [this.getSymbol()]),
+            });
+
+            // In case if there are dynamic props, check if there are props that
+            // are fully conditional and reset them
+            const dynamicAttrs = stats.attributeNames().filter(attr => {
+                return attr === 'class' ? stats.hasDynamicClass() : stats.isConditionalAttribute(attr);
+            });
+
+            if (dynamicAttrs.length) {
+                this.dynAttrs.setUpdate(ent => {
+                    const props = sn();
+                    dynamicAttrs.forEach(attr => props.add([ent.getSymbol(), '.c', propGetter(attr), ' = ']));
+                    props.add('null');
+                    return props;
+                });
+            }
+        } else {
+            this.dynAttrs = this.state.entity('_a', {
+                mount: () => this.state.runtime('attributeSet', []),
+            });
+        }
 
         this.add(this.dynAttrs);
     }
 
     private mountPendingEvents() {
         const { state } = this;
-        this.dynEvents = state.entity('events', {
+        this.dynEvents = state.entity('_e', {
             mount: () => state.runtime('pendingEvents', [this.state.host, this.getSymbol()]),
             unmount: ent => ent.unmount('detachPendingEvents')
         });

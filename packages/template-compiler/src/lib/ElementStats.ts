@@ -101,6 +101,14 @@ export default class ElementStats {
     }
 
     /**
+     * Check if given attribute is conditional, e.g. all values are set under condition
+     */
+    isConditionalAttribute(name: string): boolean {
+        const attr = this.attributes.find(item => item.name === name);
+        return attr && attr.refs.every(isConditionalRef);
+    }
+
+    /**
      * Check if given directive is dynamic
      */
     isDynamicDirective(prefix: string, name: string): boolean {

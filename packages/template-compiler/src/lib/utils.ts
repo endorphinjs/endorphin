@@ -6,6 +6,7 @@ import {
 import * as entities from 'entities';
 import { Chunk, ChunkList, HelpersMap, PlainObject } from '../types';
 import CompileState from './CompileState';
+import ElementEntity from '../entities/ElementEntity';
 
 /**
  * A prefix for Endorphin element and attribute names
@@ -178,11 +179,18 @@ export function propSetter(key: Chunk): Chunk {
 /**
  * Returns symbol for referencing pending attributes
  */
-export function pendingAttributes(state: CompileState): Chunk {
-    const { receiver } = state;
-    return receiver
-        ? receiver.pendingAttributes.getSymbol()
-        : `${state.scope}.$$_attrs`;
+export function pendingAttributes(state: CompileState, receiver: ElementEntity | void = state.receiver): SourceNode {
+    if (receiver) {
+        return sn(receiver.pendingAttributes.getSymbol());
+    }
+
+    return sn(`${state.scope}.$$_attrs`);
+}
+
+export function pendingAttributesCur(state: CompileState, receiver?: ElementEntity) {
+    const ptr = pendingAttributes(state, receiver);
+    ptr.add('.c');
+    return ptr;
 }
 
 /**

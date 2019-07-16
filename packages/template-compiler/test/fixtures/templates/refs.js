@@ -1,23 +1,25 @@
-import { appendChild, createComponent, createInjector, elem, finalizePendingRefs, insert, mountBlock, mountComponent, obj, removeRef, setPendingRef, setRef, unmountBlock, unmountComponent, updateBlock } from "endorphin";
+import { appendChild, createComponent, createInjector, elem, finalizePendingRefs, insert, mountBlock, mountComponent, obj, setPendingRef, setRef, unmountBlock, unmountComponent, updateBlock } from "endorphin";
 import * as SlotInner from "./slot-inner.html";
 
 function ifBody$0(host, injector, scope) {
+	const { refs$0 } = scope;
 	const span$0 = scope.span$0 = insert(injector, elem("span"));
-	setPendingRef(scope.refs$0, "header", span$0);
-	const footer$0 = insert(injector, elem("footer"));
-	setRef(host, "footer", footer$0);
+	setPendingRef(refs$0, "header", span$0);
+	const footer$0 = scope.footer$0 = insert(injector, elem("footer"));
+	setPendingRef(refs$0, "footer", footer$0);
 	return ifBody$0Update;
 }
 
 ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Update(host, scope) {
-	setPendingRef(scope.refs$0, "header", scope.span$0);
+	const { refs$0 } = scope;
+	setPendingRef(refs$0, "header", scope.span$0);
+	setPendingRef(refs$0, "footer", scope.footer$0);
 }
 
-function ifBody$0Unmount(scope, host) {
-	removeRef(host, "footer");
-	scope.span$0 = null;
+function ifBody$0Unmount(scope) {
+	scope.span$0 = scope.footer$0 = null;
 }
 
 function ifEntry$0(host) {

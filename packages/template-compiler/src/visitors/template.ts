@@ -22,17 +22,24 @@ import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
 import {
     sn, qStr, isLiteral, toObjectLiteral, nameToJS,
-    propSetter, isExpression, isIdentifier, pendingAttributes, propGetter
+    propSetter, isExpression, isIdentifier, pendingAttributes, propGetter, pendingEvents, pendingAttributesCur
 } from '../lib/utils';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
         state.runBlock('template', block => {
             block.exports = 'default';
-            state.refStats = refStats(node);
-
             return state.runElement(node, element => {
                 element.setMount(() => `${state.host}.componentView`);
+
+                const refs = state.refStats = refStats(node);
+                if (refs.hasDynamicRefs()) {
+                    state.pendingRefs = state.entity('refs', {
+                        mount: () => state.runtime('obj', [])
+                    });
+                    element.add(state.pendingRefs);
+                }
+
                 element.setContent(node.body, next);
 
                 if (state.slotSymbols.length) {
@@ -46,8 +53,7 @@ export default {
                     element.add(subscribeStore(state));
                 }
 
-                if (state.hasPendingRefs) {
-                    element.prepend(state.pendingRefs);
+                if (refs.hasDynamicRefs()) {
                     // Template sets refs or contains partials which may set
                     // refs as well
                     element.add(entity('refs', state, {
@@ -114,7 +120,7 @@ export default {
             return state.entity({
                 mount() {
                     const value = compileAttributeValue(dir.value, state, 'component');
-                    return sn([pendingAttributes(state), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
+                    return sn([pendingAttributesCur(state), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
                         state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
                 }
             });
@@ -181,15 +187,9 @@ export default {
 
         return entity('partial', state, {
             mount: () => {
-                const { receiver } = state;
                 const params = attributeMap(node.params, state);
-                const attrsSymbol = sn(receiver.pendingAttributes.getSymbol());
-                if (!receiver.isComponent) {
-                    attrsSymbol.add('.cur');
-                }
-
-                params.set('$$_attrs', attrsSymbol);
-                params.set('$$_events', receiver.pendingEvents.getSymbol());
+                params.set('$$_attrs', pendingAttributes(state));
+                params.set('$$_events', pendingEvents(state));
 
                 return state.runtime('mountPartial', [
                     state.host,

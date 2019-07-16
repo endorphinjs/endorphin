@@ -12,6 +12,7 @@ export interface RefStats {
     /** Template contains refs with expression as value or partials with possible refs */
     isDynamic: boolean;
     refs: { [name: string]: RefData };
+    hasDynamicRefs(): boolean;
 }
 
 interface WalkState {
@@ -29,7 +30,11 @@ export default function refStats(template: ENDTemplate): RefStats {
         condition: 0,
         stats: {
             isDynamic: false,
-            refs: {}
+            refs: {},
+            hasDynamicRefs() {
+                return this.isDynamic
+                    || Object.keys(this.refs).some(name => this.refs[name].conditional);
+            }
         }
     };
 

@@ -1,4 +1,4 @@
-import { addClassIf, appendChild, attributeSet, createInjector, detachPendingEvents, elem, finalizeAttributes, finalizeAttributesNS, finalizePendingEvents, getPartial, insert, mountIterator, mountPartial, pendingEvents, text, toggleClassIf, unmountIterator, unmountPartial, updateIterator, updatePartial, updateText } from "endorphin";
+import { addClassIf, appendChild, attributeSet, createInjector, detachPendingEvents, elem, finalizeAttributes, finalizeAttributesNS, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountIterator, mountPartial, obj, pendingEvents, text, toggleClassIf, unmountIterator, unmountPartial, updateIterator, updatePartial, updateText } from "endorphin";
 
 export const partials = {
 	button: {
@@ -21,8 +21,8 @@ function forContent$0(host, injector, scope) {
 		item: scope.item,
 		enabled: (scope.index !== 1),
 		"dashed-name": "bar",
-		$$_attrs: scope.attrSet$0.cur,
-		$$_events: scope.events$0
+		$$_attrs: scope._a$0,
+		$$_events: scope._e$0
 	});
 	return forContent$0Update;
 }
@@ -43,29 +43,32 @@ function forContent$0Unmount(scope) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const ul$0 = appendChild(target$0, elem("ul"));
+	const refs$0 = scope.refs$0 = obj();
+	const ul$0 = scope.ul$0 = appendChild(target$0, elem("ul"));
 	const inj$0 = createInjector(ul$0);
-	const attrSet$0 = scope.attrSet$0 = attributeSet(ul$0);
-	const events$0 = scope.events$0 = pendingEvents(host, ul$0);
+	const _a$0 = scope._a$0 = attributeSet();
+	const _e$0 = scope._e$0 = pendingEvents(host, ul$0);
 	scope.for$0 = mountIterator(host, inj$0, forSelect$0, forContent$0);
-	finalizePendingEvents(events$0);
-	finalizeAttributes(attrSet$0) | finalizeAttributesNS(attrSet$0);
+	finalizePendingEvents(_e$0);
+	finalizeAttributes(ul$0, _a$0) | finalizeAttributesNS(ul$0, _a$0);
+	finalizePendingRefs(host, refs$0);
 	return template$0Update;
 }
 
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { attrSet$0 } = scope;
+	const { _a$0, ul$0 } = scope;
 	updateIterator(scope.for$0);
-	finalizePendingEvents(scope.events$0);
-	finalizeAttributes(attrSet$0) | finalizeAttributesNS(attrSet$0);
+	finalizePendingEvents(scope._e$0);
+	finalizeAttributes(ul$0, _a$0) | finalizeAttributesNS(ul$0, _a$0);
+	finalizePendingRefs(host, scope.refs$0);
 }
 
 function template$0Unmount(scope) {
-	scope.events$0 = detachPendingEvents(scope.events$0);
+	scope._e$0 = detachPendingEvents(scope._e$0);
 	scope.for$0 = unmountIterator(scope.for$0);
-	scope.attrSet$0 = null;
+	scope.refs$0 = scope._a$0 = scope.ul$0 = null;
 }
 
 function partialButton$0(host, injector, scope) {
