@@ -1,4 +1,4 @@
-import { appendChild, attributeSet, elemNS, finalizeAttributes, finalizeAttributesNS, setAttribute, setClass, setPendingAttributeNS } from "endorphin";
+import { appendChild, attributeSet, elemNS, finalizeAttributes, finalizeAttributesNS, setAttribute, setPendingAttributeNS } from "endorphin";
 const ns$0 = "http://www.w3.org/2000/svg";
 const ns$1 = "http://www.w3.org/1999/xlink";
 
@@ -24,7 +24,7 @@ export default function template$0(host, scope) {
 	setAttribute(svg$0, "xmlns", "http://www.w3.org/2000/svg");
 	setAttribute(svg$0, "xmlns:xlink", "http://www.w3.org/1999/xlink");
 	const path$0 = appendChild(svg$0, elemNS("path", ns$0));
-	setClass(path$0, "svg-fill");
+	setAttribute(path$0, "class", "svg-fill");
 	setAttribute(path$0, "d", "M8 11.5c.83z");
 	const image$0 = scope.image$0 = appendChild(svg$0, elemNS("image", ns$0));
 	const _a$0 = scope._a$0 = attributeSet();

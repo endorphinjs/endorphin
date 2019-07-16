@@ -52,7 +52,7 @@ export default class AttributeEntity extends Entity {
                 // Static value, mount once
                 this.setMount(() => {
                     const ns = getAttributeNS(node, state);
-                    if (!ns && name === 'class') {
+                    if (name === 'class' && !receiver.namespace()) {
                         return state.runtime('setClass', [receiver.getSymbol(), compileAttributeValue(value, state)]);
                     }
 

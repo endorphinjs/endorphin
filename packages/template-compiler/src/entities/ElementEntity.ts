@@ -374,6 +374,18 @@ export default class ElementEntity extends Entity {
     }
 
     /**
+     * If current element is created under namespace, returns it’s namespace URI symbol
+     */
+    namespace(): string | undefined {
+        const { node, state } = this;
+        if (isElement(node)) {
+            const elemName = node.name.name;
+            const nodeName = getNodeName(elemName);
+            return state.namespace(nodeName.ns);
+        }
+    }
+
+    /**
      * Attaches given DOM entity to current element via DOM
      */
     private addDOM(entity: Entity): SourceNode {
