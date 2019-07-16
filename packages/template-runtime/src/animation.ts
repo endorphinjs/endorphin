@@ -86,6 +86,18 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 	elem.addEventListener('animationend', handler);
 	elem.addEventListener('animationcancel', handler);
 	elem.style.animation = animation;
+
+	// In case if callback is provided, we have to ensure that animation is actually applied.
+	// In some testing environments, animations could be disabled via
+	// `* { animation: none !important; }`. In this case, we should complete animation ASAP.
+	if (callback) {
+		nextTick(() => {
+			const style = window.getComputedStyle(elem, null);
+			if (!style.animationName || style.animationName === 'none') {
+				stopAnimation(elem);
+			}
+		});
+	}
 }
 
 /**
@@ -239,10 +251,16 @@ function findTween(elem: HTMLElement): Animation | null {
 
 /**
  * Concatenates two strings with optional separator
- * @param {string} name
- * @param {string} suffix
  */
 function concat(name: string, suffix: string) {
 	const sep = suffix[0] === '_' || suffix[0] === '-' ? '' : '-';
 	return name + sep + suffix;
+}
+
+function nextTick(fn: (...args: any[]) => any) {
+	if (typeof Promise !== 'undefined') {
+		Promise.resolve().then(fn);
+	} else {
+		requestAnimationFrame(fn);
+	}
 }
