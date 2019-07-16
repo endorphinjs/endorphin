@@ -7,7 +7,7 @@ import Entity from './Entity';
 import CompileState from '../lib/CompileState';
 import generateExpression from '../expression';
 import baseVisitors from '../visitors/expression';
-import { sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction, isCallExpression, isPrefix } from '../lib/utils';
+import { sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction, isCallExpression, isPrefix, pendingEvents } from '../lib/utils';
 import { ENDCompileError } from '../lib/error';
 import { ExpressionVisitorMap } from '../types';
 import { thisExpr, identifier, member, callExpr } from '../lib/ast-constructor';
@@ -17,15 +17,16 @@ export default class EventEntity extends Entity {
         super(node.name.split(':')[0], state);
 
         const eventType = this.rawName;
-        const { element } = state;
+        const { element, receiver } = state;
         const handler = createEventHandler(node, state);
 
-        if (!element.node || element.dynamicEvents.has(eventType) || element.hasPartials) {
-            this.setShared(() => state.runtime('addEvent', [element.injector, qStr(eventType), handler, state.host, state.scope]));
+        if (!receiver || receiver.isDynamicDirective(node.prefix, node.name)) {
+            // Event is dynamic, e.g. can be changed with condition
+            this.setShared(() =>
+                state.runtime('setPendingEvent', [pendingEvents(state), qStr(eventType), handler, state.scope]));
         } else {
-            // Add as static event
-            this.setMount(() => state.runtime('addStaticEvent', [element.getSymbol(), qStr(eventType), handler, state.host, state.scope]));
-            this.setUnmount(() => this.unmount('removeStaticEvent'));
+            this.setMount(() => state.runtime('addEvent', [element.getSymbol(), qStr(eventType), handler, state.host, state.scope]));
+            this.setUnmount(() => sn([this.scopeName, ' = ', this.state.runtime('removeEvent', [qStr(eventType), this.getSymbol()])]));
         }
     }
 }

@@ -1,6 +1,6 @@
 import { strictEqual } from 'assert';
 import document from './assets/document';
-import { createComponent, getProp, getState, getVar, setVar, enterScope, exitScope } from '../src/runtime';
+import { createComponent, getProp, getState, getVar, setVar, enterScope, exitScope, mountComponent } from '../src/runtime';
 
 describe('Scope', () => {
 	before(() => global['document'] = document);
@@ -17,6 +17,7 @@ describe('Scope', () => {
 			}
 		});
 
+		mountComponent(component);
 		strictEqual(getProp(component, 'class'), 'foo');
 		strictEqual(getProp(component, 'id'), 'bar');
 		strictEqual(getProp(component, 'prop1'), 123);

@@ -69,6 +69,6 @@ describe('Template compiler', () => {
     });
 
     // it.only('debug', () => {
-    //     compare('templates/slots-nested.html', null, true);
+    //     compare('debug.html', null, true);
     // });
 });

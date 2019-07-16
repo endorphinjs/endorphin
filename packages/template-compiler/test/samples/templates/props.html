@@ -1,12 +1,24 @@
-<link rel="import" href="./sub-component.html" />
+<link rel="import" href="./attrs.html" as="e1" />
 
 <template>
-    <sub-component p1="1" id={id}>
-        <e:if test={c1}>
-            <e:attribute p2=2 />
+    <e1 foo="bar1"/>
+    <e1 foo="bar2">
+        <e:if test={cond}>aaa</e:if>
+    </e1>
+    <e1 foo={bar3}/>
+    <e1 foo={bar4}>
+        <e:if test={cond}>aaa</e:if>
+    </e1>
+    <e1 foo={bar4}>
+        <e:attribute foo={baz} e:if={cond} />
+    </e1>
+    <e1 foo={bar4}>
+        <e:if test={cond}>
+            <e:attribute foo={baz} />
+            <br />
         </e:if>
-        <e:attribute p3=3 />
-    </sub-component>
-
-    <sub-component enabled />
+    </e1>
+    <e1 foo="a {bar4} b">
+        <e:attribute foo={baz} e:if={cond} />
+    </e1>
 </template>

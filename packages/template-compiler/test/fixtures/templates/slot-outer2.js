@@ -1,16 +1,16 @@
-import { createComponent, createInjector, elem, elemWithText, insert, mountBlock, mountComponent, text, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot, updateText } from "endorphin";
+import { appendChild, createComponent, createInjector, elem, elemWithText, insert, mountBlock, mountComponent, setAttribute, text, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot, updateText } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
 function ifBody$0(host, injector, scope) {
 	const p$0 = insert(injector, elem("p"));
-	scope.text$2 = p$0.appendChild(text(host.props.content2));
+	scope.text$2 = appendChild(p$0, text(host.props.content2));
 	scope.su$0 = 1;
 	return ifBody$0Update;
 }
 
 ifBody$0.dispose = ifBody$0Unmount;
 
-function ifBody$0Update(host, injector, scope) {
+function ifBody$0Update(host, scope) {
 	scope.su$0 |= updateText(scope.text$2, host.props.content2);
 }
 
@@ -44,9 +44,9 @@ function ifEntry$1(host) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const header$0 = target$0.appendChild(elem("header"));
-	scope.text$0 = header$0.appendChild(text(host.props.header));
-	const slotInner$0 = scope.slotInner$0 = target$0.appendChild(createComponent("slot-inner", SlotInner, host));
+	const header$0 = appendChild(target$0, elem("header"));
+	scope.text$0 = appendChild(header$0, text(host.props.header));
+	const slotInner$0 = scope.slotInner$0 = appendChild(target$0, createComponent("slot-inner", SlotInner, host));
 	const inj$2 = slotInner$0.componentModel.input;
 	const div$0 = insert(inj$2, elem("div"), "");
 	const inj$0 = createInjector(div$0);
@@ -54,7 +54,7 @@ export default function template$0(host, scope) {
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	const footer$0 = insert(inj$2, elem("footer"), "footer");
 	const inj$1 = createInjector(footer$0);
-	footer$0.setAttribute("slot", "footer");
+	setAttribute(footer$0, "slot", "footer");
 	scope.text$3 = insert(inj$1, text(host.props.footer));
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 	mountComponent(slotInner$0);

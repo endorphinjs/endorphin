@@ -90,7 +90,7 @@ function iterator(this: IteratorBlock, value: any, key: any) {
 		if (rendered.update) {
 			const scope = prepareScope(rendered.scope, index, key, value);
 			setScope(host, scope);
-			if (rendered.update(host, injector, scope)) {
+			if (rendered.update(host, scope)) {
 				this.updated = 1;
 			}
 			setScope(host, prevScope);

@@ -1,4 +1,4 @@
-import { createInjector, elem, elemWithText, insert, mountBlock, text, unmountBlock, updateBlock } from "endorphin";
+import { appendChild, createInjector, elem, elemWithText, insert, mountBlock, text, unmountBlock, updateBlock } from "endorphin";
 
 function ifBody$1(host, injector) {
 	insert(injector, elemWithText("div", "top 2"));
@@ -12,7 +12,7 @@ function ifEntry$1(host) {
 
 function ifBody$2(host, injector) {
 	insert(injector, elemWithText("div", "top 3"));
-	insert(injector, text("\n            top 3.1\n        "));
+	insert(injector, text("top 3.1"));
 }
 
 function ifEntry$2(host) {
@@ -23,7 +23,7 @@ function ifEntry$2(host) {
 
 function ifBody$0(host, injector, scope) {
 	const p$0 = insert(injector, elem("p"));
-	p$0.appendChild(elemWithText("strong", "top 1"));
+	appendChild(p$0, elemWithText("strong", "top 1"));
 	scope.if$1 = mountBlock(host, injector, ifEntry$1);
 	scope.if$2 = mountBlock(host, injector, ifEntry$2);
 	return ifBody$0Update;
@@ -31,7 +31,7 @@ function ifBody$0(host, injector, scope) {
 
 ifBody$0.dispose = ifBody$0Unmount;
 
-function ifBody$0Update(host, injector, scope) {
+function ifBody$0Update(host, scope) {
 	updateBlock(scope.if$1);
 	updateBlock(scope.if$2);
 }

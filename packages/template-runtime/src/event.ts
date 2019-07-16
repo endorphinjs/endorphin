@@ -1,49 +1,80 @@
-import { finalizeItems, runtimeError } from './utils';
+import { runtimeError, obj } from './utils';
 import { Scope, EventBinding } from './types';
-import { Injector } from './injector';
 import { Component } from './component';
+
+interface PendingEvents {
+	target: Element;
+	host: Component;
+	events: { [type: string]: EventBinding | void };
+}
 
 /**
  * Registers given event listener on `target` element and returns event binding
  * object to unregister event
  */
-export function addStaticEvent(target: Element, type: string, handleEvent: EventListener, host: Component, scope: Scope): EventBinding {
-	handleEvent = safeEventListener(host, handleEvent);
-	return registerBinding({ host, scope, type, handleEvent, target });
+export function addEvent(target: Element, type: string, listener: EventListener, host: Component, scope: Scope): EventBinding {
+	return registerBinding(type, { host, scope, target, listener, handleEvent });
 }
 
 /**
  * Unregister given event binding
  */
-export function removeStaticEvent(binding: EventBinding): void {
-	binding.target.removeEventListener(binding.type, binding);
+export function removeEvent(type: string, binding: EventBinding): void {
+	binding.target.removeEventListener(type, binding);
 }
 
 /**
- * Adds pending event `name` handler
+ * Creates structure for collecting pending events
  */
-export function addEvent(injector: Injector, type: string, handleEvent: EventListener, host: Component, scope: Scope): void {
-	// We’ll use `ChangeSet` to bind and unbind events only: once binding is registered,
-	// we will mutate binding props
-	const { prev, cur } = injector.events;
-	const binding = cur[type] || prev[type];
+export function pendingEvents(host: Component, target: Element): PendingEvents {
+	return { host, target, events: obj() };
+}
 
-	handleEvent = safeEventListener(host, handleEvent);
-
+export function setPendingEvent(pending: PendingEvents, type: string, listener: EventListener, scope: Scope) {
+	let binding = pending.events[type];
 	if (binding) {
+		binding.listener = listener;
 		binding.scope = scope;
-		binding.handleEvent = handleEvent;
-		cur[type] = binding;
 	} else {
-		cur[type] = { host, scope, type, handleEvent, target: injector.parentNode };
+		binding = pending.events[type] = addEvent(pending.target, type, listener, pending.host, scope);
+	}
+	binding.pending = listener;
+}
+
+export function finalizePendingEvents(pending: PendingEvents) {
+	// For event listeners, we should only bind or unbind events, depending
+	// on current listener value
+	const { events } = pending;
+	for (const type in events) {
+		const binding = events[type];
+		if (binding) {
+			if (!binding.pending) {
+				events[type] = removeEvent(type, binding);
+			}
+
+			binding.pending = void 0;
+		}
 	}
 }
 
-/**
- * Finalizes events of given injector
- */
-export function finalizeEvents(injector: Injector): number {
-	return finalizeItems(injector.events, changeEvent, injector.parentNode);
+export function detachPendingEvents(pending: PendingEvents) {
+	const { events } = pending;
+	for (const type in events) {
+		const binding = events[type];
+		if (binding) {
+			removeEvent(type, binding);
+		}
+	}
+}
+
+function handleEvent(this: EventBinding, event: Event) {
+	try {
+		this.listener && this.listener(event);
+	} catch (error) {
+		runtimeError(this.host, error);
+		// tslint:disable-next-line:no-console
+		console.error(error);
+	}
 }
 
 export function safeEventListener(host: Component, handler: EventListener): EventListener {
@@ -59,19 +90,7 @@ export function safeEventListener(host: Component, handler: EventListener): Even
 	};
 }
 
-function registerBinding(binding: EventBinding): EventBinding {
-	binding.target.addEventListener(binding.type, binding);
+function registerBinding(type: string, binding: EventBinding): EventBinding {
+	binding.target.addEventListener(type, binding);
 	return binding;
-}
-
-/**
- * Invoked when event handler was changed
- */
-function changeEvent(name: string, prevValue: EventBinding | null, newValue: EventBinding | null): void {
-	if (!prevValue && newValue) {
-		// Should register new binding
-		registerBinding(newValue);
-	} else if (prevValue && !newValue) {
-		removeStaticEvent(prevValue);
-	}
 }

@@ -1,5 +1,4 @@
 import { ENDIfStatement, ENDChooseStatement, ENDChooseCase, ENDStatement, Program } from '@endorphinjs/template-parser';
-import { SourceNode } from 'source-map';
 import Entity from './Entity';
 import CompileState from '../lib/CompileState';
 import { sn } from '../lib/utils';
@@ -23,7 +22,7 @@ export default class ConditionEntity extends Entity {
     setSimple(test: Program, statements: ENDStatement[], next: TemplateContinue) {
         const fn = ifAttr(test, statements, this.state, next);
         this.setShared(() => {
-            const args = sn([this.state.host, this.state.injector]);
+            const args = sn([this.state.host]);
             if (fn.usesScope) {
                 args.add(this.state.scope);
             }
@@ -45,10 +44,8 @@ function conditionEntry(name: string, conditions: Array<ENDIfStatement | ENDChoo
                 const body = sn();
 
                 conditions.forEach((block, i) => {
-                    if (i === 0) {
-                        body.add([`if (`, generateExpression(block.test, state), ') ']);
-                    } else if (block.test) {
-                        body.add([` else if (`, generateExpression(block.test, state), ') ']);
+                    if (block.test) {
+                        body.add([`${i === 0 ? '' : ' else '}if (`, generateExpression(block.test, state), ') ']);
                     } else {
                         body.add(' else ');
                     }
@@ -66,37 +63,40 @@ function conditionEntry(name: string, conditions: Array<ENDIfStatement | ENDChoo
 }
 
 function ifAttr(test: Program, statements: ENDStatement[], state: CompileState, next: TemplateContinue): { name: string, usesScope: boolean } {
-    let usesScope = false;
-    const name = state.runChildBlock('ifAttr', (block, elem) => {
-        elem.setMount(() => {
-            const body = sn();
-            const indent = state.indent.repeat(2);
+    const block = state.runBlock('ifAttr', () => {
+        return state.entity({
+            mount() {
+                const body = sn();
+                const indent = state.indent.repeat(2);
+                const entities = collectEntities(statements.map(next));
 
-            body.add([`if (`, generateExpression(test, state), ') {']);
-            statements.forEach(child => addEntity(next(child), body, indent));
-            body.add(`\n${state.indent}}`);
-            body.add(`\n${state.indent}return 0;`);
+                body.add([`if (`, generateExpression(test, state), ') {']);
 
-            return body;
+                for (let i = 0; i < entities.length; i++) {
+                    const mount = entities[i].getMount();
+                    if (mount) {
+                        body.add(['\n', indent, mount, ';']);
+                    }
+                }
+
+                body.add(`\n${state.indent}}`);
+                return body;
+            }
         });
+    });
 
-        if (block.scopeUsage.mount) {
-            usesScope = true;
-        }
-    }).mountSymbol;
-
-    return { name, usesScope };
+    return {
+        name: block.name,
+        usesScope: block.scopeUsage.mount > 0
+    };
 }
 
-function addEntity(entity: TemplateOutput, dest: SourceNode, indent: string = ''): SourceNode {
-    if (entity) {
-        const mount = entity.getMount();
-        if (mount) {
-            dest.add(['\n', indent, mount, ';']);
-        }
-
-        for (let i = 0; i < entity.children.length; i++) {
-            addEntity(entity.children[i], dest, indent);
+function collectEntities(list: TemplateOutput[], dest: Entity[] = []): Entity[] {
+    for (let i = 0; i < list.length; i++) {
+        const entity = list[i];
+        if (entity) {
+            dest.push(entity);
+            collectEntities(entity.children, dest);
         }
     }
 

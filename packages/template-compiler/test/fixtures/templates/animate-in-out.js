@@ -1,4 +1,4 @@
-import { animate, createComponent, createInjector, domRemove, elem, elemWithText, insert, mountBlock, mountComponent, stopAnimation, unmountBlock, unmountComponent, updateBlock } from "endorphin";
+import { animate, appendChild, createComponent, createInjector, domRemove, elem, elemWithText, insert, mountBlock, mountComponent, stopAnimation, unmountBlock, unmountComponent, updateBlock } from "endorphin";
 import * as MyComponent from "my-component.html";
 
 function animatedSection$0(host, injector, scope) {
@@ -56,7 +56,7 @@ function ifEntry$1(host) {
 
 function animatedSection$1(host, injector, scope) {
 	const section$1 = scope.section$1 = insert(injector, elem("section"));
-	section$1.appendChild(elemWithText("p", "Inner 2"));
+	appendChild(section$1, elemWithText("p", "Inner 2"));
 }
 
 function animatedSection$1Unmount(scope) {
@@ -119,7 +119,7 @@ export default function template$0(host, scope) {
 	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
 	insert(inj$0, elemWithText("span", "static"));
 	const div$1 = scope.div$1 = insert(inj$0, elem("div"));
-	div$1.appendChild(elemWithText("p", "Inner 1"));
+	appendChild(div$1, elemWithText("p", "Inner 1"));
 	animate(div$1, "show");
 	scope.if$2 = mountBlock(host, inj$0, ifEntry$2);
 	scope.if$3 = mountBlock(host, inj$0, ifEntry$3);

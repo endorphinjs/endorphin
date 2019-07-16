@@ -1,4 +1,4 @@
-import { addStaticEvent, call, elem, removeStaticEvent, subscribeStore, text, updateText } from "endorphin";
+import { addEvent, appendChild, call, elem, removeEvent, subscribeStore, text, updateText } from "endorphin";
 
 function onClick$0(evt) {
 	call(this.host.store, "update", [this.host.state.item]);
@@ -6,11 +6,11 @@ function onClick$0(evt) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const div$0 = target$0.appendChild(elem("div"));
-	scope.click$0 = addStaticEvent(div$0, "click", onClick$0, host, scope);
-	const p$0 = div$0.appendChild(elem("p"));
-	p$0.appendChild(text("Store value is "));
-	scope.text$1 = p$0.appendChild(text(host.store.data.foo));
+	const div$0 = appendChild(target$0, elem("div"));
+	scope.click$0 = addEvent(div$0, "click", onClick$0, host, scope);
+	const p$0 = appendChild(div$0, elem("p"));
+	appendChild(p$0, text("Store value is "));
+	scope.text$1 = appendChild(p$0, text(host.store.data.foo));
 	subscribeStore(host, ["foo"]);
 	return template$0Update;
 }
@@ -22,6 +22,6 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.click$0 = removeStaticEvent(scope.click$0);
+	scope.click$0 = removeEvent("click", scope.click$0);
 	scope.text$1 = null;
 }

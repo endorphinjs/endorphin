@@ -1,15 +1,23 @@
-import { ChunkList, Chunk } from '../types';
+import { ChunkList, Chunk, UsageContext } from '../types';
 import CompileState from './CompileState';
 import Entity from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import UsageStats from './UsageStats';
-import { createFunction } from './utils';
+import { createFunction, sn } from './utils';
 import InjectorEntity from '../entities/InjectorEntity';
+import { SourceNode } from 'source-map';
+
+interface EntityData {
+    mounted: boolean;
+    refs: { [K in UsageContext]: SourceNode };
+    usage: UsageStats;
+}
 
 export default class BlockContext {
     element?: ElementEntity;
     scopeUsage = new UsageStats();
     hostUsage = new UsageStats();
+    entities: Map<Entity, EntityData> = new Map();
 
     /** Indicates that block uses given injector as argument */
     injector?: InjectorEntity;
@@ -36,6 +44,35 @@ export default class BlockContext {
     constructor(readonly name: string, readonly state: CompileState) {}
 
     /**
+     * Returns source node for referencing given entity in current block’s rendering context
+     */
+    getRefNode(entity: Entity, context: UsageContext): SourceNode {
+        const data = this.getEntityData(entity);
+        data.usage.use(context);
+        return data.refs[context];
+    }
+
+    setMounted(entity: Entity) {
+        this.getEntityData(entity).mounted = true;
+    }
+
+    getEntityData(entity: Entity): EntityData {
+        if (!this.entities.has(entity)) {
+            this.entities.set(entity, {
+                mounted: false,
+                refs: {
+                    mount: sn(),
+                    update: sn(),
+                    unmount: sn()
+                },
+                usage: new UsageStats()
+            });
+        }
+
+        return this.entities.get(entity)!;
+    }
+
+    /**
      * Generates mount, update and unmount functions from given entities
      */
     generate(entities: Entity[]): ChunkList {
@@ -60,8 +97,23 @@ export default class BlockContext {
             allEntities.push(entity);
 
             let chunk: Chunk | void;
-            if (chunk = entity.getMount()) {
-                mountChunks.push(chunk);
+            if (chunk = this.getMountCode(entity)) {
+                // If entity is mounted in current block, check if entity should
+                // be referred in other blocks
+                const ref = sn(chunk);
+                if (!entity.parent) {
+                    const { symbolUsage } = entity;
+
+                    if (symbolUsage.update || symbolUsage.unmount) {
+                        ref.prepend(`${entity.scopeName} = `);
+                        scopeUsage.use('mount');
+                    }
+
+                    if (symbolUsage.mount) {
+                        ref.prepend(`const ${entity.name} = `);
+                    }
+                }
+                mountChunks.push(ref);
             }
 
             entity.children.forEach(add);
@@ -79,24 +131,18 @@ export default class BlockContext {
             }
         };
 
+        this.setRefs();
         entities.forEach(add);
 
         if (toNull.length) {
             scopeUsage.use('unmount');
-            unmountChunks.push(toNull.map(entity => `${scope}.${entity.name} = `).join('') + 'null');
+            unmountChunks.push(toNull.map(entity => `${entity.scopeName} = `).join('') + 'null');
         }
 
-        state.update(() => {
-            const symbols: string[] = [];
-
-            if (symbols.length) {
-                updateChunks.unshift(`let ${symbols.join(' = ')} = 0`);
-            }
-        });
-
         // Destructure element refs for smaller code
-        state.update(() => destructureRefs(allEntities, 'update', updateChunks, state));
-        state.unmount(() => destructureRefs(allEntities, 'unmount', unmountChunks, state));
+        this.destructureRefs('mount', mountChunks);
+        this.destructureRefs('update', updateChunks);
+        this.destructureRefs('unmount', unmountChunks);
 
         if (this.slotSymbols.size) {
             // Mark used slot symbols as updated in mount and unmount context
@@ -116,7 +162,7 @@ export default class BlockContext {
         const injectorArg = this.injector ? this.injector.name : '';
         const scopeArg = (count: number): string => count ? scope : '';
         const mountFn = createFunction(mountSymbol, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
-        const updateFn = createFunction(updateSymbol, [state.host, injectorArg, scopeArg(scopeUsage.update)], updateChunks, indent);
+        const updateFn = createFunction(updateSymbol, [state.host, scopeArg(scopeUsage.update)], updateChunks, indent);
         const unmountFn = createFunction(unmountSymbol,
             [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
 
@@ -134,14 +180,52 @@ export default class BlockContext {
 
         return [mountFn, updateFn, unmountFn];
     }
-}
 
-function destructureRefs(entities: Entity[], type: 'mount' | 'update' | 'unmount', chunks: ChunkList, state: CompileState) {
-    const refs = entities
-        .filter(ent => ent.symbolUsage[type] > 1 && (type !== 'mount' || ent.parent))
-        .map(ent => ent.name);
+    private getMountCode(entity: Entity): Chunk | undefined {
+        return this.getEntityData(entity).mounted ? entity.getMount() : null;
+    }
 
-    if (refs.length) {
-        chunks.unshift(`const { ${refs.join(', ')} } = ${state.options.scope}`);
+    private destructureRefs(context: UsageContext, chunks: ChunkList) {
+        const entities: Entity[] = [];
+        this.entities.forEach((data, entity) => {
+            if (data.usage[context] > 1 && (context !== 'mount' || !data.mounted)) {
+                entities.push(entity);
+            }
+        });
+
+        if (entities.length && chunks.length) {
+            this.scopeUsage.use(context);
+            chunks.unshift(`const { ${entities.map(ent => ent.name).join(', ')} } = ${this.state.options.scope}`);
+        }
+    }
+
+    /**
+     * Writes contents of into ref source nodes for entities used in current block
+     */
+    private setRefs() {
+        this.entities.forEach((data, entity) => {
+            const { usage, refs } = data;
+            if (usage.mount) {
+                // If entity was mounted in current block we should use local
+                // variable for referencing entity. Also use local var if entity
+                // is used more than once, otherwise use scoped var
+                if (!entity.parent && (data.mounted || usage.mount > 1)) {
+                    refs.mount.add(entity.name);
+                } else {
+                    refs.mount.add(entity.scopeName);
+                    this.scopeUsage.use('mount');
+                }
+            }
+
+            if (usage.update) {
+                refs.update.add(usage.update > 1 ? entity.name : entity.scopeName);
+                this.scopeUsage.use('update');
+            }
+
+            if (usage.unmount) {
+                refs.unmount.add(usage.unmount > 1 ? entity.name : entity.scopeName);
+                this.scopeUsage.use('unmount');
+            }
+        });
     }
 }

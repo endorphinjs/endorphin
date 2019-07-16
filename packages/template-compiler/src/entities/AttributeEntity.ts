@@ -1,56 +1,88 @@
 import { ENDAttribute, ENDAttributeName, ENDAttributeValue, Literal, Program } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import compileExpression from '../expression';
+import { Chunk, ChunkList, RenderChunk } from '../types';
 import CompileState from '../lib/CompileState';
-import { Chunk, RenderChunk } from '../types';
-import { isIdentifier, isExpression, sn, qStr, isLiteral } from '../lib/utils';
+import {
+    isIdentifier, isExpression, sn, qStr, isLiteral, isInterpolatedLiteral,
+    pendingAttributes, pendingAttributesCur, propGetter
+} from '../lib/utils';
+
+interface NSData {
+    name: string;
+    ns: string;
+}
+
+type AttributeType = 'component' | 'params' | void;
 
 export default class AttributeEntity extends Entity {
     constructor(readonly node: ENDAttribute, readonly state: CompileState) {
         super(isIdentifier(node.name) ? `${node.name.name}Attr` : 'exprAttr', state);
-        const { element } = state;
+        const { receiver } = state;
 
-        if (!element.node) {
-            // Set attribute in child block
-            this.setMount(mountDynamicAttribute);
-        } else if (element.isComponent || element.isDynamicAttribute(node)) {
-            // Attribute must be updated in runtime
-            this.setShared(mountDynamicAttribute);
-        } else {
-            // Attribute with literal value: set only once, no need to update
-            this.setMount(mountStaticAttribute);
+        if (isIdentifier(node.name)) {
+            const name = node.name.name;
+            const { value } = node;
+            const isDynamic = !receiver || receiver.isDynamicAttribute(node);
+
+            if (!receiver || receiver.isComponent) {
+                // For components and partials (empty receiver), we should always
+                // use pending attributes
+                const render: RenderChunk = () => {
+                    const ctx: AttributeType = receiver && receiver.isComponent ? 'component' : null;
+                    return sn([pendingAttributesCur(state), propGetter(name), ' = ', compileAttributeValue(value, state, ctx)]);
+                };
+
+                this.setMount(render);
+                if (isDynamic || isDynamicValue(value)) {
+                    this.setUpdate(render);
+                }
+            } else if (isDynamic) {
+                // Dynamic attributes must be collected into temp object
+                // and finalized later
+                this.setShared(() => {
+                    const ns = getAttributeNS(node, state);
+                    if (ns) {
+                        return state.runtime('setPendingAttributeNS', createArguments(name, value, state, true, ns));
+                    }
+
+                    return sn([pendingAttributesCur(state), propGetter(name), ' = ', compileAttributeValue(value, state)]);
+                });
+            } else if (!value || isLiteral(value)) {
+                // Static value, mount once
+                this.setMount(() => {
+                    const ns = getAttributeNS(node, state);
+                    if (name === 'class' && !receiver.namespace()) {
+                        return state.runtime('setClass', [receiver.getSymbol(), compileAttributeValue(value, state)]);
+                    }
+
+                    const args = createArguments(name, value, state, false, ns);
+                    return ns
+                        ? state.runtime('setAttributeNS', args)
+                        : state.runtime('setAttribute', args);
+                });
+            } else if (isDynamicValue(value)) {
+                // Expression attribute, must be updated in runtime
+                const ns = getAttributeNS(node, state);
+                this.setMount(() => {
+                    const args = createArguments(name, value, state, false, ns);
+                    return ns
+                        ? state.runtime('setAttributeExpressionNS', args)
+                        : state.runtime('setAttributeExpression', args);
+                });
+                this.setUpdate(() => {
+                    const args = createArguments(name, value, state, false, ns);
+                    args.push(this.getSymbol());
+
+                    const chunk = ns
+                        ? state.runtime('updateAttributeExpressionNS', args)
+                        : state.runtime('updateAttributeExpression', args);
+
+                    return sn([this.scopeName, ' = ', chunk]);
+                });
+            }
         }
     }
-}
-
-export const mountStaticAttribute: RenderChunk = (attr: AttributeEntity) => {
-    const { node, state } = attr;
-    const elem = state.element.getSymbol();
-    const ns = getAttributeNS(node, state);
-
-    return ns
-        ? sn([elem, `.setAttributeNS(${ns.ns}, `, attrName(node, state), ', ', attrValue(node, state), `)`], node)
-        : sn([elem, `.setAttribute(`, attrName(node, state), ', ', attrValue(node, state), `)`], node);
-};
-
-export const mountDynamicAttribute: RenderChunk = (attr: AttributeEntity) => {
-    const { node, state } = attr;
-    const { injector } = state.element;
-    const ns = getAttributeNS(node, state);
-
-    return ns
-        ? state.runtime('setAttributeNS', [injector, ns.ns, attrName(node, state), attrValue(node, state)])
-        : state.runtime('setAttribute', [injector, attrName(node, state), attrValue(node, state)]);
-};
-
-function attrName(attr: ENDAttribute, state: CompileState): Chunk {
-    const ns = getAttributeNS(attr, state);
-    return compileAttributeName(ns ? ns.name : attr.name, state);
-}
-
-function attrValue(attr: ENDAttribute, state: CompileState): Chunk {
-    const inComponent = state.element && state.element.isComponent;
-    return compileAttributeValue(attr.value, state, inComponent ? 'component' : null);
 }
 
 export function compileAttributeName(name: ENDAttributeName | string, state: CompileState): Chunk {
@@ -61,7 +93,7 @@ export function compileAttributeName(name: ENDAttributeName | string, state: Com
     return isExpression(name) ? compileExpression(name, state) : qStr(name.name);
 }
 
-export function compileAttributeValue(value: ENDAttributeValue, state: CompileState, context?: 'component' | 'params'): Chunk {
+export function compileAttributeValue(value: ENDAttributeValue, state: CompileState, context?: AttributeType): Chunk {
     if (value === null) {
         // Attribute without value, decide how to output
         if (context === 'component') {
@@ -89,9 +121,13 @@ export function compileAttributeValue(value: ENDAttributeValue, state: CompileSt
         return compileExpression(value, state);
     }
 
-    if (value.type === 'ENDAttributeValueExpression') {
+    if (isInterpolatedLiteral(value)) {
         // List of static and dynamic tokens, must be compiled to function
-        const fnName = createConcatFunction('attrValue', state, value.elements);
+        let fnName: string = state.getCache(value, 'attrValue');
+        if (!fnName) {
+            fnName = createConcatFunction('attrValue', state, value.elements);
+            state.putCache(value, 'attrValue', fnName);
+        }
         return `${fnName}(${state.host}, ${state.scope})`;
     }
 }
@@ -124,7 +160,7 @@ export function createConcatFunction(prefix: string, state: CompileState, tokens
 /**
  * Returns namespace URI for given attribute, if available
  */
-export function getAttributeNS(attr: ENDAttribute, state: CompileState): { name: string, ns: string } | void {
+export function getAttributeNS(attr: ENDAttribute, state: CompileState): NSData | undefined {
     if (isIdentifier(attr.name)) {
         const parts = String(attr.name.name).split(':');
         if (parts.length > 1 && parts[0] !== 'xmlns') {
@@ -136,4 +172,20 @@ export function getAttributeNS(attr: ENDAttribute, state: CompileState): { name:
             }
         }
     }
+}
+
+function createArguments(name: string, value: ENDAttributeValue, state: CompileState, pending: boolean, ns?: NSData): ChunkList {
+    const { receiver } = state;
+    const result: ChunkList = [pending ? pendingAttributes(state) : receiver.getSymbol()];
+    if (ns) {
+        result.push(ns.ns);
+    }
+
+    result.push(qStr(ns ? ns.name : name), compileAttributeValue(value, state));
+
+    return result;
+}
+
+function isDynamicValue(value?: ENDAttributeValue): boolean {
+    return value && (isExpression(value) || isInterpolatedLiteral(value));
 }

@@ -1,0 +1,25 @@
+<template>
+    <e1 foo="bar1" enabled/>
+    <e2 foo="bar2">
+        <e:if test={cond}>aaa</e:if>
+    </e2>
+    <e3 foo={bar3}/>
+    <e4 foo={bar4}>
+        <e:if test={cond}>aaa</e:if>
+    </e4>
+    <e5 foo={bar4}>
+        <e:attribute foo={baz} e:if={cond} />
+    </e5>
+    <e6 foo={bar4}>
+        <e:if test={cond}>
+            <e:attribute foo={baz} />
+            <br />
+        </e:if>
+    </e6>
+    <e7 foo="a {bar4} b">
+        <e:attribute foo={baz} e:if={cond} />
+    </e7>
+    <e8>
+        <e:attribute foo={baz} e:if={cond} />
+    </e8>
+</template>

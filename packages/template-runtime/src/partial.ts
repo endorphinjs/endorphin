@@ -14,6 +14,14 @@ interface PartialDefinition {
 	defaults: object;
 }
 
+interface PartialsMap {
+	[name: string]: PartialDefinition;
+}
+
+export function getPartial(host: Component, name: string, componentPartials: PartialsMap): PartialDefinition | undefined {
+	return host.props['partial:' + name] || componentPartials[name];
+}
+
 /**
  * Mounts given partial into injector context
  */
@@ -59,7 +67,7 @@ export function updatePartial(block: PartialBlock, partial: PartialDefinition, a
 	} else if (block.update) {
 		// Update rendered partial
 		const scope = setScope(host, assign(block.scope, args));
-		if (block.update(host, injector, scope)) {
+		if (block.update(host, scope)) {
 			updated = 1;
 		}
 		setScope(host, prevScope);

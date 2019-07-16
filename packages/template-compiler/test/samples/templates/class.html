@@ -1,0 +1,25 @@
+<template>
+    <e1 class:foo={enabled} class:bar />
+    <e2 class:foo>
+        <e:attribute class:foo={foo} class:bar e:if={cond}/>
+    </e2>
+
+    <e3 class="test" class:foo>
+        <e:attribute class="override" e:if={cond2} />
+    </e3>
+
+    <e4 class="test">
+        <e:if test={cond1}>
+            <e:attribute class:foo={foo} class:bar />
+            <img />
+        </e:if>
+        <e:if test={cond2}>
+            <e:attribute class="override" e:if={cond2} />
+            <br />
+        </e:if>
+    </e4>
+
+    <e5 class="foo" class:bar>
+        <e:add-class>foo {bar}</e:add-class>
+    </e5>
+</template>

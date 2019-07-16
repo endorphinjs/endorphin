@@ -1,16 +1,16 @@
 import { elem } from './dom';
-import { assign, obj, changeSet, representAttributeValue, getObjectDescriptors, captureError } from './utils';
-import { finalizeEvents, safeEventListener } from './event';
-import { normalizeClassName } from './attribute';
+import { assign, obj, representAttributeValue, getObjectDescriptors, captureError } from './utils';
+import { safeEventListener } from './event';
+import { classNames } from './attribute';
 import { createInjector, Injector } from './injector';
 import { runHook, reverseWalkDefinitions } from './hooks';
 import { getScope } from './scope';
-import { Changes, Data, UpdateTemplate, ChangeSet, MountTemplate } from './types';
+import { Changes, Data, UpdateTemplate, MountTemplate } from './types';
 import { Store } from './store';
 import { notifySlotUpdate } from './slot';
 
 type DescriptorMap = object & { [x: string]: PropertyDescriptor };
-interface RefMap { [key: string]: Element; }
+export interface RefMap { [key: string]: Element | null; }
 
 export type ComponentEventHandler = (component: Component, event: Event, target: HTMLElement) => void;
 export type StaticEventHandler = (evt: Event) => void;
@@ -70,9 +70,6 @@ interface ComponentModel {
 	/** Injector for incoming component data */
 	input: Injector;
 
-	/** Change set for component refs */
-	refs: ChangeSet;
-
 	/** Runtime variables */
 	vars: object;
 
@@ -93,9 +90,6 @@ interface ComponentModel {
 
 	/** Indicates that component is currently rendering */
 	rendering: boolean;
-
-	/** Indicates that component is currently in finalization state (calling `did*` hooks) */
-	finalizing: boolean;
 
 	/** Default props values */
 	defaultProps: object;
@@ -217,8 +211,8 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 
 	const { props, state, extend, events } = prepare(element, definition);
 
-	element.refs = {};
-	element.props = obj(props);
+	element.refs = obj();
+	element.props = obj();
 	element.state = state;
 	element.componentView = element; // XXX Should point to Shadow Root in Web Components
 	root && (element.root = root);
@@ -243,10 +237,8 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 		definition,
 		input,
 		vars: obj(),
-		refs: changeSet(),
 		mounted: false,
 		rendering: false,
-		finalizing: false,
 		update: void 0,
 		queued: false,
 		events,
@@ -261,21 +253,11 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 /**
  * Mounts given component
  */
-export function mountComponent(component: Component, initialProps?: object) {
+export function mountComponent(component: Component, props?: object) {
 	const { componentModel } = component;
-	const { input, definition, defaultProps } = componentModel;
-
-	let changes = setPropsInternal(component, obj(), assign(obj(defaultProps), initialProps));
-	const runtimeChanges = setPropsInternal(component, input.attributes.prev, input.attributes.cur);
-
-	if (changes && runtimeChanges) {
-		assign(changes, runtimeChanges);
-	} else if (runtimeChanges) {
-		changes = runtimeChanges;
-	}
-
+	const { input, definition } = componentModel;
+	const changes = setPropsInternal(component, props || componentModel.defaultProps);
 	const arg = changes || {};
-	finalizeEvents(input);
 
 	componentModel.rendering = true;
 
@@ -293,22 +275,18 @@ export function mountComponent(component: Component, initialProps?: object) {
 	componentModel.update = captureError(component, definition.default, component, getScope(component));
 	componentModel.mounted = true;
 	componentModel.rendering = false;
-	componentModel.finalizing = true;
 	runHook(component, 'didRender', arg);
 	runHook(component, 'didMount', arg);
-	componentModel.finalizing = false;
 }
 
 /**
  * Updates given mounted component
  */
-export function updateComponent(component: Component): number {
-	const { input } = component.componentModel;
-	const changes = setPropsInternal(component, input.attributes.prev, input.attributes.cur);
-	finalizeEvents(input);
+export function updateComponent(component: Component, props?: object): number {
+	const changes = props && setPropsInternal(component, props);
 
 	if (changes || component.componentModel.queued) {
-		renderNext(component, changes!);
+		renderNext(component, changes);
 	}
 
 	return changes ? 1 : 0;
@@ -322,7 +300,6 @@ export function updateComponent(component: Component): number {
 export function unmountComponent(component: Component): void {
 	const { componentModel } = component;
 	const { definition, events } = componentModel;
-	const scope = getScope(component);
 
 	runHook(component, 'willUnmount');
 
@@ -336,7 +313,7 @@ export function unmountComponent(component: Component): void {
 	}
 
 	const dispose = definition.default && definition.default.dispose;
-	captureError(component, dispose, scope);
+	captureError(component, dispose, getScope(component));
 
 	runHook(component, 'didUnmount');
 
@@ -399,10 +376,8 @@ export function renderComponent(component: Component, changes?: Changes) {
 	runHook(component, 'willRender', arg);
 	captureError(component, componentModel.update, component, getScope(component));
 	componentModel.rendering = false;
-	componentModel.finalizing = true;
 	runHook(component, 'didRender', arg);
 	runHook(component, 'didUpdate', arg);
-	componentModel.finalizing = false;
 }
 
 /**
@@ -419,38 +394,37 @@ function kebabCase(ch: string): string {
 	return '-' + ch.toLowerCase();
 }
 
-function setPropsInternal(component: Component, prevProps: object, nextProps: object): Changes | null {
-	const changes: Changes = {};
-	let didChanged = false;
+function setPropsInternal(component: Component, nextProps: object): Changes | undefined {
+	let changes: Changes | undefined;
 	const { props } = component;
 	const { defaultProps } = component.componentModel;
 
 	for (const p in nextProps) {
-		const prev = prevProps[p];
+		const prev = props[p];
 		let current = nextProps[p];
 
 		if (current == null) {
-			current = defaultProps[p];
+			nextProps[p] = current = defaultProps[p];
 		}
 
 		if (p === 'class' && current != null) {
-			current = normalizeClassName(current);
+			current = classNames(current).join(' ');
 		}
 
 		if (current !== prev) {
-			didChanged = true;
-			props[p] = prevProps[p] = current;
+			if (!changes) {
+				changes = obj();
+			}
+			props[p] = current;
 			changes[p] = { current, prev };
 
 			if (!/^partial:/.test(p)) {
 				representAttributeValue(component, p.replace(/[A-Z]/g, kebabCase), current);
 			}
 		}
-
-		nextProps[p] = null;
 	}
 
-	return didChanged ? changes : null;
+	return changes;
 }
 
 /**
@@ -544,8 +518,9 @@ function addPropsState(element: Component) {
 		// In case of calling `setProps` after component was unmounted,
 		// check if `componentModel` is available
 		if (value != null && componentModel && componentModel.mounted) {
-			const changes = setPropsInternal(element, element.props, obj(value));
+			const changes = setPropsInternal(element, assign(obj(), value));
 			changes && renderNext(element, changes);
+			return changes;
 		}
 	};
 

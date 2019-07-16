@@ -31,15 +31,21 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock'
     | 'mountKeyIterator' | 'updateKeyIterator' | 'unmountKeyIterator'
     | 'mountComponent' | 'updateComponent' | 'unmountComponent'
     | 'mountInnerHTML' | 'updateInnerHTML' | 'unmountInnerHTML'
-    | 'mountPartial' | 'updatePartial' | 'unmountPartial'
+    | 'mountPartial' | 'updatePartial' | 'unmountPartial' | 'getPartial'
     | 'createSlot' | 'mountSlot' | 'updateIncomingSlot' | 'updateDefaultSlot' | 'unmountSlot'
     | 'createInjector' | 'unmountInjector' | 'block'
-    | 'setAttribute' | 'setAttributeNS' | 'addClass' | 'finalizeAttributes'
-    | 'addEvent' | 'addStaticEvent' | 'removeStaticEvent' | 'finalizeEvents'
-    | 'setRef' | 'finalizeRefs' | 'createComponent' | 'updateText'
-    | 'insert' | 'get' | 'call' | 'assign' | 'elem' | 'elemWithText' | 'elemNS'
+
+    | 'setAttribute' | 'setAttributeExpression' | 'updateAttributeExpression' | 'setClass'
+    | 'setAttributeNS' | 'setAttributeExpressionNS' | 'updateAttributeExpressionNS'
+    | 'attributeSet' | 'addClass' | 'addClassIf' | 'toggleClassIf'
+    | 'setPendingAttribute' | 'setPendingAttributeNS' | 'addPendingClass' | 'addPendingClassIf'
+    | 'propsSet' | 'finalizeAttributes' | 'finalizeAttributesNS'
+
+    | 'addEvent' | 'removeEvent' | 'pendingEvents' | 'setPendingEvent' | 'finalizePendingEvents' | 'detachPendingEvents'
+    | 'setRef' | 'removeRef' | 'setPendingRef' | 'finalizePendingRefs' | 'createComponent' | 'updateText'
+    | 'appendChild' | 'insert' | 'get' | 'call' | 'assign' | 'elem' | 'elemWithText' | 'elemNS'
     | 'elemNSWithText' | 'text' | 'filter' | 'find' | 'subscribeStore'
-    | 'animate' | 'createAnimation' | 'stopAnimation' | 'domRemove';
+    | 'animate' | 'createAnimation' | 'stopAnimation' | 'domRemove' | 'obj' | 'changeSet';
 
 export interface ComponentImport {
     /** JS symbol for referencing imported module */

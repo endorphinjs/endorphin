@@ -5,8 +5,9 @@ import Entity, { RenderOptions, entity } from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
 import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue } from './utils';
-import { Chunk, RenderContext, ComponentImport, RuntimeSymbols, ChunkList } from '../types';
+import { Chunk, ComponentImport, RuntimeSymbols, ChunkList, UsageContext } from '../types';
 import { CompileOptions } from '..';
+import { RefStats } from './RefStats';
 
 interface NamespaceMap {
     [prefix: string]: string;
@@ -73,7 +74,7 @@ export default class CompileState {
     }
 
     /** Current rendering context */
-    get renderContext(): RenderContext {
+    get renderContext(): UsageContext {
         return this._renderContext;
     }
 
@@ -84,6 +85,9 @@ export default class CompileState {
     get cssScope(): string | null {
         return this.options.cssScope ? this.cssScopeSymbol : null;
     }
+
+    /** Returns entity for collecting pending refs */
+    pendingRefs?: Entity;
 
     /** Actual content receiver */
     receiver?: ElementEntity;
@@ -137,14 +141,18 @@ export default class CompileState {
     /** List of all registered slot update symbols */
     readonly slotSymbols: string[] = [];
 
+    /** Stats about `ref` usage in template */
+    refStats?: RefStats;
+
     /** Symbol for referencing CSS isolation scope */
     private readonly cssScopeSymbol = 'cssScope';
 
     /** Current namespaces */
     private namespaceMap: NamespaceMap = {};
 
-    private _renderContext?: RenderContext;
+    private _renderContext?: UsageContext;
     private _warned: Set<string> = new Set();
+    private cache: Map<Node, { [name: string]: any }> = new Map();
 
     constructor(options?: CompileOptions) {
         this.options = Object.assign({}, defaultOptions, options);
@@ -261,11 +269,11 @@ export default class CompileState {
         const entities = Array.isArray(result)
             ? result.filter(Boolean)
             : (result ? [result] : []);
-        this.blockContext = prevBlock;
 
         block.generate(entities)
             .forEach(chunk => this.pushOutput(chunk));
 
+        this.blockContext = prevBlock;
         return block;
     }
 
@@ -383,13 +391,6 @@ export default class CompileState {
     }
 
     /**
-     * Runs given function in `shared` block context (both `mount` and `update`)
-     */
-    shared<T>(fn: (state: this) => T): T {
-        return this.runInContext('shared', fn);
-    }
-
-    /**
      * Check if given element is a *registered* component
      */
     isComponent(elem: ENDElement): boolean {
@@ -451,9 +452,29 @@ export default class CompileState {
     }
 
     /**
+     * Returns cached value for given node
+     */
+    getCache(node: Node, key: string): any {
+        if (this.cache.has(node)) {
+            return this.cache.get(node)[key];
+        }
+    }
+
+    /**
+     * Puts given value into cache
+     */
+    putCache(node: Node, key: string, value: any) {
+        if (!this.cache.has(node)) {
+            this.cache.set(node, { [key]: value });
+        } else {
+            this.cache.get(node)[key] = value;
+        }
+    }
+
+    /**
      * Runs given function in given rendering context
      */
-    private runInContext<T>(ctx: RenderContext, fn: (state: this) => T): T {
+    private runInContext<T>(ctx: UsageContext, fn: (state: this) => T): T {
         const prev = this.renderContext;
         this._renderContext = ctx;
         const result = fn(this);

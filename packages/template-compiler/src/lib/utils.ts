@@ -1,10 +1,12 @@
 import { SourceNode } from 'source-map';
 import {
     Node, Identifier, Program, ENDElement, ENDAttributeStatement, LiteralValue,
-    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix
+    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix, ENDAttributeValueExpression
 } from '@endorphinjs/template-parser';
 import * as entities from 'entities';
 import { Chunk, ChunkList, HelpersMap, PlainObject } from '../types';
+import CompileState from './CompileState';
+import ElementEntity from '../entities/ElementEntity';
 
 /**
  * A prefix for Endorphin element and attribute names
@@ -88,6 +90,13 @@ export function isExpression(node: Node): node is Program {
 }
 
 /**
+ * Check if given AST node is a an interpolated literal like `foo{bar}`
+ */
+export function isInterpolatedLiteral(node: Node): node is ENDAttributeValueExpression {
+    return node.type === 'ENDAttributeValueExpression';
+}
+
+/**
  * Check if given AST node is element
  */
 export function isElement(node: Node): node is ENDElement {
@@ -165,6 +174,33 @@ export function propSetter(key: Chunk): Chunk {
         return isPropKey(key) ? key : qStr(key);
     }
     return sn(['[', key, ']']);
+}
+
+/**
+ * Returns symbol for referencing pending attributes
+ */
+export function pendingAttributes(state: CompileState, receiver: ElementEntity | void = state.receiver): SourceNode {
+    if (receiver) {
+        return sn(receiver.pendingAttributes.getSymbol());
+    }
+
+    return sn(`${state.scope}.$$_attrs`);
+}
+
+export function pendingAttributesCur(state: CompileState, receiver?: ElementEntity) {
+    const ptr = pendingAttributes(state, receiver);
+    ptr.add('.c');
+    return ptr;
+}
+
+/**
+ * Returns symbol fo referencing pending events
+ */
+export function pendingEvents(state: CompileState): Chunk {
+    const { receiver } = state;
+    return receiver
+        ? receiver.pendingEvents.getSymbol()
+        : `${state.scope}.$$_events`;
 }
 
 export function toObjectLiteral(map: Map<Chunk, Chunk>, indent: string = '\t', level: number = 0): SourceNode {

@@ -63,7 +63,7 @@ export function updateKeyIterator(block: KeyIteratorBlock): number {
 	const collection = block.get(host, block.parentScope);
 	if (collection && typeof collection.forEach === 'function') {
 		const prevScope = getScope(host);
-		collection.forEach(iterator, block);
+		collection.forEach(keyIterator, block);
 		setScope(host, prevScope);
 	}
 
@@ -90,7 +90,7 @@ function getItem(listItem: LinkedListItem, bound: LinkedListItem): KeyIteratorIt
 	return listItem !== bound ? listItem.value : null;
 }
 
-function iterator(this: KeyIteratorBlock, value: any, key: any) {
+function keyIterator(this: KeyIteratorBlock, value: any, key: any) {
 	const { injector, index, rendered } = this;
 	const id = this.keyExpr(value, prepareScope(this.scope, index, key, value));
 	let entry = rendered && getLookup(rendered, id);
@@ -132,10 +132,10 @@ function mountEntry(block: KeyIteratorBlock, value: any, key: any, index: number
 
 function updateEntry(entry: KeyIteratorItemBlock, value: any, key: any, index: number): number {
 	if (entry.update) {
-		const { host, injector } = entry;
+		const { host } = entry;
 		const scope = prepareScope(entry.scope, index, key, value);
 		setScope(host, scope);
-		if (entry.update(host, injector, scope)) {
+		if (entry.update(host, scope)) {
 			return 1;
 		}
 	}

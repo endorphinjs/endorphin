@@ -1,4 +1,4 @@
-import { animate, createInjector, domRemove, elem, elemWithText, finalizeAttributes, insert, mountBlock, setAttribute, unmountBlock, updateBlock } from "endorphin";
+import { animate, createInjector, domRemove, elem, elemWithText, insert, mountBlock, setAttributeExpression, setClass, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
 
 function ifBody$1(host, injector) {
 	insert(injector, elemWithText("p", "Something 1"));
@@ -12,26 +12,22 @@ function ifEntry$1(host) {
 
 function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
-	const inj$2 = createInjector(div$0);
-	div$0.setAttribute("class", "css-anim");
-	const div$1 = insert(inj$2, elemWithText("div", "CSS Animation"));
-	const inj$1 = scope.inj$1 = createInjector(div$1);
-	setAttribute(inj$1, "title", host.state.title);
-	finalizeAttributes(inj$1);
-	scope.if$1 = mountBlock(host, inj$2, ifEntry$1);
+	const inj$1 = createInjector(div$0);
+	setClass(div$0, "css-anim");
+	const div$1 = scope.div$1 = insert(inj$1, elemWithText("div", "CSS Animation"));
+	scope.titleAttr$0 = setAttributeExpression(div$1, "title", host.state.title);
+	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 }
 
-function animatedDiv$0Update(host, injector, scope) {
-	const { inj$1 } = scope;
-	setAttribute(inj$1, "title", host.state.title);
-	finalizeAttributes(inj$1);
+function animatedDiv$0Update(host, scope) {
+	scope.titleAttr$0 = updateAttributeExpression(scope.div$1, "title", host.state.title, scope.titleAttr$0);
 	updateBlock(scope.if$1);
 }
 
 function animatedDiv$0Unmount(scope) {
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.div$0 = domRemove(scope.div$0);
-	scope.inj$1 = null;
+	scope.titleAttr$0 = scope.div$1 = null;
 }
 
 function ifBody$2(host, injector) {
@@ -45,18 +41,18 @@ function ifEntry$2(host) {
 }
 
 function ifBody$0(host, injector, scope) {
-	scope.div$0 ? animatedDiv$0Update(host, injector, scope) : animatedDiv$0(host, injector, scope);
+	scope.div$0 ? animatedDiv$0Update(host, scope) : animatedDiv$0(host, injector, scope);
 	animate(scope.div$0, "show 2s");
 	const div$2 = insert(injector, elemWithText("div", "CSS static"));
-	div$2.setAttribute("class", "css-static");
+	setClass(div$2, "css-static");
 	scope.if$2 = mountBlock(host, injector, ifEntry$2);
 	return ifBody$0Update;
 }
 
 ifBody$0.dispose = ifBody$0Unmount;
 
-function ifBody$0Update(host, injector, scope) {
-	animatedDiv$0Update(host, injector, scope);
+function ifBody$0Update(host, scope) {
+	animatedDiv$0Update(host, scope);
 	updateBlock(scope.if$2);
 }
 

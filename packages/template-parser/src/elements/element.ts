@@ -1,7 +1,6 @@
 import Scanner from '../scanner';
-import { ENDElement, ParsedTag, ENDStatement, ENDAddClassStatement, ENDIfStatement, Program } from '../ast';
+import { ENDElement, ParsedTag, ENDStatement } from '../ast';
 import { InnerStatement, assertExpression } from './utils';
-import { literal } from '../utils';
 import { tagBody } from '../tag';
 
 /**
@@ -28,28 +27,8 @@ export default function elementStatement(scanner: Scanner, openTag: ParsedTag, n
     for (let i = elem.directives.length - 1; i >= 0; i--) {
         const dir = elem.directives[i];
 
-        if (dir.prefix === 'class') {
-            // Expand `class:name={expr} directives
-            const className = literal(dir.name);
-            className.loc = dir.loc;
-            const classStatement: ENDAddClassStatement = {
-                type: 'ENDAddClassStatement',
-                tokens: [className],
-                ...scanner.loc(dir.start, dir.end)
-            };
-
-            if (dir.value !== null) {
-                assertExpression(scanner, dir);
-                elem.body.unshift({
-                    type: 'ENDIfStatement',
-                    test: dir.value as Program,
-                    consequent: [classStatement],
-                    ...scanner.loc(dir.start, dir.end)
-                } as ENDIfStatement);
-            } else {
-                elem.body.unshift(classStatement);
-            }
-            elem.directives.splice(i, 1);
+        if (dir.prefix === 'class' && dir.value !== null) {
+            assertExpression(scanner, dir);
         }
     }
 

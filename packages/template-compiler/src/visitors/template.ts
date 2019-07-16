@@ -16,20 +16,30 @@ import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
 import ElementEntity from '../entities/ElementEntity';
+import ClassEntity from '../entities/ClassEntity';
 import CompileState from '../lib/CompileState';
+import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
 import {
-    sn, qStr, isLiteral, toObjectLiteral, nameToJS, propGetter,
-    propSetter, isExpression, isIdentifier
+    sn, qStr, isLiteral, toObjectLiteral, nameToJS,
+    propSetter, isExpression, isIdentifier, pendingAttributes, propGetter, pendingEvents, pendingAttributesCur
 } from '../lib/utils';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
         state.runBlock('template', block => {
             block.exports = 'default';
-
             return state.runElement(node, element => {
                 element.setMount(() => `${state.host}.componentView`);
+
+                const refs = state.refStats = refStats(node);
+                if (refs.hasDynamicRefs()) {
+                    state.pendingRefs = state.entity('refs', {
+                        mount: () => state.runtime('obj', [])
+                    });
+                    element.add(state.pendingRefs);
+                }
+
                 element.setContent(node.body, next);
 
                 if (state.slotSymbols.length) {
@@ -43,11 +53,11 @@ export default {
                     element.add(subscribeStore(state));
                 }
 
-                if (state.usedRuntime.has('setRef') || state.usedRuntime.has('mountPartial')) {
+                if (refs.hasDynamicRefs()) {
                     // Template sets refs or contains partials which may set
                     // refs as well
                     element.add(entity('refs', state, {
-                        shared: () => state.runtime('finalizeRefs', [state.host])
+                        shared: () => state.runtime('finalizePendingRefs', [state.host, state.pendingRefs.getSymbol()])
                     }));
                 }
             });
@@ -98,6 +108,22 @@ export default {
     ENDDirective(dir: ENDDirective, state) {
         if (dir.prefix === 'on') {
             return new EventEntity(dir, state);
+        }
+
+        if (dir.prefix === 'class') {
+            return new ClassEntity(dir, state);
+        }
+
+        if (dir.prefix === 'partial' && state.receiver && state.receiver.isComponent) {
+            // For components and partials (empty receiver), we should always
+            // use pending attributes
+            return state.entity({
+                mount() {
+                    const value = compileAttributeValue(dir.value, state, 'component');
+                    return sn([pendingAttributesCur(state), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
+                        state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
+                }
+            });
         }
     },
 
@@ -157,10 +183,21 @@ export default {
     },
 
     ENDPartialStatement(node: ENDPartialStatement, state) {
-        const getter = `${state.prefix('property')}['partial:${node.id}'] || ${state.partials}${propGetter(node.id)}`;
+        const getter = state.runtime('getPartial', [state.host, qStr(node.id), state.partials]);
 
         return entity('partial', state, {
-            mount: () => state.runtime('mountPartial', [state.host, state.injector, getter, generateObject(node.params, state, 1)]),
+            mount: () => {
+                const params = attributeMap(node.params, state);
+                params.set('$$_attrs', pendingAttributes(state));
+                params.set('$$_events', pendingEvents(state));
+
+                return state.runtime('mountPartial', [
+                    state.host,
+                    state.injector,
+                    getter,
+                    toObjectLiteral(params, state.indent, 1)
+                ]);
+            },
             update: ent => state.runtime('updatePartial', [ent.getSymbol(), getter, generateObject(node.params, state, 1)]),
             unmount: ent => ent.unmount('unmountPartial')
         });
@@ -183,11 +220,7 @@ function subscribeStore(state: CompileState): Entity {
 }
 
 function isSimpleConditionContent(node: ENDStatement): boolean {
-    if (node.type === 'ENDAttributeStatement') {
-        return node.directives.filter(dir => dir.prefix === 'on').length === 0;
-    }
-
-    return node.type === 'ENDAddClassStatement';
+    return node.type === 'ENDAddClassStatement' || node.type === 'ENDAttributeStatement';
 }
 
 /**
@@ -215,19 +248,25 @@ function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceN
             ? qStr(token.value as string)
             : generateExpression(token, state);
     });
-    return state.runtime('addClass', [state.injector, sn(chunks).join(' + ')]);
+    return state.runtime('addPendingClass', [
+        state.receiver.pendingAttributes.getSymbol(),
+        sn(chunks).join(' + ')
+    ]);
 }
 
 /**
  * Generates object literal from given attributes
  */
 function generateObject(params: ENDAttribute[], state: CompileState, level: number = 0): SourceNode {
+    return toObjectLiteral(attributeMap(params, state), state.indent, level);
+}
+
+function attributeMap(params: ENDAttribute[], state: CompileState): Map<Chunk, Chunk> {
     const map: Map<Chunk, Chunk> = new Map();
     params.forEach(param => {
         map.set(objectKey(param.name, state), compileAttributeValue(param.value, state, 'params'));
     });
-
-    return toObjectLiteral(map, state.indent, level);
+    return map;
 }
 
 function objectKey(node: Identifier | Program, state: CompileState) {
@@ -239,13 +278,6 @@ function objectKey(node: Identifier | Program, state: CompileState) {
  */
 function getContentAttributes(element: ElementEntity): ENDAttribute[] {
     const node = element.node as ENDElement;
-    if (element.isComponent) {
-        // In component, static attributes/props (e.g. ones which won’t change
-        // in runtime) must be added during component mount. Thus, we should
-        // process dynamic attributes only
-        return node.attributes.filter(attr => element.isDynamicAttribute(attr));
-    }
-
     if (node.name.name === 'slot') {
         // Do not return `name` attribute of slot: it will be added by runtime
         return node.attributes.filter(attr => !isIdentifier(attr.name) || attr.name.name !== 'name');
@@ -279,17 +311,13 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
         element.setContent(node.body, next);
     }
 
+    element.finalizeEvents();
+
     if (element.isComponent) {
         element.markSlotUpdate();
         element.mountComponent();
     } else {
-        if (element.dynamicAttributes.size || element.hasPartials) {
-            element.finalizeAttributes();
-        }
-
-        if (element.dynamicEvents.size || element.hasPartials) {
-            element.finalizeEvents();
-        }
+        element.finalizeAttributes();
     }
 
     return element;

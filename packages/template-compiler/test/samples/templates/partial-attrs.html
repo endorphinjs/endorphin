@@ -1,0 +1,12 @@
+<!-- Template with partials -->
+<template>
+    <div>
+        <partial:button enabled={true}/>
+    </div>
+</template>
+
+<template partial:button enabled>
+    <e:attribute foo="bar" />
+    <e:attribute class:baz foo2="bar2" e:if={@enabled} />
+    <span>inner</span>
+</template>

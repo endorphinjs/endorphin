@@ -1,6 +1,6 @@
 import { deepEqual } from 'assert';
 import document from './assets/document';
-import { createComponent, mountComponent, renderComponent, updateComponent, setAttribute, Component } from '../src/runtime';
+import { createComponent, mountComponent, renderComponent, updateComponent, Component } from '../src/runtime';
 
 // @ts-ignore
 import template from './samples/props.html';
@@ -40,12 +40,12 @@ describe('Props', () => {
 			}
 		});
 
-		setAttribute(component.componentModel.input, 'c1', true);
-		mountComponent(component, { id: 'bar' });
+		const attrSet = { id: 'bar', c1: true };
+		mountComponent(component, attrSet);
 		deepEqual(component.props, { id: 'bar', c1: true });
 
-		setAttribute(component.componentModel.input, 'c1', false);
-		updateComponent(component);
+		attrSet.c1 = false;
+		updateComponent(component, attrSet);
 		deepEqual(component.props, { id: 'bar', c1: false });
 	});
 });

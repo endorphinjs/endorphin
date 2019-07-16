@@ -24,7 +24,7 @@ function forContent$0(host, injector, scope) {
 
 forContent$0.dispose = forContent$0Unmount;
 
-function forContent$0Update(host, injector, scope) {
+function forContent$0Update(host, scope) {
 	updateBlock(scope.if$1);
 }
 
@@ -42,7 +42,7 @@ function ifBody$0(host, injector, scope) {
 
 ifBody$0.dispose = ifBody$0Unmount;
 
-function ifBody$0Update(host, injector, scope) {
+function ifBody$0Update(host, scope) {
 	updateIterator(scope.for$0);
 }
 

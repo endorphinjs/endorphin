@@ -40,7 +40,7 @@ export function updateBlock(block: FunctionBlock): number {
 		block.update = mount && mount(block.host, injector, scope);
 	} else if (block.update) {
 		// Update rendered result
-		updated = block.update(host, injector, scope) ? 1 : 0;
+		updated = block.update(host, scope) ? 1 : 0;
 	}
 
 	block.injector.ptr = block.end;

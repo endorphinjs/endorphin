@@ -1,55 +1,53 @@
-import { createInjector, elem, finalizeAttributes, setAttribute } from "endorphin";
+import { appendChild, attributeSet, elem, finalizeAttributes } from "endorphin";
 
-function ifAttr$0(host, injector) {
+function ifAttr$0(host, scope) {
 	if (host.props.c1) {
-		setAttribute(injector, "a2", "1");
+		scope._a$0.c.a2 = "1";
 	}
-	return 0;
 }
 
-function ifAttr$1(host, injector) {
+function ifAttr$1(host, scope) {
 	if (host.props.c2) {
-		setAttribute(injector, "a2", "2");
+		scope._a$0.c.a2 = "2";
 	}
-	return 0;
 }
 
-function ifAttr$2(host, injector) {
+function ifAttr$2(host, scope) {
+	const { _a$0 } = scope;
 	if (host.props.c3) {
-		setAttribute(injector, "a2", "3");
-		setAttribute(injector, "a1", "3");
-		setAttribute(injector, "a3", "3");
+		_a$0.c.a2 = "3";
+		_a$0.c.a1 = "3";
+		_a$0.c.a3 = "3";
 	}
-	return 0;
 }
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const main$0 = target$0.appendChild(elem("main"));
-	const inj$0 = scope.inj$0 = createInjector(main$0);
-	setAttribute(inj$0, "a1", host.props.id);
-	setAttribute(inj$0, "a2", "0");
-	ifAttr$0(host, inj$0);
-	ifAttr$1(host, inj$0);
-	ifAttr$2(host, inj$0);
-	setAttribute(inj$0, "a3", "4");
-	finalizeAttributes(inj$0);
+	const main$0 = scope.main$0 = appendChild(target$0, elem("main"));
+	const _a$0 = scope._a$0 = attributeSet();
+	_a$0.c.a1 = host.props.id;
+	_a$0.c.a2 = "0";
+	ifAttr$0(host, scope);
+	ifAttr$1(host, scope);
+	ifAttr$2(host, scope);
+	_a$0.c.a3 = "4";
+	finalizeAttributes(main$0, _a$0);
 	return template$0Update;
 }
 
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { inj$0 } = scope;
-	setAttribute(inj$0, "a1", host.props.id);
-	setAttribute(inj$0, "a2", "0");
-	ifAttr$0(host, inj$0);
-	ifAttr$1(host, inj$0);
-	ifAttr$2(host, inj$0);
-	setAttribute(inj$0, "a3", "4");
-	finalizeAttributes(inj$0);
+	const { _a$0 } = scope;
+	_a$0.c.a1 = host.props.id;
+	_a$0.c.a2 = "0";
+	ifAttr$0(host, scope);
+	ifAttr$1(host, scope);
+	ifAttr$2(host, scope);
+	_a$0.c.a3 = "4";
+	finalizeAttributes(scope.main$0, _a$0);
 }
 
 function template$0Unmount(scope) {
-	scope.inj$0 = null;
+	scope._a$0 = scope.main$0 = null;
 }

@@ -41,7 +41,7 @@ export function animateOut(element: ElementEntity, block: BlockContext, state: C
     const anim = state.entity(element, {
         mount(ent) {
             const mount = `${block.mountSymbol}(${state.host}, ${injector}, ${state.scope})`;
-            const update = block.updateSymbol ? `${block.updateSymbol}(${state.host}, ${injector}, ${state.scope})` : null;
+            const update = block.updateSymbol ? `${block.updateSymbol}(${state.host}, ${state.scope})` : null;
             const chunk = sn(update
                 ? [ent.getSymbol(), ` ? ${update} : ${mount};`]
                 : ['!', ent.getSymbol(), ` && ${mount};`]
@@ -59,7 +59,7 @@ export function animateOut(element: ElementEntity, block: BlockContext, state: C
     });
 
     if (block.updateSymbol) {
-        anim.setUpdate(() => `${block.updateSymbol}(${state.host}, ${injector}, ${state.scope})`);
+        anim.setUpdate(() => `${block.updateSymbol}(${state.host}, ${state.scope})`);
     }
 
     anim.setUnmount(ent => {

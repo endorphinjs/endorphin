@@ -1,104 +1,213 @@
-import { isDefined, finalizeItems, obj, representAttributeValue, changeSet } from './utils';
-import { Injector } from './injector';
+import { isDefined, obj, assign } from './utils';
 import { Component } from './component';
 
-interface NSCtx {
-	node: Element;
-	ns: string | null;
+export interface ChangeSet {
+	p: { [name: string]: any };
+	c: { [name: string]: any };
+}
+
+export interface AttributeChangeSet extends ChangeSet {
+	n?: { [namespace: string]: ChangeSet };
 }
 
 /**
- * Sets value of attribute `name` to `value`
- * @return  Update status. Always returns `0` since actual attribute value
- * is defined in `finalizeAttributes()`
+ * Creates new attribute change set
  */
-export function setAttribute(injector: Injector, name: string, value: any): number {
-	injector.attributes.cur[name] = value;
-	return 0;
+export function attributeSet(): AttributeChangeSet {
+	return { c: obj(), p: obj() };
 }
 
 /**
- * Sets value of attribute `name` under namespace of `nsURI` to `value`
+ * Create pending props change set
  */
-export function setAttributeNS(injector: Injector, nsURI: string, name: string, value: any) {
-	if (!injector.attributesNS) {
-		injector.attributesNS = obj();
+export function propsSet(elem: Component): AttributeChangeSet {
+	const props = assign(obj(), elem.componentModel.defaultProps);
+	// NB in components, pending `c` props are tested against actual `.props`,
+	// the `p` property is not used. To keep up with the same hidden JS class,
+	// create `p` property as well and point it to `c` to reduce object allocations
+	return { c: props, p: props };
+}
+
+/**
+ * Alias for `elem.setAttribute`
+ */
+export function setAttribute(elem: Element, name: string, value: any) {
+	elem.setAttribute(name, value);
+	return value;
+}
+
+/**
+ * Alias for `elem.className`
+ */
+export function setClass(elem: Element, value: any) {
+	elem.className = value;
+	return value;
+}
+
+/**
+ * Sets attribute value as expression. Unlike regular primitive attributes,
+ * expression values must be represented, e.g. non-primitive values must be
+ * converted to string representations. Also, expression resolved to `false`,
+ * `null` or `undefined` will remove attribute from element
+ */
+export function setAttributeExpression(elem: Element, name: string, value: any) {
+	const primitive = representedValue(value);
+	primitive === null
+		? elem.removeAttribute(name)
+		: setAttribute(elem, name, primitive);
+	return value;
+}
+
+/**
+ * Updates attribute value only if it’s not equal to previous value
+ */
+export function updateAttributeExpression<T = any>(elem: Element, name: string, value: T, prevValue?: any): T {
+	return prevValue !== value
+		? setAttributeExpression(elem, name, value)
+		: value;
+}
+
+/**
+ * Alias for `elem.setAttributeNS`
+ */
+export function setAttributeNS(elem: Element, ns: string, name: string, value: any) {
+	elem.setAttributeNS(ns, name, value);
+	return value;
+}
+
+/**
+ * Same as `setAttributeExpression()` but for namespaced attributes
+ */
+export function setAttributeExpressionNS(elem: Element, ns: string, name: string, value: any) {
+	const primitive = representedValue(value);
+	primitive === null
+		? elem.removeAttributeNS(ns, name)
+		: setAttributeNS(elem, ns, name, primitive);
+	return value;
+}
+
+/**
+ * Adds or removes (if value is `void`) attribute to given element
+ */
+export function updateAttributeExpressionNS<T = any>(elem: Element, ns: string, name: string, value: T, prevValue?: any): T {
+	return prevValue !== value
+		? setAttributeExpressionNS(elem, ns, name, value)
+		: value;
+}
+
+/**
+ * Alias for `elem.classList.add()`
+ */
+export function addClass(elem: HTMLElement, className: string) {
+	elem.classList.add(className);
+}
+
+/**
+ * Adds class to given element if given condition is truthy
+ */
+export function addClassIf(elem: HTMLElement, className: string, condition: any): boolean {
+	condition && addClass(elem, className);
+	return condition;
+}
+
+/**
+ * Toggles class on given element if condition is changed
+ */
+export function toggleClassIf(elem: HTMLElement, className: string, condition: any, prevResult: boolean): boolean {
+	if (prevResult !== condition) {
+		condition ? addClass(elem, className) : elem.classList.remove(className);
 	}
 
-	const { attributesNS } = injector;
-
-	if (!attributesNS[nsURI]) {
-		attributesNS[nsURI] = changeSet();
-	}
-
-	attributesNS[nsURI].cur[name] = value;
+	return condition;
 }
 
 /**
- * Updates `attrName` value in `elem`, if required
- * @returns New attribute value
+ * Sets pending attribute value which will be added to attribute later
  */
-export function updateAttribute(elem: HTMLElement, attrName: string, value: any, prevValue: any): any {
-	if (value !== prevValue) {
-		changeAttribute(attrName, prevValue, value, elem);
-		return value;
-	}
-
-	return prevValue;
+export function setPendingAttribute(data: AttributeChangeSet, name: string, value: any) {
+	data.c[name] = value;
 }
 
 /**
- * Updates props in given component, if required
- * @return Returns `true` if value was updated
+ * Sets pending namespaced attribute value which will be added to attribute later
  */
-export function updateProps(elem: Component, data: object): boolean {
-	const { props } = elem;
-	let updated: any;
+export function setPendingAttributeNS(data: AttributeChangeSet, ns: string, name: string, value: any) {
+	if (!data.n) {
+		data.n = obj();
+	}
 
-	for (const p in data) {
-		if (data.hasOwnProperty(p) && props[p] !== data[p]) {
-			if (!updated) {
-				updated = obj();
+	if (!data.n[ns]) {
+		data.n[ns] = attributeSet();
+	}
+
+	data.n[ns].c[name] = value;
+}
+
+/**
+ * Adds given class name to pending attribute set
+ */
+export function addPendingClass(data: AttributeChangeSet, className: string) {
+	if (className != null) {
+		const prev = data.c.class;
+		data.c.class = prev ? prev + ' ' + className : String(className);
+	}
+}
+
+/**
+ * Adds given class name to pending attribute set if condition is truthy
+ */
+export function addPendingClassIf(data: AttributeChangeSet, className: string, condition: any) {
+	condition && addPendingClass(data, className);
+}
+
+/**
+ * Finalizes pending attributes
+ */
+export function finalizeAttributes(elem: Element, data: AttributeChangeSet): number {
+	let updated = 0;
+	const { c, p } = data;
+
+	for (const name in c) {
+		const curValue = c[name];
+
+		if (curValue !== p[name]) {
+			updated = 1;
+			if (name === 'class') {
+				elem.className = classNames(curValue).join(' ');
+			} else {
+				setAttributeExpression(elem, name, curValue);
 			}
-			updated[p] = data[p];
+			p[name] = curValue;
 		}
+		c[name] = null;
 	}
 
-	if (updated) {
-		elem.setProps(data);
-		return true;
-	}
-
-	return false;
+	return updated;
 }
 
 /**
- * Adds given class name as pending attribute
+ * Finalizes pending namespaced attributes
  */
-export function addClass(injector: Injector, value: string) {
-	if (isDefined(value)) {
-		const className = injector.attributes.cur.class as string;
-		setAttribute(injector, 'class', isDefined(className) ? className + ' ' + value : value);
-	}
-}
-
-/**
- * Applies pending attributes changes to injector’s host element
- */
-export function finalizeAttributes(injector: Injector): number {
-	const { attributes, attributesNS } = injector;
-
-	if (isDefined(attributes.cur.class)) {
-		attributes.cur.class = normalizeClassName(attributes.cur.class);
+export function finalizeAttributesNS(elem: Element, data: AttributeChangeSet): number {
+	// NB use it as a separate function to use explicitly inside generated content.
+	// It there’s no pending namespace attributes, this method will not be included
+	// into final bundle
+	if (!data.n) {
+		return 0;
 	}
 
-	let updated = finalizeItems(attributes, changeAttribute, injector.parentNode);
+	let updated = 0;
+	for (const ns in data.n!) {
+		const { c, p } = data.n[ns];
+		for (const name in c) {
+			const curValue = c[name];
 
-	if (attributesNS) {
-		const ctx: NSCtx = { node: injector.parentNode, ns: null };
-		for (const ns in attributesNS) {
-			ctx.ns = ns;
-			updated |= finalizeItems(attributesNS[ns], changeAttributeNS, ctx);
+			if (curValue !== p[name]) {
+				updated = 1;
+				setAttributeExpressionNS(elem, ns, name, curValue);
+				p[name] = curValue;
+			}
+			c[name] = null;
 		}
 	}
 
@@ -106,44 +215,48 @@ export function finalizeAttributes(injector: Injector): number {
 }
 
 /**
- * Normalizes given class value: removes duplicates and trims whitespace
+ * Returns normalized list of class names from given string
  */
-export function normalizeClassName(str: string): string {
+export function classNames(str: string): string[] {
 	const out: string[] = [];
-	const parts = String(str).split(/\s+/);
 
-	for (let i = 0, cl: string; i < parts.length; i++) {
-		cl = parts[i];
-		if (cl && out.indexOf(cl) === -1) {
-			out.push(cl);
+	if (isDefined(str)) {
+		const parts = String(str).split(/\s+/);
+
+		for (let i = 0, cl: string; i < parts.length; i++) {
+			cl = parts[i];
+			if (cl && out.indexOf(cl) === -1) {
+				out.push(cl);
+			}
 		}
 	}
 
-	return out.join(' ');
+	return out;
 }
 
 /**
- * Callback for changing attribute value
+ * Returns represented attribute value for given data
  */
-function changeAttribute(name: string, prevValue: any, newValue: any, elem: Element): void {
-	if (isDefined(newValue)) {
-		if (name === 'class') {
-			elem.className = normalizeClassName(newValue);
-		} else {
-			representAttributeValue(elem, name, newValue);
-		}
-	} else if (isDefined(prevValue)) {
-		elem.removeAttribute(name);
+function representedValue(value: any): string | number | null {
+	if (value === false || !isDefined(value)) {
+		return null;
 	}
-}
 
-/**
- * Callback for changing attribute value
- */
-function changeAttributeNS(name: string, prevValue: any, newValue: any, ctx: NSCtx): void {
-	if (isDefined(newValue)) {
-		ctx.node.setAttributeNS(ctx.ns, name, newValue);
-	} else if (isDefined(prevValue)) {
-		ctx.node.removeAttributeNS(ctx.ns, name);
+	if (value === true) {
+		return '';
 	}
+
+	if (Array.isArray(value)) {
+		return '[]';
+	}
+
+	if (typeof value === 'function') {
+		return '𝑓';
+	}
+
+	if (typeof value === 'object') {
+		return '{}';
+	}
+
+	return value;
 }
