@@ -53,6 +53,9 @@ export interface CompileOptions {
     /** Do not import components which were detected as unused */
     removeUnusedImports?: boolean;
 
+    /** URI for referencing component’s JS definition */
+    definition?: string;
+
     /** Called with warning messages */
     warn?(msg: string, pos?: number): void;
 }

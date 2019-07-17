@@ -26,7 +26,8 @@ export const defaultOptions: CompileOptions = {
     prefix: '',
     suffix: '$',
     module: 'endorphin',
-    component: ''
+    component: '',
+    definition: '%definition'
 };
 
 export default class CompileState {
@@ -106,6 +107,9 @@ export default class CompileState {
 
     /** List of symbols used for store access in template */
     usedStore: Set<string> = new Set();
+
+    /** List of component definition symbols used in runtime */
+    usedDefinition: Set<string> = new Set();
 
     /** Context of currently rendered block */
     blockContext?: BlockContext;

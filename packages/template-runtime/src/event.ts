@@ -1,5 +1,5 @@
 import { runtimeError, obj } from './utils';
-import { Scope, EventBinding } from './types';
+import { Scope, EventBinding, ComponentEventListener } from './types';
 import { Component } from './component';
 
 interface PendingEvents {
@@ -12,7 +12,7 @@ interface PendingEvents {
  * Registers given event listener on `target` element and returns event binding
  * object to unregister event
  */
-export function addEvent(target: Element, type: string, listener: EventListener, host: Component, scope: Scope): EventBinding {
+export function addEvent(target: Element, type: string, listener: ComponentEventListener, host: Component, scope: Scope): EventBinding {
 	return registerBinding(type, { host, scope, target, listener, handleEvent });
 }
 
@@ -30,7 +30,7 @@ export function pendingEvents(host: Component, target: Element): PendingEvents {
 	return { host, target, events: obj() };
 }
 
-export function setPendingEvent(pending: PendingEvents, type: string, listener: EventListener, scope: Scope) {
+export function setPendingEvent(pending: PendingEvents, type: string, listener: ComponentEventListener, scope: Scope) {
 	let binding = pending.events[type];
 	if (binding) {
 		binding.listener = listener;
@@ -69,7 +69,7 @@ export function detachPendingEvents(pending: PendingEvents) {
 
 function handleEvent(this: EventBinding, event: Event) {
 	try {
-		this.listener && this.listener(event);
+		this.listener && this.listener(this.host, event, this.target, this.scope);
 	} catch (error) {
 		runtimeError(this.host, error);
 		// tslint:disable-next-line:no-console

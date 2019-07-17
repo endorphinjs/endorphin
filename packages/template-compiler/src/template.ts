@@ -11,6 +11,10 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
     const state = new CompileState(options);
     const body: ChunkList = [];
 
+    if (ast.scripts.length > 1) {
+        throw new ENDCompileError(`Component must contain at most one <script> tag, but found ${ast.scripts.length} tags`, ast.scripts[1]);
+    }
+
     // Collect child components. We should do it in separate pass to hoist component
     // definitions before templates are rendered
     registerComponents(ast, state);
@@ -71,13 +75,14 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
         body.push(`const ${symbol} = ${qStr(uri)};`);
     });
 
+    // Definition symbols
+    if (state.usedDefinition.size) {
+        body.push(`import { ${sortedList(state.usedDefinition)} } from "${state.options.definition}";`);
+    }
+
     // Output scripts
-    ast.scripts.forEach(script => {
-        if (script.transformed || script.content) {
-            body.push(sn(script.transformed || script.content));
-        } else if (script.url) {
-            body.push(sn(`export * from ${qStr(script.url)};`));
-        }
+    ast.scripts.forEach(() => {
+        body.push(sn(`export * from "${state.options.definition}"};`));
     });
 
     body.push('\n', template);
