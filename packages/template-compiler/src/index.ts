@@ -33,6 +33,12 @@ export interface CompileOptions {
     cssScope?: string;
 
     /**
+     * Mangle symbol names, used for scope variables. If enabled, outputs shorter
+     * but more cryptic variable names
+     */
+    mangleNames?: boolean;
+
+    /**
      * List of supported helpers. Key is an URL of module and value is a list of
      * available (exported) functions in this module
      */

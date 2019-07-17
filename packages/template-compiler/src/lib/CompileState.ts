@@ -165,7 +165,7 @@ export default class CompileState {
         const { prefix = '', suffix = '' } = this.options;
         const globalSuffix = nameToJS(this.options.component || '', true) + suffix;
         this.globalSymbol = createSymbolGenerator(prefix, num => globalSuffix + num.toString(36));
-        this.scopeSymbol = createSymbolGenerator(prefix, num => suffix + num.toString(36));
+        this.scopeSymbol = createSymbolGenerator(prefix, num => suffix + num.toString(36), this.options.mangleNames);
     }
 
     /**

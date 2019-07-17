@@ -8,18 +8,24 @@ const numGenerator: SymbolPartGenerator = num => num.toString(36);
  */
 export default function createSymbolGenerator(
         prefix: string | SymbolPartGenerator = '',
-        suffix: string | SymbolPartGenerator = numGenerator): SymbolGenerator {
+        suffix: string | SymbolPartGenerator = numGenerator,
+        mangle?: boolean): SymbolGenerator {
     const symbols: { [prefix: string]: number } = {};
 
     return name => {
-        if (name in symbols) {
-            symbols[name]++;
+        const base = mangle ? '' : name;
+        if (base in symbols) {
+            symbols[base]++;
         } else {
-            symbols[name] = 0;
+            symbols[base] = 0;
         }
 
-        const num = symbols[name];
-        return getPart(num, prefix) + name + getPart(num, suffix);
+        const num = symbols[base];
+        if (mangle) {
+            return `_${num.toString(36)}`;
+        }
+
+        return getPart(num, prefix) + base + getPart(num, suffix);
     };
 }
 
