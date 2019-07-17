@@ -1,20 +1,20 @@
 import { addEvent, appendChild, elem, removeEvent } from "endorphin";
 
-function onEvt1$0(evt) {
-	this.host.setState({ count: this.host.state.count + 1 });
+function onEvt1$0(host, evt) {
+	host.setState({ count: host.state.count + 1 });
 }
 
-function onEvt2$0(evt) {
-	this.host.setState({ count: this.host.state.count + 2 });
+function onEvt2$0(host, evt) {
+	host.setState({ count: host.state.count + 2 });
 }
 
-function onEvt3$0(evt) {
-	this.host.store.set({ s: !this.host.state.enabled });
+function onEvt3$0(host, evt) {
+	host.store.set({ s: !host.state.enabled });
 }
 
-function onEvt4$0(e) {
-	this.host.setState({ a: this.host.state.a + e.pageX });
-	this.host.setState({ b: this.host.state.b + e.pageY });
+function onEvt4$0(host, e) {
+	host.setState({ a: host.state.a + e.pageX });
+	host.setState({ b: host.state.b + e.pageY });
 }
 
 export default function template$0(host, scope) {

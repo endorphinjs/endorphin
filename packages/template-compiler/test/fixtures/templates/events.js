@@ -1,33 +1,34 @@
-import { addEvent, appendChild, detachPendingEvents, elem, finalizePendingEvents, get, pendingEvents, removeEvent, setPendingEvent } from "endorphin";
+import { addEvent, appendChild, detachPendingEvents, elem, finalizePendingEvents, pendingEvents, removeEvent, setPendingEvent } from "endorphin";
 import { emit } from "endorphin/helpers";
 
-function onClick$0(evt) {
-	this.host.componentModel.definition.method1(this.host.props.foo, this.host.props.bar, this.host, evt, this.target);
+export function method1() {}
+export function method2() {}
+export function onLeave() {}
+
+
+function onClick$0(host, evt, target) {
+	method1(host.props.foo, host.props.bar, host, evt, target);
 }
 
-function onMouseenter$0() {
-	emit(this.host, "hover");
+function onMouseenter$0(host) {
+	emit(host, "hover");
 }
 
-function onMouseleave$0(evt) {
-	this.host.componentModel.definition.onLeave(this.host, evt, evt.currentTarget, this.host, evt, this.target);
-}
-
-function onKeypress$0(evt) {
+function onKeypress$0(host, evt) {
 	evt.stopPropagation();
 }
 
-function onMousedown$0(e) {
+function onMousedown$0(host, e) {
 	e.preventDefault();
-	emit(this.host, "down", get(e, "pageX"), get(e, "pageY"));
+	emit(host, "down", e.pageX, e.pageY);
 }
 
-function onEvent2$0() {
-	emit(this.host, "update", { [this.host.props.name]: !this.host.props.open, key: this.host.props.value });
+function onEvent2$0(host) {
+	emit(host, "update", { [host.props.name]: !host.props.open, key: host.props.value });
 }
 
-function onClick$1(evt) {
-	this.host.componentModel.definition.method2(this.host.props.foo, this.host.props.bar, this.host, evt, this.target);
+function onClick$1(host, evt, target) {
+	method2(host.props.foo, host.props.bar, host, evt, target);
 }
 
 function ifAttr$0(host, scope) {
@@ -42,7 +43,7 @@ export default function template$0(host, scope) {
 	const _e$0 = scope._e$0 = pendingEvents(host, main$0);
 	setPendingEvent(_e$0, "click", onClick$0, scope);
 	scope.mouseenter$0 = addEvent(main$0, "mouseenter", onMouseenter$0, host, scope);
-	scope.mouseleave$0 = addEvent(main$0, "mouseleave", onMouseleave$0, host, scope);
+	scope.mouseleave$0 = addEvent(main$0, "mouseleave", onLeave, host, scope);
 	scope.keypress$0 = addEvent(main$0, "keypress", onKeypress$0, host, scope);
 	scope.mousedown$0 = addEvent(main$0, "mousedown", onMousedown$0, host, scope);
 	scope.event2$0 = addEvent(main$0, "event2", onEvent2$0, host, scope);

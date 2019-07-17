@@ -1,6 +1,7 @@
 import { strictEqual, deepStrictEqual } from 'assert';
 import document from './assets/document';
 import { createComponent, mountComponent } from '../src/runtime';
+import { slotCallbacks, resetCallbacks } from './samples/slots/inner-component';
 
 // @ts-ignore
 import sample1 from './samples/slots/outer-component1.html';
@@ -10,18 +11,11 @@ import sample2 from './samples/slots/outer-component2.html';
 import sample3 from './samples/slots/outer-component3.html';
 
 describe('Slot Update Hook', () => {
-	const slotCallbacks = [];
 	const last = (arr: any[]) => arr[arr.length - 1];
 
-	before(() => {
-		global['document'] = document;
-		global['slotCallbacks'] = slotCallbacks;
-	});
-	after(() => {
-		delete global['document'];
-		delete global['slotCallbacks'];
-	});
-	afterEach(() => slotCallbacks.length = 0);
+	before(() => global['document'] = document);
+	after(() => delete global['document']);
+	beforeEach(resetCallbacks);
 
 	it('sample 1', () => {
 		const component = createComponent('my-component', {

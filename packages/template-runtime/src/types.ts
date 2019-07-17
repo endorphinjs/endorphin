@@ -41,10 +41,12 @@ export type Changes<T = any> = {
 	}
 };
 
+export type ComponentEventListener = (host: Component, event: Event, target: Element, scope: Scope) => void;
+
 export interface EventBinding extends EventListenerObject {
 	host: Component;
 	scope: Scope;
 	target: Element;
-	listener?: EventListener;
-	pending?: EventListener;
+	listener?: ComponentEventListener;
+	pending?: ComponentEventListener;
 }

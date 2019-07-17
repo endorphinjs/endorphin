@@ -1,16 +1,39 @@
 import {
     ENDDirective, Expression, ENDGetterPrefix, Identifier, ExpressionStatement,
-    ENDCaller, ENDAttributeValue,
-    CallExpression, IdentifierContext
+    ENDCaller, ENDAttributeValue, CallExpression, IdentifierContext, ThisExpression,
+    ENDGetter, MemberExpression, JSNode
 } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import CompileState from '../lib/CompileState';
 import generateExpression from '../expression';
 import baseVisitors from '../visitors/expression';
-import { sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction, isCallExpression, isPrefix, pendingEvents } from '../lib/utils';
+import {
+    sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction,
+    isCallExpression, isPrefix, pendingEvents, isPropKey
+} from '../lib/utils';
 import { ENDCompileError } from '../lib/error';
 import { ExpressionVisitorMap } from '../types';
-import { thisExpr, identifier, member, callExpr } from '../lib/ast-constructor';
+import { thisExpr, identifier, callExpr } from '../lib/ast-constructor';
+
+const enum UsedArgs {
+    Host = 1 << 0,
+    Event = 1 << 1,
+    Target = 1 << 2,
+    Scope = 1 << 3,
+}
+
+interface UsedArgsState {
+    args: UsedArgs;
+}
+
+const hostContext: IdentifierContext[] = ['definition', 'property', 'state', 'store', 'store-host'];
+const scopeContext: IdentifierContext[] = ['variable'];
+const argNames: { [type in UsedArgs]: string } = {
+    [UsedArgs.Event]: 'event',
+    [UsedArgs.Host]: 'host',
+    [UsedArgs.Target]: 'target',
+    [UsedArgs.Scope]: 'scope',
+};
 
 export default class EventEntity extends Entity {
     constructor(readonly node: ENDDirective, readonly state: CompileState) {
@@ -31,19 +54,25 @@ export default class EventEntity extends Entity {
     }
 }
 
-function createEventHandler(node: ENDDirective, state: CompileState) {
+function createEventHandler(node: ENDDirective, state: CompileState): string {
     const [eventName, ...modifiers] = node.name.split(':');
     const handlerName = state.globalSymbol(`on${nameToJS(eventName, true)}`);
     let handler = getHandler(node.value);
 
-    if (!modifiers.length && !handler) {
-        throw new ENDCompileError(`Event handler must be expression`, node.value);
+    if (!modifiers.length) {
+        if (!handler) {
+            throw new ENDCompileError(`Event handler must be expression`, node.value);
+        }
+
+        if (isIdentifier(handler) && (handler.context === 'definition' || handler.context === 'property')) {
+            state.usedDefinition.add(handler.name);
+            return handler.name;
+        }
     }
 
     const prefix = `\n${state.indent}`;
     const eventArg = getEventArgName(handler);
-    const needEventArg = modifiers.length > 0 || handlerUsesEvent(handler);
-    const handlerFn = sn(`function ${handlerName}(${needEventArg ? eventArg : ''}) {`, node);
+    const handlerFn = sn('', node);
 
     // Handle event modifiers
     modifiers.forEach(m => {
@@ -54,7 +83,8 @@ function createEventHandler(node: ENDDirective, state: CompileState) {
         }
     });
 
-    const visitors = createVisitors(eventArg);
+    const argState: UsedArgsState = { args: 0 };
+    const visitors = createVisitors(eventArg, argState);
 
     if (handler) {
         if (isArrowFunction(handler)) {
@@ -70,12 +100,22 @@ function createEventHandler(node: ENDDirective, state: CompileState) {
             }
         } else {
             if (isIdentifier(handler)) {
-                handler = constructCall(handler, eventArg);
+                handler = constructCall(handler);
             }
             handlerFn.add([prefix, generateExpression(handler, state, visitors), ';']);
         }
     }
 
+    if (modifiers.length > 0 || handlerUsesEvent(handler)) {
+        argState.args |= UsedArgs.Event;
+    }
+    const args = [UsedArgs.Host, UsedArgs.Event, UsedArgs.Target, UsedArgs.Scope].map(type => {
+        if (type <= argState.args) {
+            return type === UsedArgs.Event ? eventArg : argNames[type];
+        }
+    }).filter(Boolean);
+
+    handlerFn.prepend(`function ${handlerName}(${args.join(', ')}) {`);
     handlerFn.add('\n}\n');
 
     state.pushOutput(handlerFn);
@@ -99,12 +139,8 @@ function getEventArgName(handler: Expression | void): string {
 /**
  * Constructs handler caller AST node from given shorthand identifier
  */
-function constructCall(node: Identifier, eventArg: string): CallExpression {
-    const host = thisExpr();
-    const evt = identifier(eventArg);
-    const target = member(evt, 'currentTarget');
-
-    return callExpr({ ...node, context: 'definition' }, [host, evt, target], node);
+function constructCall(node: Identifier): CallExpression {
+    return callExpr({ ...node, context: 'definition' }, [], node);
 }
 
 function handlerUsesEvent(handler: Expression | void): boolean {
@@ -123,10 +159,10 @@ function handlerUsesEvent(handler: Expression | void): boolean {
     return true;
 }
 
-function createVisitors(eventArg: string): ExpressionVisitorMap {
+function createVisitors(eventArg: string, argsState: UsedArgsState): ExpressionVisitorMap {
     const host = thisExpr();
     const evt = identifier(eventArg);
-    const target = identifier('this.target');
+    const target = identifier(argNames[UsedArgs.Target]);
 
     return {
         ENDCaller(node: ENDCaller, state, next) {
@@ -148,19 +184,61 @@ function createVisitors(eventArg: string): ExpressionVisitorMap {
                     ...node,
                     arguments: [...node.arguments, host, evt, target]
                 } as CallExpression;
+                argsState.args |= UsedArgs.Host | UsedArgs.Event | UsedArgs.Target;
             }
 
             return baseVisitors.CallExpression(node, state, next);
         },
-        ENDGetterPrefix(node: ENDGetterPrefix, state) {
-            if (node.context !== 'helper' && node.context !== 'argument') {
-                return sn(`this.${state.prefix(node.context)}`);
+        Identifier(node: Identifier, state, next) {
+            handleContext(node.context, argsState);
+            return baseVisitors.Identifier(node, state, next);
+        },
+        ENDGetter(node: ENDGetter, state, next) {
+            // console.log('getter', node);
+
+            if (node.path.length === 2) {
+                // For simple cases like accessing properties of event handler,
+                // use object notation instead of getter
+                const [ object ] = node.path;
+                let [ , property ] = node.path;
+                if (isEventArgument(object, eventArg) && (isIdentifier(property) || isLiteral(property))) {
+                    if (isLiteral(property) && typeof property.value === 'string' && isPropKey(property.value)) {
+                        property = {
+                            type: 'Identifier',
+                            name: property.value
+                        } as Identifier;
+                    }
+
+                    return baseVisitors.MemberExpression({
+                        type: 'MemberExpression',
+                        object,
+                        property,
+                        computed: false
+                    } as MemberExpression, state, next);
+                }
             }
 
-            return sn();
+            return baseVisitors.ENDGetter(node, state, next);
         },
-        ThisExpression() {
-            return sn('this.host');
+        ENDGetterPrefix(node: ENDGetterPrefix, state, next) {
+            handleContext(node.context, argsState);
+            return baseVisitors.ENDGetterPrefix(node, state, next);
+        },
+        ThisExpression(node: ThisExpression, state, next) {
+            argsState.args |= UsedArgs.Host;
+            return baseVisitors.ThisExpression(node, state, next);
         }
     };
+}
+
+function handleContext(ctx: IdentifierContext, state: UsedArgsState) {
+    if (hostContext.includes(ctx)) {
+        state.args |= UsedArgs.Host;
+    } else if (scopeContext.includes(ctx)) {
+        state.args |= UsedArgs.Scope;
+    }
+}
+
+function isEventArgument(node: JSNode, name: string): node is Identifier {
+    return isIdentifier(node) && node.context === 'argument' && node.name === name;
 }

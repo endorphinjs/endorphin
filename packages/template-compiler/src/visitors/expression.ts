@@ -19,7 +19,7 @@ export default {
             return state.helper(node.name);
         }
 
-        if (node.context && node.context !== 'argument') {
+        if (node.context && node.context !== 'argument' && node.context !== 'definition') {
             const prefix = next({
                 type: 'ENDGetterPrefix',
                 context: node.context
@@ -31,6 +31,10 @@ export default {
             }
 
             return sn([prefix, propGetter(node.name)], node, node.raw);
+        }
+
+        if (node.context === 'definition') {
+            state.usedDefinition.add(node.name);
         }
 
         return sn(node.name, node, node.name);

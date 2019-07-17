@@ -4,8 +4,4 @@
 	<slot name="footer">Default footer</slot>
 </template>
 
-<script>
-export function didSlotUpdate(component, slotName, slotBody) {
-	global.slotCallbacks.push([slotName, slotBody.textContent.trim()]);
-}
-</script>
+<script src="./inner-component.js"></script>

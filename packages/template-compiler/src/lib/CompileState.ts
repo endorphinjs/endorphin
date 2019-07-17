@@ -26,7 +26,8 @@ export const defaultOptions: CompileOptions = {
     prefix: '',
     suffix: '$',
     module: 'endorphin',
-    component: ''
+    component: '',
+    definition: '%definition'
 };
 
 export default class CompileState {
@@ -107,6 +108,9 @@ export default class CompileState {
     /** List of symbols used for store access in template */
     usedStore: Set<string> = new Set();
 
+    /** List of component definition symbols used in runtime */
+    usedDefinition: Set<string> = new Set();
+
     /** Context of currently rendered block */
     blockContext?: BlockContext;
 
@@ -161,7 +165,7 @@ export default class CompileState {
         const { prefix = '', suffix = '' } = this.options;
         const globalSuffix = nameToJS(this.options.component || '', true) + suffix;
         this.globalSymbol = createSymbolGenerator(prefix, num => globalSuffix + num.toString(36));
-        this.scopeSymbol = createSymbolGenerator(prefix, num => suffix + num.toString(36));
+        this.scopeSymbol = createSymbolGenerator(prefix, num => suffix + num.toString(36), this.options.mangleNames);
     }
 
     /**
