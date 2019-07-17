@@ -1,4 +1,5 @@
 import { addEvent, appendChild, createInjector, elem, elemWithText, insert, mountIterator, removeEvent, unmountIterator, updateIterator } from "endorphin";
+import { handleClick } from "%definition";
 
 function setVars$0(host, scope) {
 	scope.foo = 1;
@@ -12,8 +13,8 @@ function setVars$1(host, scope) {
 	scope.bar = scope.foo;
 }
 
-function onClick$0(evt) {
-	this.host.componentModel.definition.handleClick(this.scope.index, this.scope.foo, this.scope.bar, this.host, evt, this.target);
+function onClick$0(host, evt, target, scope) {
+	handleClick(scope.index, scope.foo, scope.bar, host, evt, target);
 }
 
 function forContent$0(host, injector, scope) {

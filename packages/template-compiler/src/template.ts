@@ -82,7 +82,7 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
 
     // Output scripts
     ast.scripts.forEach(() => {
-        body.push(sn(`export * from "${state.options.definition}"};`));
+        body.push(sn(`export * from "${state.options.definition}";`));
     });
 
     body.push('\n', template);

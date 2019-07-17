@@ -1,7 +1,7 @@
 import { addEvent, appendChild, call, elem, removeEvent, subscribeStore, text, updateText } from "endorphin";
 
-function onClick$0(evt) {
-	call(this.host.store, "update", [this.host.state.item]);
+function onClick$0(host, evt) {
+	call(host.store, "update", [host.state.item]);
 }
 
 export default function template$0(host, scope) {
