@@ -1,7 +1,10 @@
 import { animate, createComponent, createInjector, domRemove, elemWithText, insert, mountBlock, mountComponent, unmountBlock, unmountComponent, updateBlock } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
-import { collapse, expand } from "%definition";
+
+export function collapse() {};
+export function expand() {};
+
 
 function animatedOuterComponent$0(host, injector, scope) {
 	const outerComponent$0 = scope.outerComponent$0 = insert(injector, createComponent("outer-component", OuterComponent, host));

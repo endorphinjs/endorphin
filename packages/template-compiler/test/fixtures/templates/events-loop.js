@@ -1,5 +1,7 @@
 import { addEvent, appendChild, createInjector, elem, elemWithText, insert, mountIterator, removeEvent, unmountIterator, updateIterator } from "endorphin";
-import { handleClick } from "%definition";
+
+export function handleClick() {}
+
 
 function setVars$0(host, scope) {
 	scope.foo = 1;

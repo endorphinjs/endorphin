@@ -1,6 +1,10 @@
 import { addEvent, appendChild, detachPendingEvents, elem, finalizePendingEvents, pendingEvents, removeEvent, setPendingEvent } from "endorphin";
 import { emit } from "endorphin/helpers";
-import { method1, method2, onLeave } from "%definition";
+
+export function method1() {}
+export function method2() {}
+export function onLeave() {}
+
 
 function onClick$0(host, evt, target) {
 	method1(host.props.foo, host.props.bar, host, evt, target);

@@ -3,7 +3,7 @@ import { SourceNode } from 'source-map';
 import { ChunkList, TemplateContinue, TemplateVisitorMap } from './types';
 import CompileState from './lib/CompileState';
 import { sn, qStr, format, isPropKey } from './lib/utils';
-import { ENDCompileError } from './lib/error';
+import { ENDCompileError, ENDSyntaxError } from './lib/error';
 import templateVisitors from './visitors/template';
 import { CompileOptions } from '.';
 
@@ -77,12 +77,25 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
 
     // Definition symbols
     if (state.usedDefinition.size) {
-        body.push(`import { ${sortedList(state.usedDefinition)} } from "${state.options.definition}";`);
+        const script = ast.scripts[0];
+        if (!script) {
+            const symbols = Array.from(state.usedDefinition).slice(0, 2);
+            // tslint:disable-next-line:max-line-length
+            throw new ENDSyntaxError(`Template uses JS function${symbols.length > 1 ? 's' : ''} like ${symbols.map(qStr).join(', ')} but no <script> tag found in template`, ast.filename);
+        }
+
+        if (!script.transformed && !script.content) {
+            body.push(`import { ${sortedList(state.usedDefinition)} } from "${script.url}";`);
+        }
     }
 
     // Output scripts
-    ast.scripts.forEach(() => {
-        body.push(sn(`export * from "${state.options.definition}";`));
+    ast.scripts.forEach(script => {
+        if (script.transformed || script.content) {
+            body.push(sn(script.transformed || script.content));
+        } else if (script.url) {
+            body.push(sn(`export * from ${qStr(script.url)};`));
+        }
     });
 
     body.push('\n', template);
