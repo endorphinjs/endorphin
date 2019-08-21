@@ -34,7 +34,7 @@ export default class AttributeEntity extends Entity {
                 };
 
                 this.setMount(render);
-                if (isDynamic || isDynamicValue(value)) {
+                if (isDynamic || isDynamicValue(value) || (name === 'class' && receiver.hasConditionalClassNames())) {
                     this.setUpdate(render);
                 }
             } else if (isDynamic) {

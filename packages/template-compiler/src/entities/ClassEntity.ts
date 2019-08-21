@@ -10,21 +10,14 @@ export default class ClassEntity extends Entity {
         const { receiver } = state;
 
         if (receiver) {
-            if (!receiver || receiver.hasDynamicClass() || receiver.isComponent) {
-                this.setShared(() => {
-                    if (node.value) {
-                        return state.runtime('addPendingClassIf', [
-                            pendingAttributes(state),
-                            qStr(node.name),
-                            compileAttributeValue(node.value, state)
-                        ]);
-                    }
-
-                    return state.runtime('addPendingClass', [
-                        pendingAttributes(state),
-                        qStr(node.name)
-                    ]);
-                });
+            if (receiver.isComponent) {
+                if (receiver.hasConditionalClassNames()) {
+                    this.setShared(() => renderPendingClass(node, state));
+                } else {
+                    this.setMount(() => renderPendingClass(node, state));
+                }
+            } else if (receiver.hasDynamicClass()) {
+                this.setShared(() => renderPendingClass(node, state));
             } else if (node.value) {
                 // Value is used as a condition for toggling class name
                 this.setMount(() => state.runtime('addClassIf', [
@@ -46,4 +39,19 @@ export default class ClassEntity extends Entity {
             }
         }
     }
+}
+
+function renderPendingClass(node: ENDDirective, state: CompileState) {
+    if (node.value) {
+        return state.runtime('addPendingClassIf', [
+            pendingAttributes(state),
+            qStr(node.name),
+            compileAttributeValue(node.value, state)
+        ]);
+    }
+
+    return state.runtime('addPendingClass', [
+        pendingAttributes(state),
+        qStr(node.name)
+    ]);
 }

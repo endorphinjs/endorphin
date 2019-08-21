@@ -170,6 +170,13 @@ export default class ElementEntity extends Entity {
         return this.stats.hasDynamicClass();
     }
 
+    /**
+     * Check if current element contains conditional class names
+     */
+    hasConditionalClassNames(): boolean {
+        return this.stats.hasConditionalClassNames();
+    }
+
     add(item: Entity) {
         if ((item instanceof ElementEntity || item instanceof TextEntity) && item.code.mount) {
             item.setMount(() =>
@@ -441,7 +448,9 @@ export default class ElementEntity extends Entity {
             // In case if there are dynamic props, check if there are props that
             // are fully conditional and reset them
             const dynamicAttrs = stats.attributeNames().filter(attr => {
-                return attr === 'class' ? stats.hasDynamicClass() : stats.isConditionalAttribute(attr);
+                return attr === 'class'
+                    ? (stats.hasDynamicClass() || stats.hasConditionalClassNames())
+                    : stats.isConditionalAttribute(attr);
             });
 
             if (dynamicAttrs.length) {

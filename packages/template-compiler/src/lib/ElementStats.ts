@@ -97,6 +97,13 @@ export default class ElementStats {
     }
 
     /**
+     * Check if context element has conditional class names, e.g. defined as `class:foo={bar}`
+     */
+    hasConditionalClassNames(): boolean {
+        return this.classNames.some(ref => ref.node.type === 'ENDDirective' && !!ref.node.value);
+    }
+
+    /**
      * Check if given attribute is dynamic
      */
     isDynamicAttribute(name: string): boolean {

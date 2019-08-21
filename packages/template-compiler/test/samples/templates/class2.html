@@ -1,4 +1,12 @@
 <link rel="import" href="./my-comp.html" />
 <template>
-    <my-comp class="a" class:b={cond} />
+    <!-- Static classes in component -->
+    <my-comp class="c1" />
+    <my-comp class="c2_1" class:c2_2 />
+    <my-comp class:c3_1 class:c3_2 />
+
+    <!-- Dynamic classes in component -->
+    <my-comp class="c4_1" class:c4_2={cond} class:c4_3 />
+    <my-comp class:c5_1={cond} class:c5_2 />
+    <my-comp class:c6_1={cond1} class:c6_2={cond2} />
 </template>
