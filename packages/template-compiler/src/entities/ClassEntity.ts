@@ -10,7 +10,7 @@ export default class ClassEntity extends Entity {
         const { receiver } = state;
 
         if (receiver) {
-            if (!receiver || receiver.hasDynamicClass()) {
+            if (!receiver || receiver.hasDynamicClass() || receiver.isComponent) {
                 this.setShared(() => {
                     if (node.value) {
                         return state.runtime('addPendingClassIf', [
