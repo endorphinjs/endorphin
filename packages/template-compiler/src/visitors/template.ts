@@ -168,7 +168,9 @@ export default {
     },
 
     ENDVariableStatement(node: ENDVariableStatement, state) {
-        return new VariableEntity(node, state);
+        if (node.variables.length) {
+            return new VariableEntity(node, state);
+        }
     },
 
     ENDPartial(node: ENDPartial, state, next) {

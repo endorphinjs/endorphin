@@ -1,7 +1,8 @@
 import {
-    Node, ENDAttribute, ENDDirective, ENDElement, ENDTemplate, Identifier,
+    Node, ENDAttribute, ENDDirective, ENDElement, ENDTemplate,
     ENDStatement, ENDChooseCase, ENDAddClassStatement
 } from '@endorphinjs/template-parser';
+import { isElement, isIdentifier } from './utils';
 
 type VisitorCallback = (node: ENDStatement, content: ENDStatement[] | void, conditional: boolean) => any;
 
@@ -175,20 +176,6 @@ export class StatsError extends Error {
     constructor(message: string, readonly node: Node) {
         super(message);
     }
-}
-
-/**
- * Check if given node is identifier
- */
-function isIdentifier(node: Node): node is Identifier {
-    return node.type === 'Identifier';
-}
-
-/**
- * Check if given AST node is element
- */
-function isElement(node: Node): node is ENDElement {
-    return node.type === 'ENDElement';
 }
 
 /**
