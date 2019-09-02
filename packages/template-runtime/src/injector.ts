@@ -20,7 +20,6 @@ export interface Injector extends LinkedList {
 }
 
 export interface Block {
-	$$block: true;
 	parentNode?: void;
 	host: Component;
 	injector: Injector;
@@ -68,7 +67,7 @@ type BlockInput<T, TOptional extends keyof T> = Pick<T, Diff<keyof T, TOptional>
 /**
  * Injects given block
  */
-export function injectBlock<T extends Block>(injector: Injector, block: BlockInput<T, 'start' | 'end' | '$$block'>): T {
+export function injectBlock<T extends Block>(injector: Injector, block: BlockInput<T, 'start' | 'end'>): T {
 	const { ptr } = injector;
 
 	if (ptr) {
@@ -79,7 +78,6 @@ export function injectBlock<T extends Block>(injector: Injector, block: BlockInp
 		block.start = listPrependValue(injector, block);
 	}
 
-	block.$$block = true;
 	injector.ptr = block.end!;
 	return block as T;
 }
@@ -107,7 +105,7 @@ export function emptyBlockContent<T extends Block>(block: T): void {
 		// tslint:disable-next-line:prefer-const
 		let { value, next, prev } = item;
 
-		if (isBlock(value)) {
+		if (!isElement(value)) {
 			next = value.end.next;
 			disposeBlock(value);
 		} else if (!value[animatingKey]) {
@@ -143,7 +141,7 @@ export function move<T extends Node, B extends Block>(injector: Injector, block:
 	let item = start.next;
 	let node: Node;
 	while (item && item !== end) {
-		if (!isBlock(item.value)) {
+		if (isElement(item.value)) {
 			node = item.value;
 
 			// NB it’s possible that a single block contains nodes from different
@@ -165,11 +163,8 @@ export function disposeBlock(block: Block) {
 	block.start = block.end = null;
 }
 
-/**
- * Check if given value is a block
- */
-function isBlock(obj: any): obj is Block {
-	return '$$block' in obj;
+function isElement(obj: any): obj is Element {
+	return 'nodeType' in obj;
 }
 
 /**
