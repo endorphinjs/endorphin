@@ -105,28 +105,6 @@ export function assignIfNeeded(prev: any, next: any): boolean {
 	return false;
 }
 
-/**
- * Represents given attribute value in element
- * @param {Element} elem
- * @param {string} name
- * @param {*} value
- */
-export function representAttributeValue(elem: Element, name: string, value: any) {
-	const type = typeof(value);
-
-	if (type === 'boolean') {
-		value = value ? '' : null;
-	} else if (type === 'function') {
-		value = '𝑓';
-	} else if (Array.isArray(value)) {
-		value = '[]';
-	} else if (isDefined(value) && type === 'object') {
-		value = '{}';
-	}
-
-	isDefined(value) ? elem.setAttribute(name, value) : elem.removeAttribute(name);
-}
-
 export function safeCall<T, U, Y>(fn?: (p1?: T, p2?: U) => Y, arg1?: T, arg2?: U): Y | undefined {
 	try {
 		return fn && fn(arg1, arg2);

@@ -1,7 +1,7 @@
 import { elem } from './dom';
-import { assign, obj, representAttributeValue, getObjectDescriptors, captureError } from './utils';
+import { assign, obj, getObjectDescriptors, captureError } from './utils';
 import { safeEventListener } from './event';
-import { classNames } from './attribute';
+import { classNames, setAttributeExpression } from './attribute';
 import { createInjector, Injector } from './injector';
 import { runHook, reverseWalkDefinitions } from './hooks';
 import { getScope } from './scope';
@@ -419,7 +419,7 @@ function setPropsInternal(component: Component, nextProps: object): Changes | un
 			changes[p] = { current, prev };
 
 			if (!/^partial:/.test(p)) {
-				representAttributeValue(component, p.replace(/[A-Z]/g, kebabCase), current);
+				setAttributeExpression(component, p.replace(/[A-Z]/g, kebabCase), current);
 			}
 		}
 	}
