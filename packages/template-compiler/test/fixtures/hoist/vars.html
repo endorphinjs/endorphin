@@ -1,5 +1,7 @@
 <template>
-    <e:var foo=1 bar={baz} foo2=2 bar2={#bam}/>
+    <e:var foo=1 bar={#baz2} foo2=2 bar2={#bam} foo__0=3/>
     <h1>Test hoist</h1>
     <p>Text</p>
+    <p title={@foo}>foo var 1</p>
+    <p title={@foo__0}>foo var 2</p>
 </template>

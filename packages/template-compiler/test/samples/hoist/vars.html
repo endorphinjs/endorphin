@@ -1,6 +1,11 @@
 <template>
     <h1>Test hoist</h1>
-    <e:var foo={1} bar={baz}/>
+    <e:var foo=1 bar={baz}/>
     <p>Text</p>
-    <e:var foo2={2} bar2={#bam}/>
+    <e:var foo2=2 bar2={#bam}/>
+
+    <!-- Output variable then redefine -->
+    <p title={@foo}>foo var 1</p>
+    <e:var foo=3 bar={#baz2}/>
+    <p title={@foo}>foo var 2</p>
 </template>
