@@ -27,10 +27,11 @@ describe.only('Hoist variables', () => {
         testHoist('vars.html', 'Hoist variable definitions');
         testHoist('condition.html', 'Hoist conditional expressions');
         testHoist('attributes.html', 'Hoist attributes');
+        testHoist('class.html', 'Hoist class names');
     });
 
     it.skip('debug', () => {
-        const t = parse('./samples/hoist/condition.html');
+        const t = parse('./samples/hoist/class.html');
         // tslint:disable-next-line:no-console
         console.log(stringify(hoist(t)));
     });

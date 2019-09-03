@@ -25,6 +25,7 @@ interface VariableInfo {
 interface HoistState {
     vars: Map<string, VariableInfo>;
     attrs: Map<string, ENDAttributeValue>;
+    classNames: Map<string, Program>;
     conditions: Identifier[];
     getSymbol: SymbolGenerator;
 }
@@ -39,6 +40,7 @@ export default function hoist(program: ENDProgram): ENDProgram {
     const state: HoistState = {
         vars: new Map(),
         attrs: new Map(),
+        classNames: new Map(),
         conditions: [],
         getSymbol: createSymbolGenerator('__')
     };
@@ -71,17 +73,19 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | nul
         state.vars = vars;
     } else if (isElement(node)) {
         // Entering element bound
-        const { attrs, conditions } = state;
+        const { attrs, classNames, conditions } = state;
         state.attrs = new Map();
+        state.classNames = new Map();
         state.conditions = [];
 
         processAttributes(node.attributes, node.directives, state);
         node.body = transform(node.body, next);
 
         node.attributes = finalizeAttributes(state.attrs);
+        node.directives = finalizeDirectives(node.directives, state);
         state.attrs = attrs;
+        state.classNames = classNames;
         state.conditions = conditions;
-        return node;
     } else if (isConditional(node)) {
         rewrite(node.test, state);
         if (shouldHoistConditionTest(node)) {
@@ -107,6 +111,7 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | nul
 
         return node.consequent.length ? node : null;
     } else if (node.type === 'ENDChooseStatement') {
+        // TODO should respect previous choose statements as condition
         node.cases.forEach(next);
     } else if (node.type === 'Program') {
         rewrite(node, state);
@@ -159,10 +164,41 @@ function hoistAttribute(attr: ENDAttribute, state: HoistState) {
 
     if (condition) {
         const prev = state.attrs.get(name);
+        // TODO merge conditions if they result the same value, e.g.
+        // <e:attr a=2 e:if={foo1}/> <e:attr a=2 e:if={foo2}/>
+        // should produce `a={foo1 || foo2 ? 2 : null}` instead of `a={foo2 ? 2 : foo1 ? 2 : null}`
         value = createProgram(conditionalExpr(condition, castValue(value), castValue(prev)));
     }
 
     state.attrs.set(name, value);
+}
+
+function hoistClassName(dir: ENDDirective, state: HoistState) {
+    const { name, value } = dir;
+    const { classNames } = state;
+    const condition = last(state.conditions);
+    let expr: Expression | null = null;
+
+    if (condition && value) {
+        expr = binaryExpr(condition, castValue(value));
+    } else if (condition) {
+        expr = condition;
+    } else if (value) {
+        expr = castValue(value);
+    }
+
+    if (expr) {
+        const prev = classNames.get(name);
+        if (prev) {
+            expr = binaryExpr(castValue(prev), expr, '||');
+        } else if (classNames.has(name)) {
+            // If class name was already defined without explicit value then
+            // it should never be affected by any condition
+            expr = null;
+        }
+    }
+
+    state.classNames.set(dir.name, expr ? createProgram(expr) : null);
 }
 
 /**
@@ -193,12 +229,32 @@ function finalizeAttributes(attrs: Map<string, ENDAttributeValue>): ENDAttribute
     return result;
 }
 
+function finalizeDirectives(prev: ENDDirective[], state: HoistState): ENDDirective[] {
+    // Replace class name directives with new ones
+    const result = prev.filter(dir => !isClassName(dir));
+    state.classNames.forEach((expr, name) => {
+        result.push({
+            type: 'ENDDirective',
+            prefix: 'class',
+            name,
+            value: expr
+        });
+    });
+
+    return result;
+}
+
 function processAttributes(attributes: ENDAttribute[], directives: ENDDirective[], state: HoistState) {
     attributes.forEach(attr => {
         rewrite(attr.value, state);
         hoistAttribute(attr, state);
     });
-    directives.forEach(dir => rewrite(dir.value, state));
+    directives.forEach(dir => {
+        rewrite(dir.value, state);
+        if (isClassName(dir)) {
+            hoistClassName(dir, state);
+        }
+    });
 }
 
 /**
@@ -338,6 +394,10 @@ function conditionalExpr(test: Expression, consequent: Expression, alternate: Ex
 
 function varInfo(value: ENDAttributeValue): VariableInfo {
     return { ref: null, value, used: false };
+}
+
+function isClassName(dir: ENDDirective): boolean {
+    return dir.prefix === 'class';
 }
 
 function last<T>(arr: T[]): T | undefined {
