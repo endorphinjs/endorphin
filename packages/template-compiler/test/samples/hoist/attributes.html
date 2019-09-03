@@ -1,0 +1,11 @@
+<template>
+    <div a=1 b=2 c=3>
+        <e:attr b=20 />
+        <e:if test={foo}>
+            <e:attr a=10 />
+            <e:if test={bar}>
+                <e:attr a=100 />
+            </e:if>
+        </e:if>
+    </div>
+</template>

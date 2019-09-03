@@ -25,7 +25,8 @@ function testHoist(fileName: string, message?: string) {
 describe.only('Hoist variables', () => {
     it('basic', () => {
         testHoist('vars.html', 'Hoist variable definitions');
-        testHoist('condition.html', 'Do not hoist unaffected conditions');
+        testHoist('condition.html', 'Hoist conditional expressions');
+        testHoist('attributes.html', 'Hoist attributes');
     });
 
     it.skip('debug', () => {

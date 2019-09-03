@@ -1,14 +1,15 @@
 import {
-    ENDVariableStatement, ENDElement, ENDProgram, ENDVariable,
+    ENDVariableStatement, ENDProgram, ENDVariable, ENDAttribute, ENDDirective,
     ENDStatement, Program, Identifier, Expression, ExpressionStatement,
     ENDChooseCase, ENDIfStatement, ENDProgramStatement, ENDAttributeValue,
     LogicalExpression, Literal, ConditionalExpression, walk as walkExpr
 } from '@endorphinjs/template-parser';
 import { isElement, isLiteral } from './lib/utils';
+import { identifier } from './lib/ast-constructor';
 import createSymbolGenerator, { SymbolGenerator } from './lib/SymbolGenerator';
 
-type WalkNext = (node: WalkNode) => void;
-type WalkNode = ENDProgramStatement | ENDChooseCase;
+type WalkNode = ENDProgramStatement | ENDStatement | ENDChooseCase;
+type WalkNext = (node: WalkNode) => WalkNode | null;
 
 interface VariableInfo {
     /** Reference to another variable name to be used instead of current one */
@@ -22,8 +23,8 @@ interface VariableInfo {
 }
 
 interface HoistState {
-    elem?: ENDElement;
     vars: Map<string, VariableInfo>;
+    attrs: Map<string, ENDAttributeValue>;
     conditions: Identifier[];
     getSymbol: SymbolGenerator;
 }
@@ -37,58 +38,81 @@ const nullVal: Literal = { type: 'Literal', value: null, raw: 'null' };
 export default function hoist(program: ENDProgram): ENDProgram {
     const state: HoistState = {
         vars: new Map(),
+        attrs: new Map(),
         conditions: [],
         getSymbol: createSymbolGenerator('__')
     };
 
-    const next: WalkNext = (node: ENDStatement) => walk(node, state, next);
+    const next: WalkNext = node => walk(node, state, next);
     program.body.forEach(next);
     return program;
 }
 
-function walk(node: WalkNode, state: HoistState, next: WalkNext) {
+function transform<T extends ENDStatement>(items: T[], next: WalkNext): T[] {
+    return items.map(next).filter(Boolean) as T[];
+}
+
+function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | null {
+    if (node.type === 'ENDVariableStatement') {
+        node.variables.forEach(v => hoistVar(state, v.name, v.value));
+        return null;
+    }
+
+    if (node.type === 'ENDAttributeStatement') {
+        processAttributes(node.attributes, node.directives, state);
+        return null;
+    }
+
     if (node.type === 'ENDTemplate') {
-        const {  vars } = state;
+        const { vars } = state;
         state.vars = new Map();
-        node.body.forEach(next);
+        node.body = transform(node.body, next);
         node.body.unshift(finalizeVars(state.vars!));
         state.vars = vars;
     } else if (isElement(node)) {
         // Entering element bound
-        const { elem } = state;
-        node.attributes.forEach(attr => rewrite(state, attr.value));
-        node.directives.forEach(dir => rewrite(state, dir.value));
-        node.body.forEach(next);
-        state.elem = elem;
-    } else if (node.type === 'ENDVariableStatement') {
-        node.variables.forEach(v => hoistVar(state, v.name, v.value));
-        node.variables.length = 0;
+        const { attrs, conditions } = state;
+        state.attrs = new Map();
+        state.conditions = [];
+
+        processAttributes(node.attributes, node.directives, state);
+        node.body = transform(node.body, next);
+
+        node.attributes = finalizeAttributes(state.attrs);
+        state.attrs = attrs;
+        state.conditions = conditions;
+        return node;
     } else if (isConditional(node)) {
+        rewrite(node.test, state);
         if (shouldHoistConditionTest(node)) {
             // Hoist condition as local variable
             const lv = localVar(state.getSymbol('if'));
             let expr = node.test;
-            const prevCondition = last(state.conditions);
+            const condition = last(state.conditions);
 
-            if (prevCondition) {
+            if (condition) {
                 // Current condition is nested in another condition.
                 // We should evaluate its expression only if parent condition is truthy
-                expr = createProgram(binaryExpr(prevCondition, castValue(expr)));
+                expr = createProgram(binaryExpr(condition, castValue(expr)));
             }
 
-            hoistVar(state, lv.name, expr);
+            state.vars.set(lv.name, varInfo(expr));
             node.test = createProgram(lv);
             state.conditions.push(lv);
-            node.consequent.forEach(next);
+            node.consequent = transform(node.consequent, next);
             state.conditions.pop();
         } else {
-            node.consequent.forEach(next);
+            node.consequent = transform(node.consequent, next);
         }
+
+        return node.consequent.length ? node : null;
     } else if (node.type === 'ENDChooseStatement') {
         node.cases.forEach(next);
     } else if (node.type === 'Program') {
-        rewrite(state, node);
+        rewrite(node, state);
     }
+
+    return node;
 }
 
 /**
@@ -121,8 +145,24 @@ function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): st
         return info.ref = hoistVar(state, info.ref, value);
     }
 
-    vars.set(name, { ref: null, value: newValue, used: false });
+    vars.set(name, varInfo(newValue));
     return name;
+}
+
+/**
+ * Hoists given element attribute
+ */
+function hoistAttribute(attr: ENDAttribute, state: HoistState) {
+    const { name } = attr.name as Identifier;
+    let { value } = attr;
+    const condition = last(state.conditions);
+
+    if (condition) {
+        const prev = state.attrs.get(name);
+        value = createProgram(conditionalExpr(condition, castValue(value), castValue(prev)));
+    }
+
+    state.attrs.set(name, value);
 }
 
 /**
@@ -141,19 +181,24 @@ function finalizeVars(vars: Map<string, VariableInfo>): ENDVariableStatement {
     return result;
 }
 
-function createVariable(name: string, value: ENDAttributeValue): ENDVariable {
-    return { type: 'ENDVariable', name, value };
+function finalizeAttributes(attrs: Map<string, ENDAttributeValue>): ENDAttribute[] {
+    const result: ENDAttribute[] = [];
+    attrs.forEach((value, name) => {
+        result.push({
+            type: 'ENDAttribute',
+            name: identifier(name),
+            value
+        });
+    });
+    return result;
 }
 
-function createProgram(expression: Expression): Program {
-    return {
-        type: 'Program',
-        body: [{
-            type: 'ExpressionStatement',
-            expression
-        }],
-        raw: ''
-    };
+function processAttributes(attributes: ENDAttribute[], directives: ENDDirective[], state: HoistState) {
+    attributes.forEach(attr => {
+        rewrite(attr.value, state);
+        hoistAttribute(attr, state);
+    });
+    directives.forEach(dir => rewrite(dir.value, state));
 }
 
 /**
@@ -175,14 +220,16 @@ function isConditional(node: WalkNode): node is ENDIfStatement | ENDChooseCase {
     return node.type === 'ENDIfStatement' || node.type === 'ENDChooseCase';
 }
 
-function rewrite(state: HoistState, value?: ENDAttributeValue) {
+function rewrite(value: ENDAttributeValue | null, state: HoistState) {
     if (value) {
         if (value.type === 'Program') {
             rewriteVarAccessors(value, state);
         } else if (value.type === 'ENDAttributeValueExpression') {
-            value.elements.forEach(elem => rewrite(state, elem));
+            value.elements.forEach(elem => rewrite(elem, state));
         }
     }
+
+    return value;
 }
 
 /**
@@ -259,6 +306,21 @@ function isSimple(expr: ENDAttributeValue) {
     return expr.type === 'Literal';
 }
 
+function createVariable(name: string, value: ENDAttributeValue): ENDVariable {
+    return { type: 'ENDVariable', name, value };
+}
+
+function createProgram(expression: Expression): Program {
+    return {
+        type: 'Program',
+        body: [{
+            type: 'ExpressionStatement',
+            expression
+        }],
+        raw: ''
+    };
+}
+
 /**
  * Creates local variable identifier with given name
  */
@@ -272,6 +334,10 @@ function binaryExpr(left: Expression, right: Expression, operator = '&&'): Logic
 
 function conditionalExpr(test: Expression, consequent: Expression, alternate: Expression = nullVal): ConditionalExpression {
     return { type: 'ConditionalExpression', test, consequent, alternate };
+}
+
+function varInfo(value: ENDAttributeValue): VariableInfo {
+    return { ref: null, value, used: false };
 }
 
 function last<T>(arr: T[]): T | undefined {
