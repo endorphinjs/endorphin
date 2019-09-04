@@ -62,7 +62,10 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
     }
 
     if (node.type === 'ENDAttributeStatement') {
-        return processAttributes(node.attributes, node.directives, state);
+        processAttributes(node.attributes, node.directives, state);
+        node.attributes = [];
+        node.directives = node.directives.filter(dir => !isClassName(dir));
+        return node.directives.length ? node : null;
     }
 
     if (node.type === 'ENDAddClassStatement') {

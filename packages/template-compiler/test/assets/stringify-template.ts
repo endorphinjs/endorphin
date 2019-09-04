@@ -29,6 +29,13 @@ function walk(node: ENDStatement | ENDTemplate, state: State, next: WalkNext) {
     } else if (node.type === 'ENDVariableStatement') {
         const attrs = node.variables.map(v => attribute(v.name, v.value)).join(' ');
         tag('e:var', attrs, state);
+    } else if (node.type === 'ENDAddClassStatement') {
+        tag('e:add-class', '', state);
+    } else if (node.type === 'ENDAttributeStatement') {
+        const attributes = node.attributes.map(attr => attribute(attr.name, attr.value));
+        const directives = node.directives.map(dir => directive(dir.prefix, dir.name, dir.value));
+        const attrs = attributes.concat(directives).join(' ');
+        tag('e:attr', attrs, state);
     } else if (node.type === 'ENDIfStatement') {
         tag('e:if', attribute('test', node.test), state, node.consequent, next);
     } else if (node.type === 'Literal') {
