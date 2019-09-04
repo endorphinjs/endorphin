@@ -47,5 +47,5 @@ function getPrefix(context: IdentifierContext): string {
 }
 
 export default function generateJS(ast: Program): string {
-    return (generate(ast, { generator }) as string).trim().replace(/;$/, '');
+    return (generate(ast, { generator }) as string).replace(/;\s*$/, '');
 }

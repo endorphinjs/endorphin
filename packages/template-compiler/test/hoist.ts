@@ -28,10 +28,11 @@ describe.only('Hoist variables', () => {
         testHoist('condition.html', 'Hoist conditional expressions');
         testHoist('attributes.html', 'Hoist attributes');
         testHoist('class.html', 'Hoist class names');
+        testHoist('add-class.html', 'Hoist <add-class>');
     });
 
     it.skip('debug', () => {
-        const t = parse('./samples/hoist/class.html');
+        const t = parse('./samples/hoist/add-class.html');
         // tslint:disable-next-line:no-console
         console.log(stringify(hoist(t)));
     });

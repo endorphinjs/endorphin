@@ -1,6 +1,7 @@
 import {
     IdentifierContext, Identifier, Property, ObjectExpression, CallExpression,
-    Expression, ArgumentListElement, ThisExpression, MemberExpression, Node, SourceLocation
+    Expression, ArgumentListElement, ThisExpression, MemberExpression, Node, SourceLocation,
+    LiteralValue, Literal
 } from '@endorphinjs/template-parser';
 
 /**
@@ -17,6 +18,10 @@ interface SourceDataAlike {
 
 export function identifier(name: string, context?: IdentifierContext, source?: SourceDataAlike): Identifier {
     return addSource({ type: 'Identifier', name, context }, source);
+}
+
+export function literal(value: LiteralValue, source?: SourceDataAlike): Literal {
+    return addSource({ type: 'Literal', value, raw: JSON.stringify(value) }, source);
 }
 
 export function objectExpr(properties: Property[] = [], source?: SourceDataAlike): ObjectExpression {

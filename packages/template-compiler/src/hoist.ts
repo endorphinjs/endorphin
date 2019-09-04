@@ -1,15 +1,16 @@
 import {
-    ENDVariableStatement, ENDProgram, ENDVariable, ENDAttribute, ENDDirective,
+    ENDNode, ENDVariableStatement, ENDProgram, ENDVariable, ENDAttribute, ENDDirective,
     ENDStatement, Program, Identifier, Expression, ExpressionStatement,
     ENDChooseCase, ENDIfStatement, ENDProgramStatement, ENDAttributeValue,
-    LogicalExpression, Literal, ConditionalExpression, walk as walkExpr
+    LogicalExpression, ConditionalExpression, ENDAddClassStatement,
+    ENDAttributeValueExpression, ENDBaseAttributeValue, walk as walkExpr, Literal
 } from '@endorphinjs/template-parser';
 import { isElement, isLiteral } from './lib/utils';
-import { identifier } from './lib/ast-constructor';
+import { identifier, literal } from './lib/ast-constructor';
 import createSymbolGenerator, { SymbolGenerator } from './lib/SymbolGenerator';
 
 type WalkNode = ENDProgramStatement | ENDStatement | ENDChooseCase;
-type WalkNext = (node: WalkNode) => WalkNode | null;
+type WalkNext = (node: WalkNode) => WalkNode | void;
 
 interface VariableInfo {
     /** Reference to another variable name to be used instead of current one */
@@ -30,7 +31,7 @@ interface HoistState {
     getSymbol: SymbolGenerator;
 }
 
-const nullVal: Literal = { type: 'Literal', value: null, raw: 'null' };
+const nullVal = literal(null);
 
 /**
  * Hoists internal variables and expressions in given template to reduce nesting
@@ -54,15 +55,18 @@ function transform<T extends ENDStatement>(items: T[], next: WalkNext): T[] {
     return items.map(next).filter(Boolean) as T[];
 }
 
-function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | null {
+function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | void {
     if (node.type === 'ENDVariableStatement') {
         node.variables.forEach(v => hoistVar(state, v.name, v.value));
         return null;
     }
 
     if (node.type === 'ENDAttributeStatement') {
-        processAttributes(node.attributes, node.directives, state);
-        return null;
+        return processAttributes(node.attributes, node.directives, state);
+    }
+
+    if (node.type === 'ENDAddClassStatement') {
+        return hoistAddClass(node, state);
     }
 
     if (node.type === 'ENDTemplate') {
@@ -113,7 +117,7 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | nul
     } else if (node.type === 'ENDChooseStatement') {
         // TODO should respect previous choose statements as condition
         node.cases.forEach(next);
-    } else if (node.type === 'Program') {
+    } else if (isProgram(node)) {
         rewrite(node, state);
     }
 
@@ -201,6 +205,117 @@ function hoistClassName(dir: ENDDirective, state: HoistState) {
     state.classNames.set(dir.name, expr ? createProgram(expr) : null);
 }
 
+function hoistAddClass(addClass: ENDAddClassStatement, state: HoistState) {
+    const { attrs } = state;
+    const condition = last(state.conditions);
+    const tokens = addClass.tokens.slice();
+
+    if (attrs.has('class')) {
+        const firstToken = tokens[0];
+
+        // Add space before new class name
+        if (isLiteral(firstToken)) {
+            tokens[0] = literal(' ' + firstToken.value);
+        } else {
+            tokens.unshift(literal(' '));
+        }
+    }
+
+    const value = concatToJS(tokens);
+    const expr = condition
+        ? conditionalExpr(condition, value, literal(''))
+        : value;
+
+    attrs.set('class', concatAttrValues(attrs.get('class')!, createProgram(expr)));
+}
+
+/**
+ * Converts given plain statement tokens into attribute value
+ */
+// function convertToAttrValue(tokens: ENDPlainStatement[], prefix = ''): ENDAttributeValue {
+//     if (tokens.length === 0) {
+//         return null;
+//     }
+
+//     if (tokens.length === 1) {
+//         // A single token can be used an attribute value
+//         let result: ENDAttributeValue = tokens[0]!;
+//         if (prefix) {
+//             if (isLiteral(result)) {
+//                 result = {
+//                     ...result,
+//                     value: prefix + result.value
+//                 };
+//             } else {
+//                 result = attributeExpression([ literal(prefix), result ]);
+//             }
+//         }
+
+//         return result;
+//     }
+
+//     return concatAttrValues(literal(prefix), attributeExpression(tokens));
+// }
+
+/**
+ * Concatenates two attribute values
+ */
+function concatAttrValues(left: ENDAttributeValue, right: ENDAttributeValue): ENDAttributeValue {
+    if (left && right) {
+        if (isLiteral(left) && isLiteral(right)) {
+            return concatLiterals(left, right);
+        }
+
+        if (isAttrExpression(left) && isAttrExpression(right)) {
+            const leftElements = left.elements.slice();
+            const rightElements = right.elements.slice();
+            const leftToken = last(leftElements)!;
+            const rightToken = rightElements[0];
+            if (isLiteral(leftToken) && isLiteral(rightToken)) {
+                leftElements.pop();
+                leftElements.push(concatLiterals(leftToken, rightToken));
+                rightElements.shift();
+            }
+
+            return attributeExpression(leftElements.concat(rightElements));
+        }
+
+        if (isAttrExpression(left)) {
+            const elements = left.elements.slice();
+            const leftToken = last(elements)!;
+            if (isLiteral(leftToken) && isLiteral(right)) {
+                elements.pop();
+                elements.push(concatLiterals(leftToken, right));
+            } else {
+                elements.push(right as Program);
+            }
+
+            return attributeExpression(elements);
+        }
+
+        if (isAttrExpression(right)) {
+            const elements = right.elements.slice();
+            const rightToken = elements[0]!;
+            if (isLiteral(left) && isLiteral(rightToken)) {
+                elements.shift();
+                elements.unshift(concatLiterals(left, rightToken));
+            } else {
+                elements.unshift(left as Program);
+            }
+
+            return attributeExpression(elements);
+        }
+
+        return attributeExpression([left, right]);
+    }
+
+    return left || right;
+}
+
+function concatLiterals(left: Literal, right: Literal): Literal {
+    return literal(String(left.value) + String(right.value));
+}
+
 /**
  * Creates variable statement from given scope
  */
@@ -211,7 +326,7 @@ function finalizeVars(vars: Map<string, VariableInfo>): ENDVariableStatement {
     };
 
     vars.forEach((info, name) => {
-        result.variables.push(createVariable(name, info.value));
+        result.variables.push(variable(name, info.value));
     });
 
     return result;
@@ -278,9 +393,9 @@ function isConditional(node: WalkNode): node is ENDIfStatement | ENDChooseCase {
 
 function rewrite(value: ENDAttributeValue | null, state: HoistState) {
     if (value) {
-        if (value.type === 'Program') {
+        if (isProgram(value)) {
             rewriteVarAccessors(value, state);
-        } else if (value.type === 'ENDAttributeValueExpression') {
+        } else if (isAttrExpression(value)) {
             value.elements.forEach(elem => rewrite(elem, state));
         }
     }
@@ -322,11 +437,11 @@ function markUsed(name: string, state: HoistState) {
  */
 function castValue(value?: ENDAttributeValue): Expression {
     if (value) {
-        if (value.type === 'Literal') {
+        if (isLiteral(value)) {
             return value;
         }
 
-        if (value.type === 'Program') {
+        if (isProgram(value)) {
             const node = value.body[0] as ExpressionStatement;
             if (node) {
                 return node.expression;
@@ -334,21 +449,35 @@ function castValue(value?: ENDAttributeValue): Expression {
         }
 
         // Convert attribute expression to JS expression
-        if (value.type === 'ENDAttributeValueExpression') {
-            const { elements } = value;
-            let i = 0;
-            // NB: expression contains at least 2 elements
-            let result = binaryExpr(castValue(elements[i++]), castValue(elements[i++]), '+');
-
-            while (i < elements.length) {
-                result = binaryExpr(result, castValue(elements[i++]), '+');
-            }
-
-            return result;
+        if (isAttrExpression(value)) {
+            return concatToJS(value.elements);
         }
     }
 
     return nullVal;
+}
+
+/**
+ * Converts tokens of concat expression (like interpolated attribute value or
+ * `<e:add-class>` statement contents) to JS expression
+ */
+function concatToJS(tokens: ENDBaseAttributeValue[]): Expression {
+    if (!tokens.length) {
+        return null;
+    }
+
+    if (tokens.length === 1) {
+        return castValue(tokens[0]);
+    }
+
+    let i = 0;
+    let result = binaryExpr(castValue(tokens[i++]), castValue(tokens[i++]), '+');
+
+    while (i < tokens.length) {
+        result = binaryExpr(result, castValue(tokens[i++]), '+');
+    }
+
+    return result;
 }
 
 /**
@@ -359,11 +488,23 @@ function isSimple(expr: ENDAttributeValue) {
         return expr.body.every((e: ExpressionStatement) => isLiteral(e.expression));
     }
 
-    return expr.type === 'Literal';
+    return isLiteral(expr);
 }
 
-function createVariable(name: string, value: ENDAttributeValue): ENDVariable {
+function isProgram(node: ENDNode): node is Program {
+    return node.type === 'Program';
+}
+
+function isAttrExpression(value: ENDAttributeValue): value is ENDAttributeValueExpression {
+    return value.type === 'ENDAttributeValueExpression';
+}
+
+function variable(name: string, value: ENDAttributeValue): ENDVariable {
     return { type: 'ENDVariable', name, value };
+}
+
+function attributeExpression(elements: ENDBaseAttributeValue[]): ENDAttributeValueExpression {
+    return { type: 'ENDAttributeValueExpression', elements };
 }
 
 function createProgram(expression: Expression): Program {
@@ -381,7 +522,7 @@ function createProgram(expression: Expression): Program {
  * Creates local variable identifier with given name
  */
 function localVar(name: string): Identifier {
-    return { type: 'Identifier', name, context: 'variable' };
+    return identifier(name, 'variable');
 }
 
 function binaryExpr(left: Expression, right: Expression, operator = '&&'): LogicalExpression {
