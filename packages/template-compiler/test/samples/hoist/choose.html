@@ -1,0 +1,20 @@
+<template>
+    <div>
+        <e:if test={c1}>
+            <e:choose>
+                <e:when test={c2_1}>
+                    <e:attr a=1/>
+                </e:when>
+                <e:when test={c2_2}>
+                    <e:attr a=2 b=2/>
+                </e:when>
+                <e:when test={c2_3}>
+                    <e:attr b=3/>
+                </e:when>
+                <e:otherwise>
+                    <e:attr c=10/>
+                </e:otherwise>
+            </e:choose>
+        </e:if>
+    </div>
+</template>

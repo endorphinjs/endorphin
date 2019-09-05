@@ -5,11 +5,11 @@ import {
     LogicalExpression, ConditionalExpression, ENDAddClassStatement,
     ENDAttributeValueExpression, ENDBaseAttributeValue, walk as walkExpr, Literal
 } from '@endorphinjs/template-parser';
-import { isElement, isLiteral } from './lib/utils';
+import { isElement, isLiteral, isIdentifier } from './lib/utils';
 import { identifier, literal } from './lib/ast-constructor';
 import createSymbolGenerator, { SymbolGenerator } from './lib/SymbolGenerator';
 
-type WalkNode = ENDProgramStatement | ENDStatement | ENDChooseCase;
+type WalkNode = ENDProgramStatement | ENDStatement;
 type WalkNext = (node: WalkNode) => WalkNode | void;
 
 interface VariableInfo {
@@ -57,11 +57,14 @@ function transform<T extends ENDStatement>(items: T[], next: WalkNext): T[] {
 
 function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | void {
     if (node.type === 'ENDVariableStatement') {
+        // Move variables up to parent scope
         node.variables.forEach(v => hoistVar(state, v.name, v.value));
         return null;
     }
 
     if (node.type === 'ENDAttributeStatement') {
+        // Hoist <e:attr>: move attributes and `class:` directives to parent
+        // element, keep node if it contains unhandled directives like event listeners
         processAttributes(node.attributes, node.directives, state);
         node.attributes = [];
         node.directives = node.directives.filter(dir => !isClassName(dir));
@@ -69,31 +72,16 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
     }
 
     if (node.type === 'ENDAddClassStatement') {
+        // Hoist <e:add-class>: move contents as `class` attribute of parent element
+        // and delete node itself
         return hoistAddClass(node, state);
     }
 
-    if (node.type === 'ENDTemplate') {
-        const { vars } = state;
-        state.vars = new Map();
-        node.body = transform(node.body, next);
-        node.body.unshift(finalizeVars(state.vars!));
-        state.vars = vars;
-    } else if (isElement(node)) {
-        // Entering element bound
-        const { attrs, classNames, conditions } = state;
-        state.attrs = new Map();
-        state.classNames = new Map();
-        state.conditions = [];
-
-        processAttributes(node.attributes, node.directives, state);
-        node.body = transform(node.body, next);
-
-        node.attributes = finalizeAttributes(state.attrs);
-        node.directives = finalizeDirectives(node.directives, state);
-        state.attrs = attrs;
-        state.classNames = classNames;
-        state.conditions = conditions;
-    } else if (isConditional(node)) {
+    if (node.type === 'ENDIfStatement') {
+        // Handle <e:if>: if there are immediate attribute or variable statement
+        // children, hoist their contents to parent scope. In case if test expression
+        // is not simple (not a simple literal or identifier), replace it with variable
+        // reference
         rewrite(node.test, state);
         if (shouldHoistConditionTest(node)) {
             // Hoist condition as local variable
@@ -117,9 +105,82 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         }
 
         return node.consequent.length ? node : null;
-    } else if (node.type === 'ENDChooseStatement') {
-        // TODO should respect previous choose statements as condition
-        node.cases.forEach(next);
+    }
+
+    if (node.type === 'ENDChooseStatement') {
+        // Handle <e:choose>: basically, it’s an if/else if/else statement which
+        // means that a <e:case> statement can be handler only if previous test
+        // case fails.
+        node.cases.forEach(c => rewrite(c.test, state));
+        if (node.cases.some(shouldHoistConditionTest)) {
+            // Create expression which will pick a single case from choose statement
+            let expr: Expression;
+            const empty = literal(0);
+            for (let i = node.cases.length - 1; i >= 0; i--) {
+                const c = node.cases[i];
+                if (c.test) {
+                    expr = conditionalExpr(castValue(c.test), literal(i + 1), expr || empty);
+                } else {
+                    expr = literal(i + 1);
+                }
+            }
+
+            const condition = last(state.conditions);
+            if (condition) {
+                expr = conditionalExpr(condition, expr || nullVal, empty);
+            }
+
+            if (!expr) {
+                // This shouldn’t happen
+                return node;
+            }
+
+            const parentExpr = localVar(state.getSymbol('choose'));
+            state.vars.set(parentExpr.name, varInfo(createProgram(expr)));
+
+            node.cases = node.cases.filter((c, i) => {
+                // Hoist condition as local variable
+                const lv = localVar(state.getSymbol('case'));
+                const test = createProgram(binaryExpr(parentExpr, literal(i + 1), '==='));
+
+                state.vars.set(lv.name, varInfo(test));
+                c.test = createProgram(lv);
+                state.conditions.push(lv);
+                c.consequent = transform(c.consequent, next);
+                state.conditions.pop();
+                return c.consequent.length;
+            });
+        } else {
+            node.cases = node.cases.filter(c => {
+                c.consequent = transform(c.consequent, next);
+                return c.consequent.length;
+            });
+        }
+
+        return node.cases.length ? node : null;
+    }
+
+    if (node.type === 'ENDTemplate') {
+        const { vars } = state;
+        state.vars = new Map();
+        node.body = transform(node.body, next);
+        node.body.unshift(finalizeVars(state.vars!));
+        state.vars = vars;
+    } else if (isElement(node)) {
+        // Entering element bound
+        const { attrs, classNames, conditions } = state;
+        state.attrs = new Map();
+        state.classNames = new Map();
+        state.conditions = [];
+
+        processAttributes(node.attributes, node.directives, state);
+        node.body = transform(node.body, next);
+
+        node.attributes = finalizeAttributes(state.attrs);
+        node.directives = finalizeDirectives(node.directives, state);
+        state.attrs = attrs;
+        state.classNames = classNames;
+        state.conditions = conditions;
     } else if (isProgram(node)) {
         rewrite(node, state);
     }
@@ -231,34 +292,6 @@ function hoistAddClass(addClass: ENDAddClassStatement, state: HoistState) {
 
     attrs.set('class', concatAttrValues(attrs.get('class')!, createProgram(expr)));
 }
-
-/**
- * Converts given plain statement tokens into attribute value
- */
-// function convertToAttrValue(tokens: ENDPlainStatement[], prefix = ''): ENDAttributeValue {
-//     if (tokens.length === 0) {
-//         return null;
-//     }
-
-//     if (tokens.length === 1) {
-//         // A single token can be used an attribute value
-//         let result: ENDAttributeValue = tokens[0]!;
-//         if (prefix) {
-//             if (isLiteral(result)) {
-//                 result = {
-//                     ...result,
-//                     value: prefix + result.value
-//                 };
-//             } else {
-//                 result = attributeExpression([ literal(prefix), result ]);
-//             }
-//         }
-
-//         return result;
-//     }
-
-//     return concatAttrValues(literal(prefix), attributeExpression(tokens));
-// }
 
 /**
  * Concatenates two attribute values
@@ -380,21 +413,24 @@ function processAttributes(attributes: ENDAttribute[], directives: ENDDirective[
  */
 function shouldHoistConditionTest(node: ENDIfStatement | ENDChooseCase): boolean {
     return node.consequent.some(child => {
-        if (isConditional(child)) {
+        if (child.type === 'ENDIfStatement') {
             return shouldHoistConditionTest(child);
         }
 
+        if (child.type === 'ENDChooseStatement') {
+            return child.cases.some(shouldHoistConditionTest);
+        }
+
+        if (child.type === 'ENDAttributeStatement') {
+            return child.attributes.length || child.directives.filter(isClassName).length;
+        }
+
         return child.type === 'ENDAddClassStatement'
-            || child.type === 'ENDAttributeStatement'
             || child.type === 'ENDVariableStatement';
     });
 }
 
-function isConditional(node: WalkNode): node is ENDIfStatement | ENDChooseCase {
-    return node.type === 'ENDIfStatement' || node.type === 'ENDChooseCase';
-}
-
-function rewrite(value: ENDAttributeValue | null, state: HoistState) {
+function rewrite(value: ENDAttributeValue, state: HoistState) {
     if (value) {
         if (isProgram(value)) {
             rewriteVarAccessors(value, state);
@@ -488,7 +524,7 @@ function concatToJS(tokens: ENDBaseAttributeValue[]): Expression {
  */
 function isSimple(expr: ENDAttributeValue) {
     if (expr.type === 'Program') {
-        return expr.body.every((e: ExpressionStatement) => isLiteral(e.expression));
+        return expr.body.every((e: ExpressionStatement) => isLiteral(e.expression) || isIdentifier(e.expression));
     }
 
     return isLiteral(expr);
