@@ -1,17 +1,22 @@
 import {
-    ENDNode, ENDVariableStatement, ENDProgram, ENDVariable, ENDAttribute, ENDDirective,
+    ENDNode, ENDVariableStatement, ENDProgram, ENDAttribute, ENDDirective,
     ENDStatement, Program, Identifier, Expression, ExpressionStatement,
     ENDChooseCase, ENDIfStatement, ENDProgramStatement, ENDAttributeValue,
-    LogicalExpression, ConditionalExpression, ENDAddClassStatement,
-    ENDAttributeValueExpression, ENDBaseAttributeValue, walk as walkExpr, Literal, ENDAttributeStatement
+    ENDAddClassStatement, ENDAttributeValueExpression, ENDBaseAttributeValue,
+    Literal, ENDAttributeStatement, ENDChooseStatement, ENDForEachStatement,
+    ENDPartial, ENDPartialStatement, ENDInnerHTML, ENDTemplate, walk as walkExpr
 } from '@endorphinjs/template-parser';
 import { isElement, isLiteral, isIdentifier } from './lib/utils';
-import { identifier, literal } from './lib/ast-constructor';
+import { identifier, literal, variable, program, conditionalExpr, binaryExpr, attributeExpression } from './lib/ast-constructor';
 import astEqual from './lib/ast-equal';
 import createSymbolGenerator, { SymbolGenerator } from './lib/SymbolGenerator';
 
 type WalkNode = ENDProgramStatement | ENDStatement;
 type WalkNext = (node: WalkNode) => WalkNode | void;
+
+interface WalkVisitorMap {
+    [name: string]: (node: WalkNode, state: HoistState, next: WalkNext) => WalkNode | void;
+}
 
 interface VariableInfo {
     /** Reference to another variable name to be used instead of current one */
@@ -40,7 +45,7 @@ const nullVal = literal(null);
  * Hoists internal variables and expressions in given template to reduce nesting
  * of element attributes
  */
-export default function hoist(program: ENDProgram): ENDProgram {
+export default function hoist(prog: ENDProgram): ENDProgram {
     const state: HoistState = {
         globalScope: true,
         vars: new Map(),
@@ -51,37 +56,60 @@ export default function hoist(program: ENDProgram): ENDProgram {
     };
 
     const next: WalkNext = node => walk(node, state, next);
-    program.body.forEach(next);
-    return program;
+    prog.body.forEach(next);
+    return prog;
 }
 
-function transform<T extends ENDStatement>(items: T[], next: WalkNext): T[] {
-    return items.map(next).filter(Boolean) as T[];
-}
-
-function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | void {
-    if (node.type === 'ENDVariableStatement') {
+const visitors: WalkVisitorMap = {
+    ENDTemplate(node: ENDTemplate, state, next) {
+        const { vars, globalScope } = state;
+        state.globalScope = true;
+        state.vars = new Map();
+        node.body = transform(node.body, next);
+        if (state.vars.size) {
+            node.body.unshift(finalizeVars(state.vars));
+        }
+        state.globalScope = globalScope;
+        state.vars = vars;
+        return node;
+    },
+    ENDVariableStatement(node: ENDVariableStatement, state) {
         // Move variables up to parent scope
         node.variables.forEach(v => hoistVar(state, v.name, v.value));
         return null;
-    }
-
-    if (node.type === 'ENDAttributeStatement') {
+    },
+    ENDAttributeStatement(node: ENDAttributeStatement, state) {
         // Hoist <e:attr>: move attributes and `class:` directives to parent
         // element, keep node if it contains unhandled directives like event listeners
         processAttributes(node.attributes, node.directives, state);
         node.attributes = [];
         node.directives = node.directives.filter(dir => !isClassName(dir));
         return node.directives.length ? node : null;
-    }
+    },
+    ENDAddClassStatement(node: ENDAddClassStatement, state) {
+        const { attrs } = state;
+        const condition = last(state.conditions);
+        const tokens = node.tokens.slice();
 
-    if (node.type === 'ENDAddClassStatement') {
-        // Hoist <e:add-class>: move contents as `class` attribute of parent element
-        // and delete node itself
-        return hoistAddClass(node, state);
-    }
+        if (attrs.has('class')) {
+            const firstToken = tokens[0];
 
-    if (node.type === 'ENDIfStatement') {
+            // Add space before new class name
+            if (isLiteral(firstToken)) {
+                tokens[0] = literal(' ' + firstToken.value);
+            } else {
+                tokens.unshift(literal(' '));
+            }
+        }
+
+        const value = concatToJS(tokens);
+        const expr = condition
+            ? conditionalExpr(condition, value, literal(''))
+            : value;
+
+        attrs.set('class', concatAttrValues(attrs.get('class')!, program(expr)));
+    },
+    ENDIfStatement(node: ENDIfStatement, state, next) {
         // Handle <e:if>: if there are immediate attribute or variable statement
         // children, hoist their contents to parent scope. In case if test expression
         // is not simple (not a simple literal or identifier), replace it with variable
@@ -99,9 +127,8 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         }
 
         return node.consequent.length ? node : null;
-    }
-
-    if (node.type === 'ENDChooseStatement') {
+    },
+    ENDChooseStatement(node: ENDChooseStatement, state, next) {
         // Handle <e:choose>: basically, it’s an if/else if/else statement which
         // means that a <e:case> statement can be handler only if previous test
         // case fails.
@@ -110,6 +137,7 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
             // Create expression which will pick a single case from choose statement
             let expr: Expression;
             const empty = literal(0);
+
             for (let i = node.cases.length - 1; i >= 0; i--) {
                 const c = node.cases[i];
                 if (c.test) {
@@ -124,21 +152,16 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
                 expr = conditionalExpr(condition, expr || nullVal, empty);
             }
 
-            if (!expr) {
-                // This shouldn’t happen
-                return node;
-            }
-
             const parentExpr = localVar(state.getSymbol('choose'));
-            state.vars.set(parentExpr.name, varInfo(createProgram(expr)));
+            state.vars.set(parentExpr.name, varInfo(program(expr)));
 
             node.cases = node.cases.filter((c, i) => {
                 // Hoist condition as local variable
                 const lv = localVar(state.getSymbol('case'));
-                const test = createProgram(binaryExpr(parentExpr, literal(i + 1), '==='));
+                const test = program(binaryExpr(parentExpr, literal(i + 1), '==='));
 
                 state.vars.set(lv.name, varInfo(test));
-                c.test = createProgram(lv);
+                c.test = program(lv);
                 state.conditions.push(lv);
                 c.consequent = transform(c.consequent, next);
                 state.conditions.pop();
@@ -152,61 +175,57 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         }
 
         return node.cases.length ? node : null;
-    }
-
-    if (node.type === 'ENDForEachStatement' || node.type === 'ENDPartial') {
-        // Every <e:for-each> statement creates new variables scope.
-        // Moreover, all immediate attribute statements must be kept as statements
-        // because we can’t determine value until we iterate all items
-        const { vars, attrs, classNames, conditions, globalScope } = state;
-        state.globalScope = false;
-        state.vars = new Map();
-        state.attrs = new Map();
-        state.classNames = new Map();
-        state.conditions = [];
-
-        node.body = transform(node.body, next);
-
-        if (state.attrs.size || state.classNames.size) {
-            node.body.unshift({
-                type: 'ENDAttributeStatement',
-                attributes: finalizeAttributes(state.attrs),
-                directives: createClassDirectives(state.classNames)
-            } as ENDAttributeStatement);
-        }
-
-        if (state.vars.size) {
-            node.body.unshift(finalizeVars(state.vars));
-        }
-
-        state.globalScope = globalScope;
-        state.vars = vars;
-        state.attrs = attrs;
-        state.classNames = classNames;
-        state.conditions = conditions;
-    }
-
-    if (node.type === 'ENDPartialStatement') {
+    },
+    ENDForEachStatement: blockScopeStatement,
+    ENDPartial: blockScopeStatement,
+    ENDPartialStatement(node: ENDPartialStatement, state) {
         node.params.forEach(p => rewrite(p.value, state));
         return node;
-    }
-
-    if (node.type === 'ENDInnerHTML') {
+    },
+    ENDInnerHTML(node: ENDInnerHTML, state) {
         rewrite(node.value, state);
         return node;
+    },
+    Program(node: Program, state) {
+        return rewrite(node, state) as Program;
+    }
+};
+
+function blockScopeStatement(node: ENDForEachStatement | ENDPartial, state: HoistState, next: WalkNext) {
+    // Every <e:for-each> statement creates new variables scope.
+    // Moreover, all immediate attribute statements must be kept as statements
+    // because we can’t determine value until we iterate all items
+    const { vars, attrs, classNames, conditions, globalScope } = state;
+    state.globalScope = false;
+    state.vars = new Map();
+    state.attrs = new Map();
+    state.classNames = new Map();
+    state.conditions = [];
+
+    node.body = transform(node.body, next);
+
+    if (state.attrs.size || state.classNames.size) {
+        node.body.unshift({
+            type: 'ENDAttributeStatement',
+            attributes: finalizeAttributes(state.attrs),
+            directives: createClassDirectives(state.classNames)
+        } as ENDAttributeStatement);
     }
 
-    if (node.type === 'ENDTemplate') {
-        const { vars, globalScope } = state;
-        state.globalScope = true;
-        state.vars = new Map();
-        node.body = transform(node.body, next);
-        if (state.vars.size) {
-            node.body.unshift(finalizeVars(state.vars));
-        }
-        state.globalScope = globalScope;
-        state.vars = vars;
-    } else if (isElement(node)) {
+    if (state.vars.size) {
+        node.body.unshift(finalizeVars(state.vars));
+    }
+
+    state.globalScope = globalScope;
+    state.vars = vars;
+    state.attrs = attrs;
+    state.classNames = classNames;
+    state.conditions = conditions;
+    return node;
+}
+
+function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | void {
+    if (isElement(node)) {
         // Entering element bound
         const { attrs, classNames, conditions } = state;
         state.attrs = new Map();
@@ -221,11 +240,15 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         state.attrs = attrs;
         state.classNames = classNames;
         state.conditions = conditions;
-    } else if (isProgram(node)) {
-        rewrite(node, state);
+        return node;
     }
 
-    return node;
+    const visitor = visitors[node.type];
+    return visitor ? visitor(node, state, next) : node;
+}
+
+function transform<T extends ENDStatement>(items: T[], next: WalkNext): T[] {
+    return items.map(next).filter(Boolean) as T[];
 }
 
 /**
@@ -240,7 +263,7 @@ function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): st
     // For local scopes, we should fallback to previous variable value, if any
     const fallback = state.globalScope ? nullVal : localVar(name);
     const newValue = condition
-        ? createProgram(conditionalExpr(condition, castValue(value), fallback))
+        ? program(conditionalExpr(condition, castValue(value), fallback))
         : value;
 
     if (info) {
@@ -278,7 +301,7 @@ function hoistAttribute(attr: ENDAttribute, state: HoistState) {
         // TODO merge conditions if they result the same value, e.g.
         // <e:attr a=2 e:if={foo1}/> <e:attr a=2 e:if={foo2}/>
         // should produce `a={foo1 || foo2 ? 2 : null}` instead of `a={foo2 ? 2 : foo1 ? 2 : null}`
-        value = createProgram(conditionalExpr(condition, castValue(value), castValue(prev)));
+        value = program(conditionalExpr(condition, castValue(value), castValue(prev)));
     }
 
     state.attrs.set(name, value);
@@ -309,31 +332,7 @@ function hoistClassName(dir: ENDDirective, state: HoistState) {
         }
     }
 
-    state.classNames.set(dir.name, expr ? createProgram(expr) : null);
-}
-
-function hoistAddClass(addClass: ENDAddClassStatement, state: HoistState) {
-    const { attrs } = state;
-    const condition = last(state.conditions);
-    const tokens = addClass.tokens.slice();
-
-    if (attrs.has('class')) {
-        const firstToken = tokens[0];
-
-        // Add space before new class name
-        if (isLiteral(firstToken)) {
-            tokens[0] = literal(' ' + firstToken.value);
-        } else {
-            tokens.unshift(literal(' '));
-        }
-    }
-
-    const value = concatToJS(tokens);
-    const expr = condition
-        ? conditionalExpr(condition, value, literal(''))
-        : value;
-
-    attrs.set('class', concatAttrValues(attrs.get('class')!, createProgram(expr)));
+    state.classNames.set(dir.name, expr ? program(expr) : null);
 }
 
 /**
@@ -568,7 +567,7 @@ function createCondition(expr: Program, state: HoistState) {
     if (condition) {
         // Current condition is nested in another condition.
         // We should evaluate its expression only if parent condition is truthy
-        expr = createProgram(binaryExpr(condition, castValue(expr)));
+        expr = program(binaryExpr(condition, castValue(expr)));
     }
 
     if (isSimple(expr)) {
@@ -588,7 +587,7 @@ function createCondition(expr: Program, state: HoistState) {
     if (!varName) {
         state.vars.set(lv.name, varInfo(expr));
     }
-    return createProgram(lv);
+    return program(lv);
 }
 
 /**
@@ -600,11 +599,11 @@ function sameValue(n1: ENDAttributeValue, n2: ENDAttributeValue): boolean {
     }
 
     if (n1 && n2 && n1.type === n2.type) {
-        if (n1.type === 'Program') {
+        if (isProgram(n1)) {
             return astEqual(n1.body[0], (n2 as Program).body[0]);
         }
 
-        if (n1.type === 'Literal') {
+        if (isLiteral(n1)) {
             return astEqual(n1, n2 as Literal);
         }
     }
@@ -616,7 +615,7 @@ function sameValue(n1: ENDAttributeValue, n2: ENDAttributeValue): boolean {
  * Check if given expression is simple, e.g. doesn’t require extra effort to build value
  */
 function isSimple(expr: ENDAttributeValue | Expression) {
-    if (expr.type === 'Program') {
+    if (isProgram(expr)) {
         return expr.body.every((e: ExpressionStatement) => isSimple(e.expression));
     }
 
@@ -624,7 +623,7 @@ function isSimple(expr: ENDAttributeValue | Expression) {
 }
 
 function getExpression(expr: Program | Expression): Expression {
-    if (expr.type === 'Program') {
+    if (isProgram(expr)) {
         return (expr.body[0] as ExpressionStatement).expression;
     }
 
@@ -639,38 +638,8 @@ function isAttrExpression(value: ENDAttributeValue): value is ENDAttributeValueE
     return value.type === 'ENDAttributeValueExpression';
 }
 
-function variable(name: string, value: ENDAttributeValue): ENDVariable {
-    return { type: 'ENDVariable', name, value };
-}
-
-function attributeExpression(elements: ENDBaseAttributeValue[]): ENDAttributeValueExpression {
-    return { type: 'ENDAttributeValueExpression', elements };
-}
-
-function createProgram(expression: Expression): Program {
-    return {
-        type: 'Program',
-        body: [{
-            type: 'ExpressionStatement',
-            expression
-        }],
-        raw: ''
-    };
-}
-
-/**
- * Creates local variable identifier with given name
- */
 function localVar(name: string): Identifier {
     return identifier(name, 'variable');
-}
-
-function binaryExpr(left: Expression, right: Expression, operator = '&&'): LogicalExpression {
-    return { type: 'LogicalExpression', operator, left, right };
-}
-
-function conditionalExpr(test: Expression, consequent: Expression, alternate: Expression = nullVal): ConditionalExpression {
-    return { type: 'ConditionalExpression', test, consequent, alternate };
 }
 
 function varInfo(value: ENDAttributeValue): VariableInfo {
