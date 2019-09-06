@@ -48,6 +48,16 @@ function walk(node: WalkNode, state: State, next: WalkNext) {
         tag(node.test ? 'e:when' : 'e:otherwise', attribute('test', node.test), state, node.consequent, next);
     } else if (node.type === 'ENDForEachStatement') {
         tag('e:for-each', attribute('select', node.select), state, node.body, next);
+    } else if (node.type === 'ENDPartial') {
+        const attributes = node.params.map(param => attribute(param.name, param.value));
+        attributes.unshift(`partial:${node.id}`);
+        nl(state);
+        tag('template', attributes.join(' '), state, node.body, next);
+    } else if (node.type === 'ENDPartialStatement') {
+        const attributes = node.params.map(param => attribute(param.name, param.value));
+        tag(`partial:${node.id}`, attributes.join(' '), state);
+    } else if (node.type === 'ENDInnerHTML') {
+        state.out += `{{${expr(node.value)}}}`;
     } else if (node.type === 'Literal') {
         state.out += node.value;
     } else if (node.type === 'Program') {

@@ -31,10 +31,11 @@ describe.only('Hoist variables', () => {
         testHoist('add-class.html', 'Hoist <add-class>');
         testHoist('choose.html', 'Hoist <e:choose>');
         testHoist('for-each.html', 'Hoist <for-each>');
+        testHoist('partials.html', 'Hoist partials');
     });
 
     it.skip('debug', () => {
-        const t = parse('./samples/hoist/for-each.html');
+        const t = parse('./samples/hoist/partials.html');
         // tslint:disable-next-line:no-console
         console.log(stringify(hoist(t)));
     });

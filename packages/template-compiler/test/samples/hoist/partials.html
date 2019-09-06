@@ -1,0 +1,18 @@
+<template>
+    <main>
+        <e:var a=1/>
+        <e:for-each select={list}>
+            <partial:content item={@value} active={@value.id === #active} pos={@index} />
+        </e:for-each>
+    </main>
+</template>
+
+<template partial:content item=null active=false pos=0>
+    <section data-id={@value.id} class:selected={@value.id === #active}>
+        <e:var a=2/>
+        <e:attr class:enabled={@value.enabled} e:if={@value.visible}/>
+        <e:for-each select={@item.items}>
+            <span>{@value}</span>
+        </e:for-each>
+    </section>
+</template>

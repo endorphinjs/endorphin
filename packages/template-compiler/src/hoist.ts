@@ -154,7 +154,7 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         return node.cases.length ? node : null;
     }
 
-    if (node.type === 'ENDForEachStatement') {
+    if (node.type === 'ENDForEachStatement' || node.type === 'ENDPartial') {
         // Every <e:for-each> statement creates new variables scope.
         // Moreover, all immediate attribute statements must be kept as statements
         // because we can’t determine value until we iterate all items
@@ -184,6 +184,16 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         state.attrs = attrs;
         state.classNames = classNames;
         state.conditions = conditions;
+    }
+
+    if (node.type === 'ENDPartialStatement') {
+        node.params.forEach(p => rewrite(p.value, state));
+        return node;
+    }
+
+    if (node.type === 'ENDInnerHTML') {
+        rewrite(node.value, state);
+        return node;
     }
 
     if (node.type === 'ENDTemplate') {
