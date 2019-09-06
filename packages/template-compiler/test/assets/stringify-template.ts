@@ -1,7 +1,11 @@
-import { ENDStatement, ENDProgram, ENDTemplate, ENDAttributeValue, ENDAttributeName, Literal, Program } from '@endorphinjs/template-parser';
+import {
+    ENDStatement, ENDProgram, ENDAttributeValue, ENDAttributeName,
+    Literal, Program, ENDChooseCase, ENDProgramStatement
+} from '@endorphinjs/template-parser';
 import expr from './stringify-expression';
 
-type WalkNext = (node: ENDStatement) => void;
+type WalkNode = ENDProgramStatement | ENDStatement | ENDChooseCase;
+type WalkNext = (node: WalkNode) => void;
 interface State {
     out: string;
     indent: number;
@@ -18,7 +22,7 @@ export default function stringify(program: ENDProgram): string {
     return state.out;
 }
 
-function walk(node: ENDStatement | ENDTemplate, state: State, next: WalkNext) {
+function walk(node: WalkNode, state: State, next: WalkNext) {
     if (node.type === 'ENDTemplate') {
         tag('template', '', state, node.body, next);
     } else if (node.type === 'ENDElement') {
@@ -38,6 +42,12 @@ function walk(node: ENDStatement | ENDTemplate, state: State, next: WalkNext) {
         tag('e:attr', attrs, state);
     } else if (node.type === 'ENDIfStatement') {
         tag('e:if', attribute('test', node.test), state, node.consequent, next);
+    } else if (node.type === 'ENDChooseStatement') {
+        tag('e:choose', '', state, node.cases, next);
+    } else if (node.type === 'ENDChooseCase') {
+        tag(node.test ? 'e:when' : 'e:otherwise', attribute('test', node.test), state, node.consequent, next);
+    } else if (node.type === 'ENDForEachStatement') {
+        tag('e:for-each', attribute('select', node.select), state, node.body, next);
     } else if (node.type === 'Literal') {
         state.out += node.value;
     } else if (node.type === 'Program') {
@@ -45,7 +55,7 @@ function walk(node: ENDStatement | ENDTemplate, state: State, next: WalkNext) {
     }
 }
 
-function tag(name: string, attrs: string, state: State, children?: ENDStatement[], next?: WalkNext) {
+function tag(name: string, attrs: string, state: State, children?: WalkNode[], next?: WalkNext) {
     state.out += `<${name}${attrs ? ' ' + attrs : ''}`;
     if (children) {
         children = children.filter(nonEmpty);
@@ -114,7 +124,7 @@ function directive(prefix: string, name: string, value?: ENDAttributeValue): str
     return result;
 }
 
-function isTextOnly(statements: ENDStatement[]): statements is Array<Literal | Program> {
+function isTextOnly(statements: WalkNode[]): statements is Array<Literal | Program> {
     return statements.every(s => s.type === 'Literal' || s.type === 'Program');
 }
 

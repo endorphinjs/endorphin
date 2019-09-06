@@ -3,10 +3,11 @@ import {
     ENDStatement, Program, Identifier, Expression, ExpressionStatement,
     ENDChooseCase, ENDIfStatement, ENDProgramStatement, ENDAttributeValue,
     LogicalExpression, ConditionalExpression, ENDAddClassStatement,
-    ENDAttributeValueExpression, ENDBaseAttributeValue, walk as walkExpr, Literal
+    ENDAttributeValueExpression, ENDBaseAttributeValue, walk as walkExpr, Literal, ENDAttributeStatement
 } from '@endorphinjs/template-parser';
 import { isElement, isLiteral, isIdentifier } from './lib/utils';
 import { identifier, literal } from './lib/ast-constructor';
+import astEqual from './lib/ast-equal';
 import createSymbolGenerator, { SymbolGenerator } from './lib/SymbolGenerator';
 
 type WalkNode = ENDProgramStatement | ENDStatement;
@@ -24,6 +25,8 @@ interface VariableInfo {
 }
 
 interface HoistState {
+    /** Indicates current variable scope is global for template */
+    globalScope: boolean;
     vars: Map<string, VariableInfo>;
     attrs: Map<string, ENDAttributeValue>;
     classNames: Map<string, Program>;
@@ -39,6 +42,7 @@ const nullVal = literal(null);
  */
 export default function hoist(program: ENDProgram): ENDProgram {
     const state: HoistState = {
+        globalScope: true,
         vars: new Map(),
         attrs: new Map(),
         classNames: new Map(),
@@ -84,20 +88,10 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         // reference
         rewrite(node.test, state);
         if (shouldHoistConditionTest(node)) {
-            // Hoist condition as local variable
-            const lv = localVar(state.getSymbol('if'));
-            let expr = node.test;
-            const condition = last(state.conditions);
-
-            if (condition) {
-                // Current condition is nested in another condition.
-                // We should evaluate its expression only if parent condition is truthy
-                expr = createProgram(binaryExpr(condition, castValue(expr)));
-            }
-
-            state.vars.set(lv.name, varInfo(expr));
-            node.test = createProgram(lv);
-            state.conditions.push(lv);
+            // Hoist condition as local variable. In the end, `node.test` will
+            // contain a simple expression, either literal or identifier
+            node.test = createCondition(node.test, state);
+            state.conditions.push(getExpression(node.test) as Identifier);
             node.consequent = transform(node.consequent, next);
             state.conditions.pop();
         } else {
@@ -160,11 +154,47 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         return node.cases.length ? node : null;
     }
 
+    if (node.type === 'ENDForEachStatement') {
+        // Every <e:for-each> statement creates new variables scope.
+        // Moreover, all immediate attribute statements must be kept as statements
+        // because we can’t determine value until we iterate all items
+        const { vars, attrs, classNames, conditions, globalScope } = state;
+        state.globalScope = false;
+        state.vars = new Map();
+        state.attrs = new Map();
+        state.classNames = new Map();
+        state.conditions = [];
+
+        node.body = transform(node.body, next);
+
+        if (state.attrs.size || state.classNames.size) {
+            node.body.unshift({
+                type: 'ENDAttributeStatement',
+                attributes: finalizeAttributes(state.attrs),
+                directives: createClassDirectives(state.classNames)
+            } as ENDAttributeStatement);
+        }
+
+        if (state.vars.size) {
+            node.body.unshift(finalizeVars(state.vars));
+        }
+
+        state.globalScope = globalScope;
+        state.vars = vars;
+        state.attrs = attrs;
+        state.classNames = classNames;
+        state.conditions = conditions;
+    }
+
     if (node.type === 'ENDTemplate') {
-        const { vars } = state;
+        const { vars, globalScope } = state;
+        state.globalScope = true;
         state.vars = new Map();
         node.body = transform(node.body, next);
-        node.body.unshift(finalizeVars(state.vars!));
+        if (state.vars.size) {
+            node.body.unshift(finalizeVars(state.vars));
+        }
+        state.globalScope = globalScope;
         state.vars = vars;
     } else if (isElement(node)) {
         // Entering element bound
@@ -196,8 +226,11 @@ function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): st
     const { vars } = state;
     const info = vars.get(name);
     const condition = last(state.conditions);
-    const newValue = condition && !isSimple(value)
-        ? createProgram(conditionalExpr(condition, castValue(value)))
+
+    // For local scopes, we should fallback to previous variable value, if any
+    const fallback = state.globalScope ? nullVal : localVar(name);
+    const newValue = condition
+        ? createProgram(conditionalExpr(condition, castValue(value), fallback))
         : value;
 
     if (info) {
@@ -382,14 +415,14 @@ function finalizeAttributes(attrs: Map<string, ENDAttributeValue>): ENDAttribute
 
 function finalizeDirectives(prev: ENDDirective[], state: HoistState): ENDDirective[] {
     // Replace class name directives with new ones
-    const result = prev.filter(dir => !isClassName(dir));
-    state.classNames.forEach((expr, name) => {
-        result.push({
-            type: 'ENDDirective',
-            prefix: 'class',
-            name,
-            value: expr
-        });
+    return prev.filter(dir => !isClassName(dir))
+        .concat(createClassDirectives(state.classNames));
+}
+
+function createClassDirectives(classNames: Map<string, Program>): ENDDirective[] {
+    const result: ENDDirective[] = [];
+    classNames.forEach((value, name) => {
+        result.push({ type: 'ENDDirective', prefix: 'class', name, value });
     });
 
     return result;
@@ -519,15 +552,73 @@ function concatToJS(tokens: ENDBaseAttributeValue[]): Expression {
     return result;
 }
 
+function createCondition(expr: Program, state: HoistState) {
+    const condition = last(state.conditions);
+
+    if (condition) {
+        // Current condition is nested in another condition.
+        // We should evaluate its expression only if parent condition is truthy
+        expr = createProgram(binaryExpr(condition, castValue(expr)));
+    }
+
+    if (isSimple(expr)) {
+        return expr;
+    }
+
+    // Check if we already have variable with the same expression
+    let varName: string | null = null;
+    for (const [k, v] of state.vars) {
+        if (sameValue(expr, v.value)) {
+            varName = k;
+            break;
+        }
+    }
+
+    const lv = localVar(varName || state.getSymbol('if'));
+    if (!varName) {
+        state.vars.set(lv.name, varInfo(expr));
+    }
+    return createProgram(lv);
+}
+
+/**
+ * Check if two given attribute values has the same value
+ */
+function sameValue(n1: ENDAttributeValue, n2: ENDAttributeValue): boolean {
+    if (n1 === n2) {
+        return true;
+    }
+
+    if (n1 && n2 && n1.type === n2.type) {
+        if (n1.type === 'Program') {
+            return astEqual(n1.body[0], (n2 as Program).body[0]);
+        }
+
+        if (n1.type === 'Literal') {
+            return astEqual(n1, n2 as Literal);
+        }
+    }
+
+    return false;
+}
+
 /**
  * Check if given expression is simple, e.g. doesn’t require extra effort to build value
  */
-function isSimple(expr: ENDAttributeValue) {
+function isSimple(expr: ENDAttributeValue | Expression) {
     if (expr.type === 'Program') {
-        return expr.body.every((e: ExpressionStatement) => isLiteral(e.expression) || isIdentifier(e.expression));
+        return expr.body.every((e: ExpressionStatement) => isSimple(e.expression));
     }
 
-    return isLiteral(expr);
+    return isLiteral(expr) || isIdentifier(expr);
+}
+
+function getExpression(expr: Program | Expression): Expression {
+    if (expr.type === 'Program') {
+        return (expr.body[0] as ExpressionStatement).expression;
+    }
+
+    return expr;
 }
 
 function isProgram(node: ENDNode): node is Program {

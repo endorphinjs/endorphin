@@ -29,11 +29,12 @@ describe.only('Hoist variables', () => {
         testHoist('attributes.html', 'Hoist attributes');
         testHoist('class.html', 'Hoist class names');
         testHoist('add-class.html', 'Hoist <add-class>');
-        testHoist('choose.html', 'Hoist <add-class>');
+        testHoist('choose.html', 'Hoist <e:choose>');
+        testHoist('for-each.html', 'Hoist <for-each>');
     });
 
     it.skip('debug', () => {
-        const t = parse('./samples/hoist/choose.html');
+        const t = parse('./samples/hoist/for-each.html');
         // tslint:disable-next-line:no-console
         console.log(stringify(hoist(t)));
     });

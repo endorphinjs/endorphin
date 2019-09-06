@@ -1,4 +1,4 @@
 <template>
-    <e:var __if0={foo} __if1={@__if0 && bar} __if2={foo2} __if3={foo3}/>
-    <div a={@__if1 ? 100 : @__if0 ? 10 : 1} b=20 c=3 d={@__if3 ? 4 : @__if2 ? 4 : null}/>
+    <e:var __if0={foo && bar}/>
+    <div a={@__if0 ? 100 : foo ? 10 : 1} b=20 c=3 d={foo3 ? 4 : foo2 ? 4 : null}/>
 </template>

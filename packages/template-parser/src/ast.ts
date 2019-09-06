@@ -129,7 +129,7 @@ export interface Property extends JSNode {
     shorthand?: boolean;
 }
 
-interface BaseExpression extends JSNode {
+export interface BaseExpression extends JSNode {
     left: Expression;
     operator: string;
     right: Expression;

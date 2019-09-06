@@ -1,0 +1,15 @@
+<template>
+    <div a=1>
+        <e:var v=1/>
+        <e:attr a=2 e:if={c1}/>
+        <e:for-each select={items}>
+            <e:if test={@value.enabled}>
+                <e:var v=2/>
+                <e:attr class:enabled />
+            </e:if>
+            <section b=10>
+                <e:attr b=11 e:if={@value.enabled} />
+            </section>
+        </e:for-each>
+    </div>
+</template>
