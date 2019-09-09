@@ -22,7 +22,7 @@ function testHoist(fileName: string, message?: string) {
     strictEqual(result.trim(), read(fixture).trim(), message);
 }
 
-describe.only('Hoist variables', () => {
+describe('Hoist variables', () => {
     it('basic', () => {
         testHoist('vars.html', 'Hoist variable definitions');
         testHoist('condition.html', 'Hoist conditional expressions');
@@ -35,7 +35,7 @@ describe.only('Hoist variables', () => {
     });
 
     it.skip('debug', () => {
-        const t = parse('./samples/hoist/partials.html');
+        const t = parse('./samples/hoist/msg-message.html');
         // tslint:disable-next-line:no-console
         console.log(stringify(hoist(t)));
     });

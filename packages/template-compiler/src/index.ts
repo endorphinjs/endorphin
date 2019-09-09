@@ -3,6 +3,7 @@ import { HelpersMap } from './types';
 import generateTemplate from './template';
 import { ENDCompileError, ENDSyntaxError } from './lib/error';
 import { prepareHelpers } from './lib/utils';
+import hoist from './hoist';
 
 export interface ParsedTemplate {
     /** Original template source code */
@@ -37,6 +38,12 @@ export interface CompileOptions {
      * but more cryptic variable names
      */
     mangleNames?: boolean;
+
+    /**
+     * Run expression hoisting to optimize templates layout. Required for
+     * server-side rendering
+     */
+    optimize?: boolean;
 
     /**
      * List of supported helpers. Key is an URL of module and value is a list of
@@ -83,7 +90,11 @@ export default function transform(code: string, url?: string, options?: CompileO
  */
 export function parse(code: string, url?: string, options?: CompileOptions): ParsedTemplate {
     const helpers = prepareHelpers(options && options.helpers || {});
-    return { code, url, ast: parseTemplate(code, url, { helpers: Object.keys(helpers) }) };
+    const ast = parseTemplate(code, url, { helpers: Object.keys(helpers) });
+    if (options && options.optimize) {
+        hoist(ast);
+    }
+    return { code, url, ast };
 }
 
 /**

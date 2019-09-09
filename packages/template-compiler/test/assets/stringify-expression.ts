@@ -1,5 +1,5 @@
 import { generate, baseGenerator } from 'astring';
-import { Program, ENDGetterPrefix, IdentifierContext, ENDFilter, Identifier } from '@endorphinjs/template-parser';
+import { Program, ENDGetterPrefix, IdentifierContext, ENDFilter, Identifier, ENDGetter, ENDCaller } from '@endorphinjs/template-parser';
 
 interface AstringState {
     write(text: string): void;
@@ -8,6 +8,35 @@ interface AstringState {
 const generator = Object.assign({}, baseGenerator, {
     ENDGetterPrefix(node: ENDGetterPrefix, state: AstringState) {
         state.write(getPrefix(node.context));
+    },
+    ENDGetter(node: ENDGetter, state: AstringState) {
+        state.write('$get(');
+        node.path.forEach((child, i) => {
+            if (i !== 0) {
+                state.write(', ');
+            }
+            this[child.type](child, state);
+        });
+
+        state.write(')');
+    },
+    ENDCaller(node: ENDCaller, state: AstringState) {
+        state.write('$call(');
+        const { object, property } = node;
+        this[object.type](object, state);
+        state.write(', ');
+        this[property.type](property, state);
+        if (node.arguments && node.arguments.length) {
+            state.write(', [');
+            node.arguments.forEach((arg, i) => {
+                if (i !== 0) {
+                    state.write(', ');
+                }
+                this[arg.type](arg, state);
+            });
+            state.write(']');
+        }
+        state.write(')');
     },
     ENDFilter(node: ENDFilter, state: AstringState) {
         const { object, expression } = node;
