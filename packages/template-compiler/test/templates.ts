@@ -68,7 +68,7 @@ describe('Template compiler', () => {
         compare('svg.html');
     });
 
-    // it.only('debug', () => {
-    //     compare('debug.html', null, true);
-    // });
+    it.only('debug', () => {
+        compare('props.html', { optimize: true }, true);
+    });
 });

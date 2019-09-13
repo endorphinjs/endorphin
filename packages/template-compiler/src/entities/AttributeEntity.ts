@@ -8,7 +8,7 @@ import {
     pendingAttributes, pendingAttributesCur, propGetter
 } from '../lib/utils';
 
-interface NSData {
+export interface NSData {
     name: string;
     ns: string;
 }

@@ -33,6 +33,11 @@ export default class BlockContext {
     updateSymbol?: string;
     unmountSymbol?: string;
 
+    // Additional arguments to prepend to generated function
+    mountArgs: string[] = [];
+    updateArgs: string[] = [];
+    unmountArgs: string[] = [];
+
     /** Indicates that generated functions should be unlinked */
     unlinked?: boolean;
 
@@ -161,10 +166,10 @@ export default class BlockContext {
         const { indent } = state;
         const injectorArg = this.injector ? this.injector.name : '';
         const scopeArg = (count: number): string => count ? scope : '';
-        const mountFn = createFunction(mountSymbol, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
-        const updateFn = createFunction(updateSymbol, [state.host, scopeArg(scopeUsage.update)], updateChunks, indent);
+        const mountFn = createFunction(mountSymbol, [...this.mountArgs, state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
+        const updateFn = createFunction(updateSymbol, [...this.updateArgs, state.host, scopeArg(scopeUsage.update)], updateChunks, indent);
         const unmountFn = createFunction(unmountSymbol,
-            [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
+            [...this.unmountArgs, scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
 
         if (this.exports) {
             mountFn.prepend([`export `, this.exports === 'default' ? 'default ' : '']);

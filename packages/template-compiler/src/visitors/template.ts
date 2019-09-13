@@ -304,6 +304,7 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
         element.setRef(node.ref);
     }
 
+    // XXX output attributes
     element.setContent(getContentAttributes(element), next);
     element.setContent(node.directives, next);
 

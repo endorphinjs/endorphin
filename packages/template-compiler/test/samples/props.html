@@ -1,0 +1,17 @@
+<link rel="import" href="./my-component.html" />
+
+<script>
+export function onToggleSelect() {}
+</script>
+
+<template>
+    <e:if test={enabled}>
+        <my-component
+            class="foo"
+            checked={message.selected}
+            on:click={onToggleSelect}
+            class:shift={a > 10}
+            data-l="t,selectMultiple"
+            e:if={c1 && (c2 || c3)}/>
+    </e:if>
+</template>
