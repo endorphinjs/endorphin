@@ -88,7 +88,7 @@ interface ComponentModel {
 	/** Component render is queued */
 	queued: boolean;
 
-	/** Indicates that component is currently rendering */
+	/** Indicates that component is preparing to rendering */
 	preparing: boolean;
 
 	/** Default props values */
