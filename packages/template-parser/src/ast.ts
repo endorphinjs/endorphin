@@ -30,7 +30,8 @@ export type Expression = ArrayExpression | ArrowFunctionExpression | AssignmentE
     | UnaryExpression | UpdateExpression | FunctionDeclaration | ArrowFunctionExpression
     | AssignmentPattern | SpreadElement | TemplateLiteral | TaggedTemplateExpression
     | ENDGetter | ENDCaller | ENDFilter;
-export type Statement = ReturnStatement | EmptyStatement | ExpressionStatement | VariableDeclaration | FunctionDeclaration | IfStatement;
+export type Statement = ReturnStatement | EmptyStatement | ExpressionStatement
+    | VariableDeclaration | FunctionDeclaration | IfStatement | BlockStatement;
 export type PropertyKey = Identifier | Literal;
 export type PropertyValue = Pattern | Literal;
 export type LiteralValue = boolean | number | string | null;
@@ -67,6 +68,12 @@ export interface Identifier extends JSNode {
 
 export interface VariableDeclaration {
     type: 'VariableDeclaration';
+    declarations: VariableDeclarator[];
+    kind: 'var' | 'let' | 'const';
+}
+
+export interface VariableDeclarator {
+    type: 'VariableDeclarator';
     id: Identifier;
     init: Expression;
 }

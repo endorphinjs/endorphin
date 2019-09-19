@@ -1,9 +1,16 @@
-import { Statement, BlockStatement, Expression, Program } from '@endorphinjs/template-parser';
+import { Statement, BlockStatement, Expression, Program, Identifier, JSNode } from '@endorphinjs/template-parser';
 import SSROutput from './SSROutput';
+import { identifier, literal } from '../lib/ast-constructor';
 
 export interface SSROptions {
     /** List of HTML elements that should be empty */
     empty: string[];
+}
+
+interface ImportSpecifier extends JSNode {
+    type: 'ImportSpecifier';
+    imported: Identifier;
+    local: Identifier;
 }
 
 export type SSRHelper = 'attr';
@@ -16,7 +23,6 @@ export default class SSRState {
     public options: SSROptions;
     public output: SSROutput;
     public program: Program = { type: 'Program', body: [], raw: '' };
-
     private usedHelpers = new Set<SSRHelper>();
 
     constructor(options: Partial<SSROptions>) {
@@ -34,11 +40,19 @@ export default class SSRState {
     /**
      * Enters new output context and runs `callback` in it
      */
-    enter(name: string, callback: (out: SSROutput) => void) {
+    enter(name: string, callback: (out: SSROutput) => void, exports?: boolean) {
         const { output } = this;
         this.output = new SSROutput(name);
         callback(this.output);
-        this.program.body.push(this.output.finalize());
+        const fn = this.output.finalize();
+        if (exports) {
+            this.program.body.push({
+                type: 'ExportDefaultDeclaration',
+                declaration: fn
+            } as any as Statement);
+        } else {
+            this.program.body.push(fn);
+        }
         this.output = output;
     }
 
@@ -46,8 +60,15 @@ export default class SSRState {
      * Runs given `callback` in context of `block`. All output content will be added
      * into accumulator inside `block`
      */
-    run(statement: Statement, block: BlockStatement, callback: () => void) {
-        this.output.run(statement, block, callback);
+    run(block: BlockStatement, callback: () => void) {
+        return this.output.run(block, callback);
+    }
+
+    /**
+     * Adds given statement into output block
+     */
+    add<T extends Statement>(statement: T) {
+        return this.output.add(statement);
     }
 
     /**
@@ -55,5 +76,24 @@ export default class SSRState {
      */
     out(value: string | Expression) {
         this.output.out(value);
+    }
+
+    finalize(): Program {
+        if (this.usedHelpers.size) {
+            // Import runtime helpers
+            const specifiers: ImportSpecifier[] = Array.from(this.usedHelpers).map(id => ({
+                type: 'ImportSpecifier',
+                imported: identifier(id),
+                local: identifier(id),
+            }));
+
+            this.program.body.unshift({
+                type: 'ImportDeclaration',
+                specifiers,
+                source: literal('endorphin/ssr')
+            } as any as Statement);
+        }
+
+        return this.program;
     }
 }

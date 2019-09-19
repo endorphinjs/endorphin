@@ -63,7 +63,7 @@ export function createGetter(expr: MemberExpression): ENDGetter | MemberExpressi
 }
 
 function idToLiteral(id: Identifier): Literal {
-    return literal(id.name, null, {
+    return literal(id.name, {
         start: id.start,
         end: id.end,
         loc: id.loc

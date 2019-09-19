@@ -1,11 +1,13 @@
 import parseTemplate, { ENDProgram } from '@endorphinjs/template-parser';
-import { generate } from 'astring';
+import generate from './generate';
 import SSRState, { SSROptions } from './SSRState';
 import { visitors, VisitorContinue } from './visitors';
 import { ENDCompileError } from '../lib/error';
+import hoist from '../hoist';
 
 export default function ssr(code: string, url?: string, options?: Partial<SSROptions>) {
-    return compile(parseTemplate(code, url), options);
+    const template = parseTemplate(code, url);
+    return compile(hoist(template), options);
 }
 
 export function compile(ast: ENDProgram, options?: Partial<SSROptions>): string {
@@ -25,5 +27,5 @@ export function compile(ast: ENDProgram, options?: Partial<SSROptions>): string 
         }
     });
 
-    return generate(state.program);
+    return generate(state.finalize());
 }

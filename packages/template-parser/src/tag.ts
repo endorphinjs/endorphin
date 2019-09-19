@@ -210,13 +210,13 @@ function attributeValue(scanner: Scanner, options?: JSParserOptions): ENDAttribu
             };
         }
 
-        return literal(raw.slice(1, -1), raw, scanner.loc(start));
+        return literal(raw.slice(1, -1), scanner.loc(start));
     }
 
     if (scanner.eatWhile(isUnquoted)) {
         scanner.start = start;
         const value = scanner.current();
-        return literal(castAttributeValue(value), value, scanner.loc(start));
+        return literal(castAttributeValue(value), scanner.loc(start));
     }
 }
 
@@ -234,7 +234,7 @@ function attributeValueExpression(scanner: Scanner, options?: JSParserOptions): 
         if (expr = expression(scanner, options)) {
             if (pos !== start) {
                 const txt = scanner.substring(start, pos);
-                elements.push(literal(txt, txt, scanner.loc(start)));
+                elements.push(literal(txt, scanner.loc(start)));
             }
             elements.push(expr);
             start = scanner.pos;
@@ -245,7 +245,7 @@ function attributeValueExpression(scanner: Scanner, options?: JSParserOptions): 
 
     if (start !== scanner.pos) {
         const txt = scanner.substring(start, scanner.pos);
-        elements.push(literal(txt, txt, scanner.loc(start)));
+        elements.push(literal(txt, scanner.loc(start)));
     }
 
     return {
@@ -449,7 +449,7 @@ export function tagText(scanner: Scanner, open: ParsedTag): Literal {
         end = scanner.pos;
         if (close = closeTag(scanner)) {
             if (tagName(close) === tagName(open)) {
-                return literal(scanner.substring(start, end), null, scanner.loc(start, end));
+                return literal(scanner.substring(start, end), scanner.loc(start, end));
             }
         } else {
             scanner.pos++;

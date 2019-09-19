@@ -16,8 +16,12 @@ export default class SSROutput {
             type: 'BlockStatement',
             body: [{
                 type: 'VariableDeclaration',
-                id: this.outVar,
-                init: literal('')
+                declarations: [{
+                    type: 'VariableDeclarator',
+                    id: this.outVar,
+                    init: literal('')
+                }],
+                kind: 'let'
             }]
         };
 
@@ -30,15 +34,23 @@ export default class SSROutput {
     }
 
     /**
+     * Adds given statement into output block
+     */
+    add<T extends Statement>(statement: T): T {
+        this.block.body.push(statement);
+        return statement;
+    }
+
+    /**
      * Runs given `callback` in context of `block`. All output content will be added
      * into accumulator inside `block`
      */
-    run(statement: Statement, block: BlockStatement, callback: () => void) {
+    run(block: BlockStatement, callback: () => void) {
         const prevBlock = this.block;
-        prevBlock.body.push(statement);
         this.block = block;
         this.node = null;
         callback();
+        this.node = null;
         this.block = prevBlock;
     }
 
@@ -61,39 +73,49 @@ export default class SSROutput {
                 expression: this.node
             });
         } else {
-            // Modify expression and add given value to it
-            let target: Literal | null = null;
-            if (isString(node)) {
-                if (isString(this.node.right)) {
-                    target = this.node.right;
-                    // this.node.right.value += node.value as string;
-                } else if (this.node.right.type === 'BinaryExpression' && isString(this.node.right.right)) {
-                    target = this.node.right.right;
-                }
-            }
-
-            // We can merge two strings into a single token
-            if (target) {
-                target.value += (node as Literal).value as string;
-            } else {
-                this.node.right = {
-                    type: 'BinaryExpression',
-                    left: this.node.right,
-                    operator: '+',
-                    right: node
-                } as BinaryExpression;
-            }
+            this.node.right = concatExpressions(this.node.right, node);
         }
     }
 
     finalize() {
         (this.root.body as BlockStatement).body.push({
+            type: 'ReturnStatement',
             argument: this.outVar
         } as ReturnStatement);
         return this.root;
     }
 }
 
+export function concatExpressions(left: Expression, right: Expression): Expression {
+    // Modify expression and add given value to it
+    let target: Literal | null = null;
+    if (isString(right)) {
+        if (isString(left)) {
+            target = left;
+        } else if (left.type === 'BinaryExpression' && isString(left.right)) {
+            target = left.right;
+        }
+    }
+
+    if (target) {
+        // We can merge two strings into a single token
+        appendLiteral(target, right as Literal);
+        return left;
+    }
+
+    return {
+        type: 'BinaryExpression',
+        operator: '+',
+        left,
+        right
+    } as BinaryExpression;
+}
+
 function isString(node: Expression): node is Literal {
     return node.type === 'Literal' && typeof node.value === 'string';
+}
+
+function appendLiteral(left: Literal, right: Literal) {
+    left.value += right.value as string;
+    left.raw = JSON.stringify(left.value);
 }

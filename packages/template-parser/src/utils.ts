@@ -39,8 +39,8 @@ export function identifier(name: string, loc: SourceDataAlike): Identifier {
 /**
  * Factory function for creating `Literal` AST node
  */
-export function literal(value: LiteralValue, raw?: string, loc?: SourceDataAlike): Literal {
-    return { type: 'Literal', value, raw, ...toSourceData(loc) };
+export function literal(value: LiteralValue, loc?: SourceDataAlike): Literal {
+    return { type: 'Literal', value, raw: JSON.stringify(value), ...toSourceData(loc) };
 }
 
 /**
