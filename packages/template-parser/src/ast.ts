@@ -30,7 +30,7 @@ export type Expression = ArrayExpression | ArrowFunctionExpression | AssignmentE
     | UnaryExpression | UpdateExpression | FunctionDeclaration | ArrowFunctionExpression
     | AssignmentPattern | SpreadElement | TemplateLiteral | TaggedTemplateExpression
     | ENDGetter | ENDCaller | ENDFilter;
-export type Statement = ReturnStatement | EmptyStatement | ExpressionStatement;
+export type Statement = ReturnStatement | EmptyStatement | ExpressionStatement | VariableDeclaration | FunctionDeclaration | IfStatement;
 export type PropertyKey = Identifier | Literal;
 export type PropertyValue = Pattern | Literal;
 export type LiteralValue = boolean | number | string | null;
@@ -63,6 +63,12 @@ export interface Identifier extends JSNode {
     // Endorphin extension: identifier context
     context?: IdentifierContext;
     raw?: string;
+}
+
+export interface VariableDeclaration {
+    type: 'VariableDeclaration';
+    id: Identifier;
+    init: Expression;
 }
 
 export interface ThisExpression extends JSNode {
@@ -208,6 +214,13 @@ export interface ReturnStatement extends JSNode {
 export interface BlockStatement extends JSNode {
     type: 'BlockStatement';
     body: Statement[];
+}
+
+export interface IfStatement extends JSNode {
+    type: 'IfStatement';
+    test: Expression;
+    consequent: Statement;
+    alternate: Statement | null;
 }
 
 export interface TemplateLiteral extends JSNode {
