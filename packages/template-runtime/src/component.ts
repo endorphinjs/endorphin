@@ -89,7 +89,7 @@ interface ComponentModel {
 	queued: boolean;
 
 	/** Indicates that component is currently rendering */
-	rendering: boolean;
+	preparing: boolean;
 
 	/** Default props values */
 	defaultProps: object;
@@ -238,7 +238,7 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 		input,
 		vars: obj(),
 		mounted: false,
-		rendering: false,
+		preparing: false,
 		update: void 0,
 		queued: false,
 		events,
@@ -259,7 +259,7 @@ export function mountComponent(component: Component, props?: object) {
 	const changes = setPropsInternal(component, props || componentModel.defaultProps);
 	const arg = changes || {};
 
-	componentModel.rendering = true;
+	componentModel.preparing = true;
 
 	// Notify slot status
 	for (const p in input.slots) {
@@ -272,9 +272,9 @@ export function mountComponent(component: Component, props?: object) {
 
 	runHook(component, 'willMount', arg);
 	runHook(component, 'willRender', arg);
+	componentModel.preparing = false;
 	componentModel.update = captureError(component, definition.default, component, getScope(component));
 	componentModel.mounted = true;
-	componentModel.rendering = false;
 	runHook(component, 'didRender', arg);
 	runHook(component, 'didMount', arg);
 }
@@ -336,7 +336,7 @@ export function subscribeStore(component: Component, keys?: string[]) {
  * Queues next component render
  */
 function renderNext(component: Component, changes?: Changes) {
-	if (!component.componentModel.rendering) {
+	if (!component.componentModel.preparing) {
 		renderComponent(component, changes);
 	} else {
 		scheduleRender(component, changes);
@@ -366,7 +366,7 @@ export function renderComponent(component: Component, changes?: Changes) {
 	const arg = changes || {};
 
 	componentModel.queued = false;
-	componentModel.rendering = true;
+	componentModel.preparing = true;
 
 	if (changes) {
 		runHook(component, 'didChange', arg);
@@ -374,8 +374,8 @@ export function renderComponent(component: Component, changes?: Changes) {
 
 	runHook(component, 'willUpdate', arg);
 	runHook(component, 'willRender', arg);
+	componentModel.preparing = false;
 	captureError(component, componentModel.update, component, getScope(component));
-	componentModel.rendering = false;
 	runHook(component, 'didRender', arg);
 	runHook(component, 'didUpdate', arg);
 }
@@ -537,7 +537,7 @@ function addPropsState(element: Component) {
 			// applied during rendering stage.
 			// If called outside of rendering state we should schedule render
 			// on next tick
-			if (componentModel.mounted && !componentModel.rendering) {
+			if (componentModel.mounted && !componentModel.preparing) {
 				scheduleRender(element);
 			}
 		}
