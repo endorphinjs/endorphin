@@ -203,6 +203,15 @@ export function createComponent(name: string, definition: ComponentDefinition, h
 
 	const element = elem(name, cssScope) as Component;
 
+	return createComponentFromElement(element, definition, root);
+}
+
+/**
+ * Convert HTMLElement into Endorphin DOM component with given definition
+ */
+export function createComponentFromElement(el: HTMLElement | Component, definition: ComponentDefinition, root?: Component): Component {
+	const element = el as Component;
+
 	// Add host scope marker: we can’t rely on tag name since component
 	// definition is bound to element in runtime, not compile time
 	if (definition.cssScope) {
