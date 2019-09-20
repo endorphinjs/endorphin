@@ -1,7 +1,7 @@
-import {attr} from "endorphin/ssr";
-export default function render(props) {
+import {renderProps, attr} from "endorphin/ssr";
+export default function render(name, props) {
   let out = "";
-  out += "<e1 foo=\"bar1\" enabled=\"\"></e1><e2 foo=\"bar2\">";
+  out += "<" + name + renderProps(props) + "><e1 foo=\"bar1\" enabled=\"\"></e1><e2 foo=\"bar2\">";
   if (props.cond) {
     out += "aaa";
   }
@@ -13,6 +13,6 @@ export default function render(props) {
   if (props.cond) {
     out += "<br />";
   }
-  out += "</e6><e7" + attr("foo", props.cond ? props.baz : "a " + props.bar4 + " b") + "></e7><e8" + attr("foo", props.cond ? props.baz : null) + "></e8>";
+  out += "</e6><e7" + attr("foo", props.cond ? props.baz : "a " + props.bar4 + " b") + "></e7><e8" + attr("foo", props.cond ? props.baz : null) + "></e8></" + name + ">";
   return out;
 }

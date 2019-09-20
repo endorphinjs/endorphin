@@ -1,6 +1,7 @@
-export default function render(props) {
+import {renderProps} from "endorphin/ssr";
+export default function render(name, props) {
   let out = "";
-  out += "<h1>Hello world</h1>";
+  out += "<" + name + renderProps(props) + "><h1>Hello world</h1>";
   if (props.expr1) {
     out += "<p><strong>top 1</strong></p>";
     if (props.expr2) {
@@ -18,6 +19,6 @@ export default function render(props) {
   } else {
     out += "<div>sub 3</div>";
   }
-  out += "<p>Lorem ipsum 2</p></blockquote>";
+  out += "<p>Lorem ipsum 2</p></blockquote></" + name + ">";
   return out;
 }

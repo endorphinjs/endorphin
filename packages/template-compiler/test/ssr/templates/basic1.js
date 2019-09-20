@@ -1,5 +1,6 @@
-export default function render(props) {
+import {renderProps} from "endorphin/ssr";
+export default function render(name, props) {
   let out = "";
-  out += "<h1>Hello world</h1>";
+  out += "<" + name + renderProps(props) + "><h1>Hello world</h1></" + name + ">";
   return out;
 }

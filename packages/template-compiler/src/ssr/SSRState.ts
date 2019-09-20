@@ -1,4 +1,4 @@
-import { Statement, BlockStatement, Expression, Program, Identifier, JSNode } from '@endorphinjs/template-parser';
+import { Statement, BlockStatement, Expression, Program, Identifier, JSNode, Pattern } from '@endorphinjs/template-parser';
 import SSROutput from './SSROutput';
 import { identifier, literal } from '../lib/ast-constructor';
 
@@ -13,7 +13,7 @@ interface ImportSpecifier extends JSNode {
     local: Identifier;
 }
 
-export type SSRHelper = 'attr';
+export type SSRHelper = 'attr' | 'renderProps' | 'escape';
 
 const defaultOptions: SSROptions = {
     empty: ['img', 'meta', 'link', 'br', 'base', 'hr', 'area', 'wbr', 'col', 'embed', 'input', 'param', 'source', 'track']
@@ -23,10 +23,22 @@ export default class SSRState {
     public options: SSROptions;
     public output: SSROutput;
     public program: Program = { type: 'Program', body: [], raw: '' };
+
     private usedHelpers = new Set<SSRHelper>();
+    private _scope = identifier('scope');
 
     constructor(options: Partial<SSROptions>) {
         this.options = { ...defaultOptions, ...options };
+    }
+
+    /**
+     * Returns symbol for referencing local scope
+     */
+    get scope(): Identifier {
+        if (this.output) {
+            this.output.mountScope(this._scope);
+        }
+        return this._scope;
     }
 
     /**
@@ -40,9 +52,9 @@ export default class SSRState {
     /**
      * Enters new output context and runs `callback` in it
      */
-    enter(name: string, callback: (out: SSROutput) => void, exports?: boolean) {
+    enter(name: string, params: Pattern[], callback: (out: SSROutput) => void, exports?: boolean) {
         const { output } = this;
-        this.output = new SSROutput(name);
+        this.output = new SSROutput(name, params);
         callback(this.output);
         const fn = this.output.finalize();
         if (exports) {
@@ -74,8 +86,8 @@ export default class SSRState {
     /**
      * Pushes given value into output
      */
-    out(value: string | Expression) {
-        this.output.out(value);
+    out(...args: Array<string | Expression>) {
+        args.forEach(arg => this.output.out(arg));
     }
 
     finalize(): Program {

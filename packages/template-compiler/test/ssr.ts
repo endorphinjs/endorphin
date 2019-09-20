@@ -31,5 +31,6 @@ describe.only('Server-side rendering', () => {
         compare('./templates/attribute1.html', true);
         compare('./templates/attribute2.html', true);
         compare('./templates/attrs.html', true);
+        compare('./templates/class.html', true);
     });
 });

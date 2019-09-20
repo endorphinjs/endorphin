@@ -1,34 +1,27 @@
 import {
     AssignmentExpression, BlockStatement, FunctionDeclaration, Expression, Literal,
-    BinaryExpression, ReturnStatement, Statement
+    BinaryExpression, ReturnStatement, Statement, Pattern, Identifier
 } from '@endorphinjs/template-parser';
-import { identifier, literal } from '../lib/ast-constructor';
+import { identifier, literal, varDeclaration } from '../lib/ast-constructor';
 
 export default class SSROutput {
     private root: FunctionDeclaration;
     private block: BlockStatement;
     private node: AssignmentExpression | null = null;
     private outVar = identifier('out');
+    private scopeMounted = false;
 
-    constructor(name: string) {
+    constructor(name: string, params: Pattern[]) {
         // Create function AST node
         this.block = {
             type: 'BlockStatement',
-            body: [{
-                type: 'VariableDeclaration',
-                declarations: [{
-                    type: 'VariableDeclarator',
-                    id: this.outVar,
-                    init: literal('')
-                }],
-                kind: 'let'
-            }]
+            body: [varDeclaration(this.outVar, literal(''), 'let')]
         };
 
         this.root = {
             type: 'FunctionDeclaration',
             id: identifier(name),
-            params: [identifier('props')],
+            params,
             body: this.block
         };
     }
@@ -38,6 +31,7 @@ export default class SSROutput {
      */
     add<T extends Statement>(statement: T): T {
         this.block.body.push(statement);
+        this.node = null;
         return statement;
     }
 
@@ -74,6 +68,23 @@ export default class SSROutput {
             });
         } else {
             this.node.right = concatExpressions(this.node.right, node);
+        }
+    }
+
+    /**
+     * Mounts scope variable, if required. Scope is used to store internal template data
+     * and can be either created inside function (template entry) or passed as argument
+     */
+    mountScope(scope: Identifier) {
+        if (!this.scopeMounted) {
+            if (!this.root.params.includes(scope)) {
+                const v = varDeclaration(scope, {
+                    type: 'ObjectExpression',
+                    properties: []
+                }, 'const');
+                (this.root.body as BlockStatement).body.unshift(v);
+            }
+            this.scopeMounted = true;
         }
     }
 

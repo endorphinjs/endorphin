@@ -2,7 +2,7 @@ import {
     IdentifierContext, Identifier, Property, ObjectExpression, CallExpression,
     Expression, ArgumentListElement, ThisExpression, MemberExpression, Node, SourceLocation,
     LiteralValue, Literal, ENDAttributeValue, ENDVariable, Program, LogicalExpression,
-    ConditionalExpression, ENDAttributeValueExpression, ENDBaseAttributeValue
+    ConditionalExpression, ENDAttributeValueExpression, ENDBaseAttributeValue, VariableDeclaration
 } from '@endorphinjs/template-parser';
 
 /**
@@ -82,6 +82,19 @@ export function member(object: Expression, prop: Expression | string, source?: S
     }
 
     return addSource({ type: 'MemberExpression', object, property: prop }, source);
+}
+
+export function varDeclaration(name: string | Identifier, value: Expression, kind: 'let' | 'var' | 'const'): VariableDeclaration {
+    const id = typeof name === 'string' ? identifier(name) : name;
+    return {
+        type: 'VariableDeclaration',
+        declarations: [{
+            type: 'VariableDeclarator',
+            id,
+            init: value
+        }],
+        kind
+    };
 }
 
 function addSource<T extends Node>(node: T, source?: SourceDataAlike): T {
