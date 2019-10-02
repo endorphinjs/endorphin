@@ -28,9 +28,14 @@ export default function innerHTML(scanner: Scanner): ENDInnerHTML {
                 if (!stack) {
                     // Expecting the end of inner HTML expression
                     if (scanner.eat(EXPRESSION_END)) {
+                        const value = parseJS(scanner.substring(start + 2, scanner.pos - 2), {
+                            ...scanner.options,
+                            url: scanner.url,
+                            offset: scanner.sourceLocation(start + 2),
+                        });
                         return {
                             type: 'ENDInnerHTML',
-                            value: parseJS(scanner.substring(start + 2, scanner.pos - 2), scanner),
+                            value,
                             ...scanner.loc(start)
                         };
                     } else {
