@@ -158,7 +158,7 @@ function reorder(block: KeyIteratorBlock) {
 		actualPrev = getItem(item.start.prev!, start);
 		actualNext = getItem(item.end.next!, end);
 
-		if (expectedPrev !== actualPrev && expectedNext !== actualNext) {
+		if (expectedPrev !== actualPrev || expectedNext !== actualNext) {
 			// Blocks must be reordered
 			move(injector, item, expectedPrev ? expectedPrev.end : block.start);
 		}
