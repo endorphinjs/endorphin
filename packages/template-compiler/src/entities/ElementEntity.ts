@@ -7,11 +7,13 @@ import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter, propGetter } from '../lib/utils';
+import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
 import ElementStats from '../lib/ElementStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
+import attributeStats from '../lib/attributeStats';
+import { ownAttributes } from '../lib/attributes';
 
 export default class ElementEntity extends Entity {
     injectorEntity: InjectorEntity;
@@ -27,11 +29,14 @@ export default class ElementEntity extends Entity {
     private slotMarks: { [slotName: string]: string } = {};
     private dynAttrs?: Entity;
     private dynEvents?: Entity;
+    private pendingCurAttributes?: Entity;
+    private pendingPrevAttributes?: Entity;
 
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
         if (node) {
-            const stats = this.stats = new ElementStats(node);
+            // XXX refactor stats: no need to collect attribute data due to hoisting
+            this.stats = new ElementStats(node);
 
             if (isElement(node)) {
                 this.isComponent = state.isComponent(node)
@@ -51,13 +56,13 @@ export default class ElementEntity extends Entity {
                 });
 
                 // Mount pending attributes and events in same block as element
-                if (stats.hasPartials || stats.hasDynamicAttributes() || stats.hasDynamicClass()) {
-                    this.mountPendingAttributes();
-                }
+                // if (stats.hasPartials || stats.hasDynamicAttributes() || stats.hasDynamicClass()) {
+                //     this.mountPendingAttributes();
+                // }
 
-                if (stats.hasPartials || stats.hasDynamicEvents()) {
-                    this.mountPendingEvents();
-                }
+                // if (stats.hasPartials || stats.hasDynamicEvents()) {
+                //     this.mountPendingEvents();
+                // }
             }
         } else {
             // Empty node means we’re in element defined in outer block
@@ -95,11 +100,7 @@ export default class ElementEntity extends Entity {
 
     /** Entity for receiving pending attributes */
     get pendingAttributes(): Entity {
-        if (!this.dynAttrs) {
-            this.mountPendingAttributes();
-        }
-
-        return this.dynAttrs;
+        return this.pendingCurAttributes;
     }
 
     /** Entity for receiving pending events */
@@ -234,6 +235,17 @@ export default class ElementEntity extends Entity {
         }
     }
 
+    mountAttributes() {
+        if (isElement(this.node)) {
+            const stats = attributeStats(this.node);
+            const pending = ownAttributes(this, stats, this.state);
+            if (pending) {
+                this.pendingCurAttributes = pending.cur;
+                this.pendingPrevAttributes = pending.prev;
+            }
+        }
+    }
+
     /**
      * Adds entity to mount, update and unmount component
      * Since component should be mounted and updated *after* it’s
@@ -264,39 +276,47 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeAttributes() {
-        if (this.hasPendingAttributes) {
+        if (this.pendingCurAttributes) {
             // There are pending dynamic attributes
             const { state } = this;
-            let noNS = this.stats.hasDynamicClass();
-            let withNS = false;
+            // let noNS = this.stats.hasDynamicClass();
+            // let withNS = false;
 
-            if (this.stats.hasPartials) {
-                noNS = withNS = true;
-            } else {
-                this.stats.attributeNames().forEach(attrName => {
-                    const m = attrName.match(/^([\w\-]+):/);
-                    if (m && m[1] !== 'xmlns') {
-                        withNS = true;
-                    } else {
-                        noNS = true;
-                    }
-                });
-            }
+            // if (this.stats.hasPartials) {
+            //     noNS = withNS = true;
+            // } else {
+            //     this.stats.attributeNames().forEach(attrName => {
+            //         const m = attrName.match(/^([\w\-]+):/);
+            //         if (m && m[1] !== 'xmlns') {
+            //             withNS = true;
+            //         } else {
+            //             noNS = true;
+            //         }
+            //     });
+            // }
 
-            // Check which types of attributes we have to finalize
+            // // Check which types of attributes we have to finalize
+            // const ent = state.entity({
+            //     shared: () => {
+            //         const output = sn();
+            //         if (noNS) {
+            //             output.add(state.runtime('finalizeAttributes', [this.getSymbol(), this.dynAttrs.getSymbol()]));
+            //         }
+
+            //         if (withNS) {
+            //             output.add(state.runtime('finalizeAttributesNS', [this.getSymbol(), this.dynAttrs.getSymbol()]));
+            //         }
+
+            //         return output.join(' | ');
+            //     }
+            // });
+
             const ent = state.entity({
-                shared: () => {
-                    const output = sn();
-                    if (noNS) {
-                        output.add(state.runtime('finalizeAttributes', [this.getSymbol(), this.dynAttrs.getSymbol()]));
-                    }
-
-                    if (withNS) {
-                        output.add(state.runtime('finalizeAttributesNS', [this.getSymbol(), this.dynAttrs.getSymbol()]));
-                    }
-
-                    return output.join(' | ');
-                }
+                shared: () => state.runtime('finalizeAttributes', [
+                    this.getSymbol(),
+                    this.pendingCurAttributes.getSymbol(),
+                    this.pendingPrevAttributes.getSymbol()
+                ])
             });
 
             this.add(state.markSlot(ent));
@@ -435,39 +455,6 @@ export default class ElementEntity extends Entity {
         }
 
         return null;
-    }
-
-    private mountPendingAttributes() {
-        const { state, stats } = this;
-
-        if (this.isComponent) {
-            this.dynAttrs = state.entity('_p', {
-                mount: () => state.runtime('propsSet', [this.getSymbol()]),
-            });
-
-            // In case if there are dynamic props, check if there are props that
-            // are fully conditional and reset them
-            const dynamicAttrs = stats.attributeNames().filter(attr => {
-                return attr === 'class'
-                    ? (stats.hasDynamicClass() || stats.hasConditionalClassNames())
-                    : stats.isConditionalAttribute(attr);
-            });
-
-            if (dynamicAttrs.length) {
-                this.dynAttrs.setUpdate(ent => {
-                    const props = sn();
-                    dynamicAttrs.forEach(attr => props.add([ent.getSymbol(), '.c', propGetter(attr), ' = ']));
-                    props.add('null');
-                    return props;
-                });
-            }
-        } else {
-            this.dynAttrs = this.state.entity('_a', {
-                mount: () => this.state.runtime('attributeSet', []),
-            });
-        }
-
-        this.add(this.dynAttrs);
     }
 
     private mountPendingEvents() {

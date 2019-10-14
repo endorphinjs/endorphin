@@ -1,0 +1,74 @@
+<template>
+    <div a={1} b={2 + 3} c={cond ? 2 : null}>
+        <e:for-each select={items}>
+            <e:attr c={@value == 1 ? 4 : null} d={@value == 2 : 'foo' : null} />
+        </e:for-each>
+    </div>
+</template>
+
+<script>
+//////////// Endorphin runtime
+function elem(name) {
+    return document.createElement('div');
+}
+
+function attr(el, name, value) {
+    el.setAttribute(name, value);
+}
+
+function attrExpr(elem, prevAttrs, name, value) {
+    if (prevAttrs[name] !== value) {
+        attr(elem, name, value);
+    }
+}
+
+function finalizePendingAttrs(el, next, prev) {
+    for (const p in next) {
+        if (next[p] !== prev[p]) {
+            attr(el, p, prev[p] = next[p]);
+        }
+    }
+}
+//////////// End Endorphin runtime
+
+function dynAttrs(div, prevAttrs, host) {
+    attrExpr(div, prevAttrs, 'b', 2 + 3);
+    // NB: `c` is a pending attribute
+    // attrExpr(div, prevAttrs, 'c', host.props.cond ? 2 : null);
+}
+
+function preparePending(pending, host, scope) {
+    pending.c = host.props.cond ? 2 : null;
+    pending.d = null;
+}
+
+function pendingAttrs(pending, host, scope) {
+    pending.c = scope.item == 1 ? 4 : null;
+    pending.d = scope.item == 2 ? 'foo' : null;
+}
+
+function template(host, scope) {
+    const div = elem('div');
+    host.appendChild(div);
+    const divAttrs = {};
+    const curPendingAttrs = {};
+    const prevPendingAttrs = {};
+    attr(div, 'a', 1);
+    dynAttrs(div, divAttrs, host);
+    preparePending(curPendingAttrs, host, scope);
+
+    host.props.items.forEach(item => {
+        pendingAttrs(curPendingAttrs, host, scope);
+    });
+    finalizePendingAttrs(div, curPendingAttrs, prevPendingAttrs);
+
+    return host => {
+        dynAttrs(div, divAttrs, host);
+        preparePending(curPendingAttrs, host, scope);
+        host.props.items.forEach(item => {
+            pendingAttrs(divPendingAttrs, host, scope);
+        });
+        finalizePendingAttrs(div, curPendingAttrs, prevPendingAttrs);
+    };
+}
+</script>

@@ -1,11 +1,11 @@
 import {
     ENDTemplate, ENDElement, ENDAttributeStatement, ENDAttribute, ENDDirective,
-    ENDAddClassStatement, Literal, Program, ENDIfStatement, ENDChooseStatement,
+    Literal, Program, ENDIfStatement, ENDChooseStatement,
     ENDForEachStatement, ENDInnerHTML, ENDVariableStatement, ENDPartial, ENDPartialStatement,
     ENDStatement, Identifier
 } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
-import { ChunkList, Chunk, AstVisitorMap, TemplateOutput, AstVisitorContinue } from '../types';
+import { Chunk, AstVisitorMap, TemplateOutput, AstVisitorContinue } from '../types';
 import generateExpression from '../expression';
 import Entity, { entity } from '../entities/Entity';
 import AttributeEntity, { compileAttributeValue } from '../entities/AttributeEntity';
@@ -16,14 +16,11 @@ import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
 import ElementEntity from '../entities/ElementEntity';
-import ClassEntity from '../entities/ClassEntity';
 import CompileState from '../lib/CompileState';
+import { pendingAttributes } from '../lib/attributes';
 import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
-import {
-    sn, qStr, isLiteral, toObjectLiteral, nameToJS,
-    propSetter, isExpression, isIdentifier, pendingAttributes, propGetter, pendingEvents, pendingAttributesCur
-} from '../lib/utils';
+import { qStr, isLiteral, toObjectLiteral, nameToJS, propSetter, isExpression } from '../lib/utils';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
@@ -96,9 +93,14 @@ export default {
     },
 
     ENDAttributeStatement(node: ENDAttributeStatement, state, next) {
-        return entity('block', state)
-            .setContent(node.attributes, next)
-            .setContent(node.directives, next);
+        const { receiver } = state;
+        if (receiver && receiver.pendingAttributes) {
+            if (receiver.isComponent) {
+                // TODO handle component
+            } else {
+                return pendingAttributes(node, receiver.pendingAttributes, state);
+            }
+        }
     },
 
     ENDAttribute(attr: ENDAttribute, state) {
@@ -110,27 +112,27 @@ export default {
             return new EventEntity(dir, state);
         }
 
-        if (dir.prefix === 'class') {
-            return new ClassEntity(dir, state);
-        }
+        // if (dir.prefix === 'class') {
+        //     return new ClassEntity(dir, state);
+        // }
 
         if (dir.prefix === 'partial' && state.receiver && state.receiver.isComponent) {
             // For components and partials (empty receiver), we should always
             // use pending attributes
-            return state.entity({
-                mount() {
-                    const value = compileAttributeValue(dir.value, state, 'component');
-                    return sn([pendingAttributesCur(state), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
-                        state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
-                }
-            });
+            // return state.entity({
+            //     mount() {
+            //         const value = compileAttributeValue(dir.value, state, 'component');
+            //         return sn([pendingAttributesCur(state), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
+            //             state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
+            //     }
+            // });
         }
     },
 
-    ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
-        return entity('block', state)
-            .setShared(() => mountAddClass(node, state));
-    },
+    // ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
+    //     return entity('block', state)
+    //         .setShared(() => mountAddClass(node, state));
+    // },
 
     Literal(node: Literal, state) {
         if (node.value != null) {
@@ -190,8 +192,8 @@ export default {
         return entity('partial', state, {
             mount: () => {
                 const params = attributeMap(node.params, state);
-                params.set('$$_attrs', pendingAttributes(state));
-                params.set('$$_events', pendingEvents(state));
+                // params.set('$$_attrs', pendingAttributes(state));
+                // params.set('$$_events', pendingEvents(state));
 
                 return state.runtime('mountPartial', [
                     state.host,
@@ -244,17 +246,17 @@ function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorCon
     });
 }
 
-function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceNode {
-    const chunks: ChunkList = node.tokens.map(token => {
-        return isLiteral(token)
-            ? qStr(token.value as string)
-            : generateExpression(token, state);
-    });
-    return state.runtime('addPendingClass', [
-        pendingAttributes(state),
-        sn(chunks).join(' + ')
-    ]);
-}
+// function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceNode {
+//     const chunks: ChunkList = node.tokens.map(token => {
+//         return isLiteral(token)
+//             ? qStr(token.value as string)
+//             : generateExpression(token, state);
+//     });
+//     return state.runtime('addPendingClass', [
+//         pendingAttributes(state),
+//         sn(chunks).join(' + ')
+//     ]);
+// }
 
 /**
  * Generates object literal from given attributes
@@ -275,19 +277,6 @@ function objectKey(node: Identifier | Program, state: CompileState) {
     return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
 }
 
-/**
- * Returns list of attributes to be added as a content of given element entity
- */
-function getContentAttributes(element: ElementEntity): ENDAttribute[] {
-    const node = element.node as ENDElement;
-    if (node.name.name === 'slot') {
-        // Do not return `name` attribute of slot: it will be added by runtime
-        return node.attributes.filter(attr => !isIdentifier(attr.name) || attr.name.name !== 'name');
-    }
-
-    return node.attributes;
-}
-
 function handleElement(element: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): ElementEntity {
     const node = element.node as ENDElement;
     const isSlot = node.name.name === 'slot';
@@ -304,8 +293,8 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
         element.setRef(node.ref);
     }
 
-    // XXX output attributes
-    element.setContent(getContentAttributes(element), next);
+    // element.setContent(getContentAttributes(element), next);
+    element.mountAttributes();
     element.setContent(node.directives, next);
 
     if (isSlot) {

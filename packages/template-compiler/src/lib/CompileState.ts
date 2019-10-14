@@ -261,7 +261,7 @@ export default class CompileState {
 
     /**
      * Creates new block with `name` and runs `fn` function in its context.
-     * Block context, accumulated during `fn` run, will be generates and JS code
+     * Block context, accumulated during `fn` run, will be generated as JS code
      * and added into final output
      */
     runBlock(name: string, fn: (block: BlockContext) => Entity | Entity[]): BlockContext {

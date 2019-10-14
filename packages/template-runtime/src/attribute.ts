@@ -37,6 +37,24 @@ export function setAttribute(elem: Element, name: string, value: any) {
 }
 
 /**
+ * Updates element’s `name` attribute value only if it differs from previous value,
+ * defined in `prev`
+ */
+export function updateAttribute(elem: Element, name: string, value: any, prev: {[name: string]: any}) {
+	if (value !== prev[name]) {
+		const primitive = representedValue(value);
+		if (primitive === null) {
+			elem.removeAttribute(name);
+		} else {
+			setAttribute(elem, name, primitive);
+		}
+		prev[name] = value;
+	}
+
+	return value;
+}
+
+/**
  * Alias for `elem.className`
  */
 export function setClass(elem: Element, value: any) {

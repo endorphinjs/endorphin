@@ -69,6 +69,6 @@ describe('Template compiler', () => {
     });
 
     it.only('debug', () => {
-        compare('props.html', { optimize: true }, true);
+        compare('templates/attribute1.html', { optimize: true }, true);
     });
 });
