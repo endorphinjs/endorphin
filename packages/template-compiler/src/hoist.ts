@@ -4,7 +4,7 @@ import {
     ENDChooseCase, ENDIfStatement, ENDProgramStatement, ENDAttributeValue,
     ENDAddClassStatement, ENDAttributeValueExpression, ENDBaseAttributeValue,
     Literal, ENDAttributeStatement, ENDChooseStatement, ENDForEachStatement,
-    ENDPartial, ENDPartialStatement, ENDInnerHTML, ENDTemplate, walk as walkExpr
+    ENDPartial, ENDPartialStatement, ENDInnerHTML, ENDTemplate, walk as walkExpr, ENDPlainStatement
 } from '@endorphinjs/template-parser';
 import { isElement, isLiteral, isIdentifier } from './lib/utils';
 import { identifier, literal, variable, program, conditionalExpr, binaryExpr, attributeExpression } from './lib/ast-constructor';
@@ -87,27 +87,7 @@ const visitors: WalkVisitorMap = {
         return node.directives.length ? node : null;
     },
     ENDAddClassStatement(node: ENDAddClassStatement, state) {
-        const { attrs } = state;
-        const condition = last(state.conditions);
-        const tokens = node.tokens.slice();
-
-        if (attrs.has('class')) {
-            const firstToken = tokens[0];
-
-            // Add space before new class name
-            if (isLiteral(firstToken)) {
-                tokens[0] = literal(' ' + firstToken.value);
-            } else {
-                tokens.unshift(literal(' '));
-            }
-        }
-
-        const value = concatToJS(tokens);
-        const expr = condition
-            ? conditionalExpr(condition, value, literal(''))
-            : value;
-
-        attrs.set('class', concatAttrValues(attrs.get('class')!, program(expr)));
+        addClass(node.tokens, last(state.conditions), state);
     },
     ENDIfStatement(node: ENDIfStatement, state, next) {
         // Handle <e:if>: if there are immediate attribute or variable statement
@@ -234,6 +214,11 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
 
         processAttributes(node.attributes, node.directives, state);
         node.body = transform(node.body, next);
+
+        // Move class names into "class" attribute
+        state.classNames.forEach((condition, name) => {
+            addClass([literal(name)], condition ? getExpression(condition) : null, state);
+        });
 
         node.attributes = finalizeAttributes(state.attrs);
         node.directives = finalizeDirectives(node.directives, state);
@@ -423,9 +408,9 @@ function finalizeAttributes(attrs: Map<string, ENDAttributeValue>): ENDAttribute
 }
 
 function finalizeDirectives(prev: ENDDirective[], state: HoistState): ENDDirective[] {
-    // Replace class name directives with new ones
-    return prev.filter(dir => !isClassName(dir))
-        .concat(createClassDirectives(state.classNames));
+    // Skip class directives: they should be moved into "class" attribute
+    return prev.filter(dir => !isClassName(dir));
+        // .concat(createClassDirectives(state.classNames));
 }
 
 function createClassDirectives(classNames: Map<string, Program>): ENDDirective[] {
@@ -501,6 +486,32 @@ function rewriteVarAccessors(expr: Program, state: HoistState) {
             }
         }
     });
+}
+
+/**
+ * Adds given class name (defined as a set of tokens) into `class` attribute
+ */
+function addClass(tokens: ENDPlainStatement[], condition: Expression | null, state: HoistState) {
+    const { attrs } = state;
+    tokens = tokens.slice();
+
+    if (attrs.has('class')) {
+        const firstToken = tokens[0];
+
+        // Add space before new class name
+        if (isLiteral(firstToken)) {
+            tokens[0] = literal(' ' + firstToken.value);
+        } else {
+            tokens.unshift(literal(' '));
+        }
+    }
+
+    const value = concatToJS(tokens);
+    const expr = condition
+        ? conditionalExpr(condition, value, literal(''))
+        : value;
+
+    attrs.set('class', concatAttrValues(attrs.get('class')!, isLiteral(expr) ? expr : program(expr)));
 }
 
 /**

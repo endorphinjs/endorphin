@@ -8,7 +8,7 @@
 </template>
 <template partial:content item=null active=false pos=0>
     <e:var a=2 __if0={@value.visible}/>
-    <section data-id={@value.id} class:selected={@value.id === #active} class:enabled={@__if0 && @value.enabled}>
+    <section data-id={@value.id} class="{@value.id === #active ? "selected" : ""}{@__if0 && @value.enabled ? " enabled" : ""}">
         <e:for-each select={@item.items}>
             <span>{@value}</span>
         </e:for-each>
