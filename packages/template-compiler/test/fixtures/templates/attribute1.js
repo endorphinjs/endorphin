@@ -1,8 +1,8 @@
 import { appendChild, elem, obj, setAttribute, updateAttribute } from "endorphin";
 
 function mainAttrs$0(elem, prev, host) {
-	updateAttribute(elem, "a1", (host.props.c3 ? "3" : host.props.id), prev);
-	updateAttribute(elem, "a2", (host.props.c3 ? 3 : (host.props.c2 ? 2 : (host.props.c1 ? "1" : "0"))), prev);
+	updateAttribute(elem, prev, "a1", (host.props.c3 ? "3" : host.props.id));
+	updateAttribute(elem, prev, "a2", (host.props.c3 ? 3 : (host.props.c2 ? 2 : (host.props.c1 ? "1" : "0"))));
 }
 
 export default function template$0(host, scope) {
@@ -14,12 +14,6 @@ export default function template$0(host, scope) {
 	return template$0Update;
 }
 
-template$0.dispose = template$0Unmount;
-
 function template$0Update(host, scope) {
 	mainAttrs$0(scope.main$0, scope.attrSet$0, host);
-}
-
-function template$0Unmount(scope) {
-	scope.attrSet$0 = scope.main$0 = null;
 }

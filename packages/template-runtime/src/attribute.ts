@@ -40,7 +40,7 @@ export function setAttribute(elem: Element, name: string, value: any) {
  * Updates element’s `name` attribute value only if it differs from previous value,
  * defined in `prev`
  */
-export function updateAttribute(elem: Element, name: string, value: any, prev: {[name: string]: any}) {
+export function updateAttribute(elem: Element, prev: { [name: string]: any }, name: string, value: any) {
 	if (value !== prev[name]) {
 		const primitive = representedValue(value);
 		if (primitive === null) {

@@ -1,4 +1,4 @@
-import { ENDAttribute, ENDAttributeName, ENDAttributeValue, Literal, Program } from '@endorphinjs/template-parser';
+import { ENDAttribute, ENDAttributeName, ENDAttributeValue } from '@endorphinjs/template-parser';
 import Entity from './Entity';
 import compileExpression from '../expression';
 import { Chunk, ChunkList, RenderChunk } from '../types';
@@ -122,39 +122,23 @@ export function compileAttributeValue(value: ENDAttributeValue, state: CompileSt
     }
 
     if (isInterpolatedLiteral(value)) {
-        // List of static and dynamic tokens, must be compiled to function
-        let fnName: string = state.getCache(value, 'attrValue');
-        if (!fnName) {
-            fnName = createConcatFunction('attrValue', state, value.elements);
-            state.putCache(value, 'attrValue', fnName);
-        }
-        return `${fnName}(${state.host}, ${state.scope})`;
-    }
-}
+        // List of static and dynamic tokens, create concatenated expression
+        const body = sn('');
+        value.elements.forEach((token, i) => {
+            if (i !== 0) {
+                body.add(' + ');
+            }
 
-export function createConcatFunction(prefix: string, state: CompileState, tokens: Array<string | Literal | Program>): string {
-    return state.runBlock(prefix, () => {
-        return state.entity({
-            mount() {
-                const body = sn('return ');
-                tokens.forEach((token, i) => {
-                    if (i !== 0) {
-                        body.add(' + ');
-                    }
-
-                    if (typeof token === 'string') {
-                        body.add(qStr(token));
-                    } else if (isLiteral(token)) {
-                        body.add(qStr(token.value as string));
-                    } else {
-                        body.add(['(', compileExpression(token, state), ')']);
-                    }
-                });
-                body.add(';');
-                return body;
+            if (typeof token === 'string') {
+                body.add(qStr(token));
+            } else if (isLiteral(token)) {
+                body.add(qStr(token.value as string));
+            } else {
+                body.add(['(', compileExpression(token, state), ')']);
             }
         });
-    }).mountSymbol;
+        return body;
+    }
 }
 
 /**

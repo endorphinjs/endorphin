@@ -139,7 +139,10 @@ export default class BlockContext {
         this.setRefs();
         entities.forEach(add);
 
-        if (toNull.length) {
+        // Edge case: do not null variables for main component template: since
+        // component will be destroyed, all scope contents will be automatically
+        // garbage collected
+        if (toNull.length && this.exports !== 'default') {
             scopeUsage.use('unmount');
             unmountChunks.push(toNull.map(entity => `${entity.scopeName} = `).join('') + 'null');
         }

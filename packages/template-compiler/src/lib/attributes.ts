@@ -103,7 +103,7 @@ function mountExpressionAttributes(elem: ElementEntity, attrs: ENDAttribute[], s
         return attrs.map(attr => {
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
-            return entity(state, state.runtime('updateAttribute', ['elem', qStr(name), value, 'prev']));
+            return entity(state, state.runtime('updateAttribute', ['elem', 'prev', qStr(name), value]));
         });
     });
 
