@@ -1,19 +1,14 @@
-import { appendChild, attributeSet, elemNS, finalizeAttributes, finalizeAttributesNS, setAttribute, setPendingAttributeNS } from "endorphin";
+import { appendChild, elemNS, obj, setAttribute, updateAttribute, updateAttributeNS } from "endorphin";
 const ns$0 = "http://www.w3.org/2000/svg";
 const ns$1 = "http://www.w3.org/1999/xlink";
 
-function ifAttr$0(host, scope) {
-	if (host.props.cond) {
-		setPendingAttributeNS(scope._a$0, ns$1, "href", host.state.url2);
-	}
+function imageAttrs$0(elem, prev, host) {
+	updateAttributeNS(elem, prev, ns$1, "href", (host.props.cond ? host.state.url2 : host.state.url));
 }
 
-function ifAttr$1(host, scope) {
-	const { _a$1 } = scope;
-	if (host.props.cond) {
-		setPendingAttributeNS(_a$1, ns$1, "href", host.state.url2);
-		_a$1.c.title = "foo";
-	}
+function image2Attrs$0(elem, prev, host) {
+	updateAttributeNS(elem, prev, ns$1, "href", (host.props.cond ? host.state.url2 : host.state.url));
+	updateAttribute(elem, prev, "title", (host.props.cond ? "foo" : null));
 }
 
 export default function template$0(host, scope) {
@@ -27,30 +22,15 @@ export default function template$0(host, scope) {
 	setAttribute(path$0, "class", "svg-fill");
 	setAttribute(path$0, "d", "M8 11.5c.83z");
 	const image$0 = scope.image$0 = appendChild(svg$0, elemNS("image", ns$0));
-	const _a$0 = scope._a$0 = attributeSet();
-	setPendingAttributeNS(_a$0, ns$1, "href", host.state.url);
-	ifAttr$0(host, scope);
-	finalizeAttributesNS(image$0, _a$0);
+	const attrSet$0 = scope.attrSet$0 = obj();
+	imageAttrs$0(image$0, attrSet$0, host);
 	const image2$0 = scope.image2$0 = appendChild(svg$0, elemNS("image2", ns$0));
-	const _a$1 = scope._a$1 = attributeSet();
-	setPendingAttributeNS(_a$1, ns$1, "href", host.state.url);
-	ifAttr$1(host, scope);
-	finalizeAttributes(image2$0, _a$1) | finalizeAttributesNS(image2$0, _a$1);
+	const attrSet$1 = scope.attrSet$1 = obj();
+	image2Attrs$0(image2$0, attrSet$1, host);
 	return template$0Update;
 }
 
-template$0.dispose = template$0Unmount;
-
 function template$0Update(host, scope) {
-	const { _a$0, _a$1, image2$0 } = scope;
-	setPendingAttributeNS(_a$0, ns$1, "href", host.state.url);
-	ifAttr$0(host, scope);
-	finalizeAttributesNS(scope.image$0, _a$0);
-	setPendingAttributeNS(_a$1, ns$1, "href", host.state.url);
-	ifAttr$1(host, scope);
-	finalizeAttributes(image2$0, _a$1) | finalizeAttributesNS(image2$0, _a$1);
-}
-
-function template$0Unmount(scope) {
-	scope._a$0 = scope.image$0 = scope._a$1 = scope.image2$0 = null;
+	imageAttrs$0(scope.image$0, scope.attrSet$0, host);
+	image2Attrs$0(scope.image2$0, scope.attrSet$1, host);
 }

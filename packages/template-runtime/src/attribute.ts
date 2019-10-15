@@ -10,6 +10,14 @@ export interface AttributeChangeSet extends ChangeSet {
 	n?: { [namespace: string]: ChangeSet };
 }
 
+interface ValueMap {
+	[name: string]: any;
+}
+
+interface ValueMapNS {
+	[ns: string]: ValueMap;
+}
+
 /**
  * Creates new attribute change set
  */
@@ -40,7 +48,7 @@ export function setAttribute(elem: Element, name: string, value: any) {
  * Updates element’s `name` attribute value only if it differs from previous value,
  * defined in `prev`
  */
-export function updateAttribute(elem: Element, prev: { [name: string]: any }, name: string, value: any) {
+export function updateAttribute(elem: Element, prev: ValueMap, name: string, value: any) {
 	if (value !== prev[name]) {
 		const primitive = representedValue(value);
 		if (primitive === null) {
@@ -90,6 +98,25 @@ export function updateAttributeExpression<T = any>(elem: Element, name: string, 
  */
 export function setAttributeNS(elem: Element, ns: string, name: string, value: any) {
 	elem.setAttributeNS(ns, name, value);
+	return value;
+}
+
+/**
+ * Updates element’s `name` attribute value only if it differs from previous value,
+ * defined in `prev`
+ */
+export function updateAttributeNS(elem: Element, prevNS: ValueMapNS, ns: string, name: string, value: any) {
+	const prev = ns in prevNS ? prevNS[ns] : (prevNS[ns] = obj());
+	if (value !== prev[name]) {
+		const primitive = representedValue(value);
+		if (primitive === null) {
+			elem.removeAttributeNS(ns, name);
+		} else {
+			setAttributeNS(elem, ns, name, primitive);
+		}
+		prev[name] = value;
+	}
+
 	return value;
 }
 
@@ -149,16 +176,12 @@ export function setPendingAttribute(data: AttributeChangeSet, name: string, valu
 /**
  * Sets pending namespaced attribute value which will be added to attribute later
  */
-export function setPendingAttributeNS(data: AttributeChangeSet, ns: string, name: string, value: any) {
-	if (!data.n) {
-		data.n = obj();
+export function setPendingAttributeNS(attrs: ValueMapNS, ns: string, name: string, value: any) {
+	if (!(ns in attrs)) {
+		attrs[ns] = obj();
 	}
 
-	if (!data.n[ns]) {
-		data.n[ns] = attributeSet();
-	}
-
-	data.n[ns].c[name] = value;
+	attrs[ns][name] = value;
 }
 
 /**

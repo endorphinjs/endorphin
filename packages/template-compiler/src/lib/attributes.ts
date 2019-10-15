@@ -12,6 +12,11 @@ interface AttributeLookup {
     [name: string]: ENDAttributeValue;
 }
 
+interface NSData {
+    name: string;
+    ns: string;
+}
+
 /**
  * Generates code for mounting own element’s attributes
  */
@@ -51,16 +56,22 @@ export function ownAttributes(elem: ElementEntity, stats: AttributeStats, state:
  * Mounts pending attributes from `<e:attr>` statement and returns entity for invoking it
  */
 export function pendingAttributes(node: ENDAttributeStatement, attrs: Entity, state: CompileState): Entity {
-    const blockName = nameToJS(`setPendingAttrs`);
+    const { receiver } = state;
+    const blockName = nameToJS(receiver ? `${receiver.rawName}PendingAttrs` : `setPendingAttrs`);
     const accum = 'pending';
     const b = state.runBlock(blockName, block => {
         block.mountArgs.push(accum);
         const entities: Entity[] = [];
 
         node.attributes.forEach(attr => {
-            const ident = `${accum}${propGetter((attr.name as Identifier).name)}`;
+            const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
-            entities.push(entity(state, sn([`${ident} = `, value])));
+            const ns = getAttributeNS(name, state);
+            const chunk: Chunk = ns
+                ? state.runtime('setPendingAttributeNS', [accum, ns.ns, qStr(ns.name), value])
+                : sn([`${accum + propGetter(name)} = `, value]);
+
+            entities.push(entity(state, chunk));
         });
 
         node.directives.forEach(dir => {
@@ -85,10 +96,24 @@ export function pendingAttributes(node: ENDAttributeStatement, attrs: Entity, st
  */
 function mountStaticAttributes(elem: ElementEntity, attrs: ENDAttribute[], state: CompileState) {
     state.mount(() => {
+        const { receiver } = state;
         attrs.forEach(attr => {
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
-            elem.add(entity(state, state.runtime('setAttribute', [elem.getSymbol(), qStr(name), value])));
+            const ns = getAttributeNS(name, state);
+            if (name === 'class' && !receiver.namespace()) {
+                elem.add(
+                    entity(state, state.runtime('setClass', [elem.getSymbol(), value]))
+                );
+            } else if (ns) {
+                elem.add(
+                    entity(state, state.runtime('setAttributeNS', [elem.getSymbol(), ns.ns, qStr(ns.name), value]))
+                );
+            } else {
+                elem.add(
+                    entity(state, state.runtime('setAttribute', [elem.getSymbol(), qStr(name), value]))
+                );
+            }
         });
     });
 }
@@ -103,7 +128,10 @@ function mountExpressionAttributes(elem: ElementEntity, attrs: ENDAttribute[], s
         return attrs.map(attr => {
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
-            return entity(state, state.runtime('updateAttribute', ['elem', 'prev', qStr(name), value]));
+            const ns = getAttributeNS(name, state);
+            return ns
+                ? entity(state, state.runtime('updateAttributeNS', ['elem', 'prev', ns.ns, qStr(ns.name), value]))
+                : entity(state, state.runtime('updateAttribute', ['elem', 'prev', qStr(name), value]));
         });
     });
 
@@ -123,8 +151,7 @@ function mountExpressionAttributes(elem: ElementEntity, attrs: ENDAttribute[], s
 /**
  * Generates code that prepares pending props
  */
-function preparePendingAttributes(elem: ElementEntity, stats: AttributeStats,
-                                  attributes: AttributeLookup, state: CompileState) {
+function preparePendingAttributes(elem: ElementEntity, stats: AttributeStats, attributes: AttributeLookup, state: CompileState) {
     const cur = createObj('curPending', state);
     const prev = createObj('prevPending', state);
     elem.add(cur);
@@ -132,17 +159,27 @@ function preparePendingAttributes(elem: ElementEntity, stats: AttributeStats,
 
     const blockName = nameToJS(`${elem.name}PreparePending`);
     const b = state.runBlock(blockName, block => {
-        block.mountArgs.push('pending');
+        const accum = 'pending';
+        block.mountArgs.push(accum);
         const toNull: string[] = [];
         const entities: Entity[] = [];
 
         stats.attributes.forEach(attrName => {
-            const ident = `pending${propGetter(attrName)}`;
-            if (attributes[attrName] == null) {
-                toNull.push(ident);
+            const ns = getAttributeNS(attrName, state);
+            if (ns) {
+                const value = attributes[attrName]
+                    ? compileAttributeValue(attributes[attrName], state)
+                    : 'null';
+                const code = state.runtime('setPendingAttributeNS', [accum, ns.ns, qStr(ns.name), value]);
+                entities.push(entity(state, code));
             } else {
-                const value = compileAttributeValue(attributes[attrName], state);
-                entities.push(entity(state, sn([`${ident} = `, value])));
+                const ident = accum + propGetter(attrName);
+                if (attributes[attrName] == null) {
+                    toNull.push(ident);
+                } else {
+                    const value = compileAttributeValue(attributes[attrName], state);
+                    entities.push(entity(state, sn([`${ident} = `, value])));
+                }
             }
         });
 
@@ -178,7 +215,6 @@ function entity(state: CompileState, name: Chunk, mount?: Chunk): Entity {
 
     const obj = state.entity(name as string | undefined);
     obj.setMount(() => mount);
-    // obj.code.mount = mount;
     return obj;
 }
 
@@ -195,4 +231,23 @@ function addHostScope(args: ChunkList, block: BlockContext, state: CompileState)
 
 function createFnCall(name: string, args: ChunkList) {
     return sn([`${name}(`, sn(args).join(', '), ')']);
+}
+
+/**
+ * Returns namespace URI for given attribute, if available
+ */
+function getAttributeNS(attr: ENDAttribute | string, state: CompileState): NSData | undefined {
+    const attrName = typeof attr === 'string'
+        ? attr
+        : (attr.name as Identifier).name;
+
+    const parts = attrName.split(':');
+    if (parts.length > 1 && parts[0] !== 'xmlns') {
+        // It’s a namespaced attribute, find it’s URI
+        const ns = state.namespace(parts.shift());
+
+        if (ns) {
+            return { ns, name: parts.join(':') };
+        }
+    }
 }
