@@ -197,7 +197,7 @@ export function toObjectLiteral(map: Map<Chunk, Chunk>, indent: string = '\t', l
             result.add(',');
         }
 
-        result.add(['\n', _innerIndent, key, ': ', value]);
+        result.add(['\n', _innerIndent, propSetter(key), ': ', value]);
     });
 
     if (map.size) {

@@ -187,6 +187,24 @@ export function setPendingAttributeNS(attrs: ValueMapNS, ns: string, name: strin
 }
 
 /**
+ * Updates pending `name` value only if given `value` is not null
+ */
+export function updatePendingAttribute(attrs: ValueMap, name: string, value: any) {
+	if (value != null) {
+		attrs[name] = value;
+	}
+}
+
+/**
+ * Updates pending namespaced `name` value only if given `value` is not null
+ */
+export function updatePendingAttributeNS(attrs: ValueMap, ns: string, name: string, value: any) {
+	if (value != null) {
+		pendingNS(attrs, ns)[name] = value;
+	}
+}
+
+/**
  * Adds given class name to pending attribute set
  */
 export function addPendingClass(data: ValueMap, className: string) {
@@ -222,15 +240,19 @@ export function finalizeAttributes(elem: Element, cur: ValueMap, prev: ValueMap)
 					setAttributeExpressionNS(elem, key, name, curNS);
 					prevNS[name] = curNS;
 				}
+				curValue[name] = null;
 			}
-		} else if (curValue !== prev[key]) {
-			updated = 1;
-			if (key === 'class') {
-				elem.className = classNames(curValue).join(' ');
-			} else {
-				setAttributeExpression(elem, key, curValue);
+		} else {
+			if (curValue !== prev[key]) {
+				updated = 1;
+				if (key === 'class') {
+					elem.className = classNames(curValue).join(' ');
+				} else {
+					setAttributeExpression(elem, key, curValue);
+				}
+				prev[key] = curValue;
 			}
-			prev[key] = curValue;
+			cur[key] = null;
 		}
 	}
 
@@ -239,6 +261,7 @@ export function finalizeAttributes(elem: Element, cur: ValueMap, prev: ValueMap)
 
 /**
  * Finalizes pending namespaced attributes
+ * TODO remove
  */
 export function finalizeAttributesNS(elem: Element, data: AttributeChangeSet): number {
 	// NB use it as a separate function to use explicitly inside generated content.

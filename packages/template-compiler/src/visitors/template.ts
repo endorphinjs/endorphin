@@ -19,7 +19,9 @@ import CompileState from '../lib/CompileState';
 import { compileAttributeValue, pendingAttributes, mountAddClass } from '../lib/attributes';
 import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
-import { qStr, isLiteral, toObjectLiteral, nameToJS, propSetter, isExpression } from '../lib/utils';
+import { qStr, isLiteral, toObjectLiteral, nameToJS, propSetter, isExpression, sn, propGetter } from '../lib/utils';
+
+const partialAttrsReceiver = ':a';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
@@ -93,14 +95,12 @@ export default {
 
     ENDAttributeStatement(node: ENDAttributeStatement, state, next) {
         const { receiver } = state;
-        if (receiver && receiver.pendingAttributes) {
-            return pendingAttributes(node, receiver.pendingAttributes, state);
-            // if (receiver.isComponent) {
-            //     // TODO handle component
-            // } else {
-            //     return pendingAttributes(node, receiver.pendingAttributes, state);
-            // }
-        }
+        // No receiver means we are running inside partial
+        const attrReceiver = receiver
+            ? receiver.pendingAttributes
+            : new PartialReceiver(partialAttrsReceiver, state);
+
+        return pendingAttributes(node, attrReceiver, state);
     },
 
     ENDDirective(dir: ENDDirective, state) {
@@ -127,7 +127,11 @@ export default {
 
     ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
         const { receiver }  = state;
-        return mountAddClass(node, receiver.pendingAttributes, state);
+        // No receiver means we are running inside partial
+        const attrReceiver = receiver
+            ? receiver.pendingAttributes
+            : new PartialReceiver(partialAttrsReceiver, state);
+        return mountAddClass(node, attrReceiver, state);
     },
 
     Literal(node: Literal, state) {
@@ -185,10 +189,14 @@ export default {
     ENDPartialStatement(node: ENDPartialStatement, state) {
         const getter = state.runtime('getPartial', [state.host, qStr(node.id), state.partials]);
 
-        return entity('partial', state, {
+        const attrReceiver = state.receiver
+            ? state.receiver.pendingAttributes
+            : new PartialReceiver(partialAttrsReceiver, state);
+
+        return state.entity('partial', {
             mount: () => {
                 const params = attributeMap(node.params, state);
-                // params.set('$$_attrs', pendingAttributes(state));
+                params.set(partialAttrsReceiver, attrReceiver.getSymbol());
                 // params.set('$$_events', pendingEvents(state));
 
                 return state.runtime('mountPartial', [
@@ -198,7 +206,11 @@ export default {
                     toObjectLiteral(params, state.indent, 1)
                 ]);
             },
-            update: ent => state.runtime('updatePartial', [ent.getSymbol(), getter, generateObject(node.params, state, 1)]),
+            update: ent => {
+                const params = attributeMap(node.params, state);
+                params.set(partialAttrsReceiver, attrReceiver.getSymbol());
+                return state.runtime('updatePartial', [ent.getSymbol(), getter, toObjectLiteral(params, state.indent, 1)]);
+            },
             unmount: ent => ent.unmount('unmountPartial')
         });
     }
@@ -298,4 +310,10 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
     }
 
     return element;
+}
+
+class PartialReceiver extends Entity {
+    getSymbol() {
+        return sn([this.state.scope, propGetter(this.rawName)]);
+    }
 }

@@ -58,25 +58,26 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
         hasPendingAttrs: stats.pendingAttributes.size > 0
     };
 
-    // Create object to accumulate actual attribute values
-    let attrSet: Entity | null = null;
-    if (result.hasExpressionAttrs || result.hasPendingAttrs || (elem.isComponent && result.hasStaticAttrs)) {
-        result.receiver = attrSet = createObj('attrSet', state);
-        elem.add(attrSet);
+    const useAttrReceiver = result.hasExpressionAttrs || result.hasPendingAttrs
+        || stats.partials || (elem.isComponent && result.hasStaticAttrs);
+
+    if (useAttrReceiver) {
+        // Create object to accumulate actual attribute values
+        elem.add(result.receiver = createObj('attrSet', state));
     }
 
     if (elem.isComponent) {
         // Mount attributes as props
         if (result.hasStaticAttrs) {
-            mountStaticProps(elem, attrSet, staticAttrs, state);
+            mountStaticProps(elem, result.receiver, staticAttrs, state);
         }
 
         if (result.hasExpressionAttrs) {
-            mountExpressionAttributes(elem, attrSet, expressionAttrs, state);
+            mountExpressionAttributes(elem, result.receiver, expressionAttrs, state);
         }
 
         if (result.hasPendingAttrs) {
-            preparePendingAttributes(elem, attrSet, stats, pendingAttrs, state);
+            preparePendingAttributes(elem, result.receiver, stats, pendingAttrs, state);
         }
     } else {
         // NB keep object init closer to `receiver` for better minification
@@ -90,11 +91,11 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
         }
 
         if (result.hasExpressionAttrs) {
-            mountExpressionAttributes(elem, attrSet, expressionAttrs, state);
+            mountExpressionAttributes(elem, result.receiver, expressionAttrs, state);
         }
 
         if (result.hasPendingAttrs) {
-            preparePendingAttributes(elem, attrSet, stats, pendingAttrs, state);
+            preparePendingAttributes(elem, result.receiver, stats, pendingAttrs, state);
         }
     }
 
@@ -117,9 +118,18 @@ export function pendingAttributes(node: ENDAttributeStatement, attrsReceiver: En
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
             const ns = !isComponent ? getAttributeNS(name, state) : null;
-            const chunk: Chunk = ns
-                ? state.runtime('setPendingAttributeNS', [accum, ns.ns, qStr(ns.name), value])
-                : sn([`${accum + propGetter(name)} = `, value]);
+            let chunk: Chunk;
+            if (!state.receiver) {
+                // We are inside partial, we should update pending attributes
+                // instead of overwriting
+                chunk = ns
+                    ? state.runtime('updatePendingAttributeNS', [accum, ns.ns, qStr(ns.name), value])
+                    : state.runtime('updatePendingAttribute', [accum, qStr(name), value]);
+            } else {
+                chunk = ns
+                    ? state.runtime('setPendingAttributeNS', [accum, ns.ns, qStr(ns.name), value])
+                    : sn([`${accum + propGetter(name)} = `, value]);
+            }
 
             entities.push(entity(state, chunk));
         });
