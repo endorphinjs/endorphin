@@ -1,18 +1,16 @@
-import { ENDElement, ENDTemplate, ENDAttribute, Literal, ENDAttributeValue, Identifier, Program } from '@endorphinjs/template-parser';
+import { ENDElement, ENDTemplate, Literal, ENDAttributeValue, Program } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import Entity from './Entity';
-import { compileAttributeValue } from './AttributeEntity';
 import ComponentMountEntity from './ComponentMountEntity';
 import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter } from '../lib/utils';
-import ElementStats from '../lib/ElementStats';
+import { isElement, sn, qStr, getControlName, getAttrValue } from '../lib/utils';
+import attributeStats, { ElementStats } from '../lib/attributeStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
-import attributeStats from '../lib/attributeStats';
 import { ownAttributes } from '../lib/attributes';
 
 export default class ElementEntity extends Entity {
@@ -35,9 +33,7 @@ export default class ElementEntity extends Entity {
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
         if (node) {
-            // XXX refactor stats: no need to collect attribute data due to hoisting
-            this.stats = new ElementStats(node);
-
+            this.stats = attributeStats(node);
             if (isElement(node)) {
                 this.isComponent = state.isComponent(node)
                     || getControlName(node.name.name) === 'self';
@@ -54,15 +50,6 @@ export default class ElementEntity extends Entity {
                         }
                     }
                 });
-
-                // Mount pending attributes and events in same block as element
-                // if (stats.hasPartials || stats.hasDynamicAttributes() || stats.hasDynamicClass()) {
-                //     this.mountPendingAttributes();
-                // }
-
-                // if (stats.hasPartials || stats.hasDynamicEvents()) {
-                //     this.mountPendingEvents();
-                // }
             }
         } else {
             // Empty node means we’re in element defined in outer block
@@ -112,17 +99,14 @@ export default class ElementEntity extends Entity {
         return this.dynEvents;
     }
 
+    // TODO remove
     get hasPendingAttributes(): boolean {
         return !!this.dynAttrs;
     }
 
+    // TODO remove
     get hasPendingEvents(): boolean {
         return !!this.dynEvents;
-    }
-
-    /** Whether element contains partials */
-    get hasPartials(): boolean {
-        return this.stats && this.stats.hasPartials;
     }
 
     /**
@@ -137,51 +121,18 @@ export default class ElementEntity extends Entity {
     }
 
     /**
-     * Check if given attribute name is dynamic, e.g. can be changed by nested
-     * statements
-     */
-    isDynamicAttribute(attr: ENDAttribute): boolean {
-        const { stats } = this;
-
-        if (stats.hasPartials) {
-            return true;
-        }
-
-        if (isIdentifier(attr.name)) {
-            const name = attr.name.name;
-            return name === 'class'
-                ? this.hasDynamicClass()
-                : stats.isDynamicAttribute(attr.name.name);
-        }
-
-        return false;
-    }
-
-    /**
      * Check if given directive is dynamic
      */
     isDynamicDirective(prefix: string, name: string): boolean {
-        return this.stats.isDynamicDirective(prefix, name);
-    }
-
-    /**
-     * Check if current element contains dynamic class names
-     */
-    hasDynamicClass(): boolean {
-        return this.stats.hasDynamicClass();
-    }
-
-    /**
-     * Check if current element contains conditional class names
-     */
-    hasConditionalClassNames(): boolean {
-        return this.stats.hasConditionalClassNames();
+        // TODO remove
+        return false;
+        // return this.stats.isDynamicDirective(prefix, name);
     }
 
     add(item: Entity) {
         if ((item instanceof ElementEntity || item instanceof TextEntity) && item.code.mount) {
             item.setMount(() =>
-                !this.isComponent && this.stats && this.stats.isStaticContent
+                !this.isComponent && this.stats && this.stats.staticContent
                     ? this.addDOM(item)
                     : this.addInjector(item));
         }
@@ -237,8 +188,7 @@ export default class ElementEntity extends Entity {
 
     mountAttributes() {
         if (isElement(this.node)) {
-            const stats = attributeStats(this.node);
-            const pending = ownAttributes(this, stats, this.state);
+            const pending = ownAttributes(this, this.stats, this.state);
             if (pending) {
                 this.pendingCurAttributes = pending.cur;
                 this.pendingPrevAttributes = pending.prev;
@@ -279,44 +229,15 @@ export default class ElementEntity extends Entity {
         if (this.pendingCurAttributes) {
             // There are pending dynamic attributes
             const { state } = this;
-            // let noNS = this.stats.hasDynamicClass();
-            // let withNS = false;
-
-            // if (this.stats.hasPartials) {
-            //     noNS = withNS = true;
-            // } else {
-            //     this.stats.attributeNames().forEach(attrName => {
-            //         const m = attrName.match(/^([\w\-]+):/);
-            //         if (m && m[1] !== 'xmlns') {
-            //             withNS = true;
-            //         } else {
-            //             noNS = true;
-            //         }
-            //     });
-            // }
-
-            // // Check which types of attributes we have to finalize
-            // const ent = state.entity({
-            //     shared: () => {
-            //         const output = sn();
-            //         if (noNS) {
-            //             output.add(state.runtime('finalizeAttributes', [this.getSymbol(), this.dynAttrs.getSymbol()]));
-            //         }
-
-            //         if (withNS) {
-            //             output.add(state.runtime('finalizeAttributesNS', [this.getSymbol(), this.dynAttrs.getSymbol()]));
-            //         }
-
-            //         return output.join(' | ');
-            //     }
-            // });
 
             const ent = state.entity({
-                shared: () => state.runtime('finalizeAttributes', [
-                    this.getSymbol(),
-                    this.pendingCurAttributes.getSymbol(),
-                    this.pendingPrevAttributes.getSymbol()
-                ])
+                shared: () => {
+                    return state.runtime('finalizeAttributes', [
+                        this.getSymbol(),
+                        this.pendingCurAttributes.getSymbol(),
+                        this.pendingPrevAttributes.getSymbol()
+                    ]);
+                }
             });
 
             this.add(state.markSlot(ent));
@@ -368,36 +289,6 @@ export default class ElementEntity extends Entity {
 
             this.add(ent);
         }
-    }
-
-    /**
-     * Returns map of static props of current element
-     */
-    getStaticProps(): Map<Chunk, Chunk> {
-        const props: Map<Chunk, Chunk> = new Map();
-
-        if (isElement(this.node)) {
-            const { attributes, directives } = this.node;
-            const { state } = this;
-
-            attributes.forEach(attr => {
-                if (!this.isDynamicAttribute(attr)) {
-                    props.set(objectKey(attr.name, this.state), compileAttributeValue(attr.value, state, 'component'));
-                }
-            });
-
-            directives.forEach(dir => {
-                if (dir.prefix === 'partial') {
-                    const value = compileAttributeValue(dir.value, state, 'component');
-                    props.set(
-                        propSetter(`${dir.prefix}:${dir.name}`),
-                        state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])
-                    );
-                }
-            });
-        }
-
-        return props;
     }
 
     /**
@@ -480,8 +371,4 @@ export function getNodeName(localName: string): { ns?: string, name: string } {
     }
 
     return { ns, name };
-}
-
-function objectKey(node: Identifier | Program, state: CompileState) {
-    return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
 }

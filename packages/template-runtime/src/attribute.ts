@@ -18,6 +18,9 @@ interface ValueMapNS {
 	[ns: string]: ValueMap;
 }
 
+/** Base object to create pending namespaced attribute set */
+const nsProto = obj();
+
 /**
  * Creates new attribute change set
  */
@@ -174,14 +177,11 @@ export function setPendingAttribute(data: AttributeChangeSet, name: string, valu
 }
 
 /**
- * Sets pending namespaced attribute value which will be added to attribute later
+ * Sets pending namespaced attribute value which will be added to element later
  */
 export function setPendingAttributeNS(attrs: ValueMapNS, ns: string, name: string, value: any) {
-	if (!(ns in attrs)) {
-		attrs[ns] = obj();
-	}
-
-	attrs[ns][name] = value;
+	const map = pendingNS(attrs, ns);
+	map[name] = value;
 }
 
 /**
@@ -204,23 +204,32 @@ export function addPendingClassIf(data: AttributeChangeSet, className: string, c
 /**
  * Finalizes pending attributes
  */
-export function finalizeAttributes(elem: Element, data: AttributeChangeSet): number {
+export function finalizeAttributes(elem: Element, cur: ValueMap, prev: ValueMap): number {
 	let updated = 0;
-	const { c, p } = data;
 
-	for (const name in c) {
-		const curValue = c[name];
+	for (const key in cur) {
+		const curValue = cur[key];
+		if (isPendingNS(curValue)) {
+			// It’s a pending attribute set
+			const prevNS = pendingNS(prev, key);
+			for (const name in curValue) {
+				const curNS = curValue[name];
 
-		if (curValue !== p[name]) {
+				if (curNS !== prevNS[name]) {
+					updated = 1;
+					setAttributeExpressionNS(elem, key, name, curNS);
+					prevNS[name] = curNS;
+				}
+			}
+		} else if (curValue !== prev[key]) {
 			updated = 1;
-			if (name === 'class') {
+			if (key === 'class') {
 				elem.className = classNames(curValue).join(' ');
 			} else {
-				setAttributeExpression(elem, name, curValue);
+				setAttributeExpression(elem, key, curValue);
 			}
-			p[name] = curValue;
+			prev[key] = curValue;
 		}
-		c[name] = null;
 	}
 
 	return updated;
@@ -300,4 +309,19 @@ function representedValue(value: any): string | number | null {
 	}
 
 	return value;
+}
+
+/**
+ * Check if given object is a pending namespaced attribute set
+ */
+function isPendingNS(data: any): data is ValueMap {
+	return data != null && typeof data === 'object' && Object.getPrototypeOf(data) === nsProto;
+}
+
+/**
+ * Ensures given attribute value map contains namespace map for given `ns` and
+ * returns it
+ */
+function pendingNS(attrs: ValueMap, ns: string): ValueMap {
+	return ns in attrs ? attrs[ns] : (attrs[ns] = Object.create(nsProto));
 }

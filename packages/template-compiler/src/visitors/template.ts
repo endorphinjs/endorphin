@@ -8,7 +8,6 @@ import { SourceNode } from 'source-map';
 import { Chunk, AstVisitorMap, TemplateOutput, AstVisitorContinue } from '../types';
 import generateExpression from '../expression';
 import Entity, { entity } from '../entities/Entity';
-import AttributeEntity, { compileAttributeValue } from '../entities/AttributeEntity';
 import TextEntity from '../entities/TextEntity';
 import ConditionEntity from '../entities/ConditionEntity';
 import IteratorEntity from '../entities/IteratorEntity';
@@ -17,7 +16,7 @@ import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
 import ElementEntity from '../entities/ElementEntity';
 import CompileState from '../lib/CompileState';
-import { pendingAttributes } from '../lib/attributes';
+import { pendingAttributes, compileAttributeValue } from '../lib/attributes';
 import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
 import { qStr, isLiteral, toObjectLiteral, nameToJS, propSetter, isExpression } from '../lib/utils';
@@ -101,10 +100,6 @@ export default {
                 return pendingAttributes(node, receiver.pendingAttributes, state);
             }
         }
-    },
-
-    ENDAttribute(attr: ENDAttribute, state) {
-        return new AttributeEntity(attr, state);
     },
 
     ENDDirective(dir: ENDDirective, state) {
@@ -287,13 +282,14 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
         : null;
 
     // Create element instance
+    // TODO refactor, no need to pass argument, should detect single text content
+    // right in `create()` method
     element.create(singleTextContent);
 
     if (node.ref) {
         element.setRef(node.ref);
     }
 
-    // element.setContent(getContentAttributes(element), next);
     element.mountAttributes();
     element.setContent(node.directives, next);
 

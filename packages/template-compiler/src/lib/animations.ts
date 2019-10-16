@@ -1,5 +1,5 @@
 import { Expression, MemberExpression, ArrowFunctionExpression, ENDAttributeValue, ObjectExpression, ENDElement } from '@endorphinjs/template-parser';
-import { compileAttributeValue } from '../entities/AttributeEntity';
+import { compileAttributeValue } from '../lib/attributes';
 import Entity from '../entities/Entity';
 import generateExpression from '../expression';
 import { Chunk } from '../types';

@@ -1,12 +1,12 @@
 import { ENDElement, Identifier, ENDAttribute, ENDAttributeValue, ENDAttributeStatement } from '@endorphinjs/template-parser';
 import CompileState from './CompileState';
-import { isLiteral, nameToJS, sn, qStr, propGetter } from './utils';
+import { isLiteral, nameToJS, sn, qStr, propGetter, isExpression, isInterpolatedLiteral } from './utils';
 import ElementEntity from '../entities/ElementEntity';
-import { compileAttributeValue } from '../entities/AttributeEntity';
 import { ChunkList, Chunk } from '../types';
-import { AttributeStats } from './attributeStats';
+import { ElementStats } from './attributeStats';
 import Entity from '../entities/Entity';
 import BlockContext from './BlockContext';
+import compileExpression from '../expression';
 
 interface AttributeLookup {
     [name: string]: ENDAttributeValue;
@@ -17,10 +17,12 @@ interface NSData {
     ns: string;
 }
 
+type AttributeType = 'component' | 'params' | void;
+
 /**
  * Generates code for mounting own element’s attributes
  */
-export function ownAttributes(elem: ElementEntity, stats: AttributeStats, state: CompileState) {
+export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: CompileState) {
     const node = elem.node as ENDElement;
     const staticAttrs: ENDAttribute[] = [];
     const expressionAttrs: ENDAttribute[] = [];
@@ -28,10 +30,10 @@ export function ownAttributes(elem: ElementEntity, stats: AttributeStats, state:
 
     node.attributes.forEach(attr => {
         const name = (attr.name as Identifier).name;
-        if (stats.attributes.has(name)) {
+        if (stats.pendingAttributes.has(name)) {
             pendingAttrs[name] = attr.value;
         } else {
-            if (isLiteral(attr.value)) {
+            if (!attr.value || isLiteral(attr.value)) {
                 staticAttrs.push(attr);
             } else {
                 expressionAttrs.push(attr);
@@ -47,7 +49,7 @@ export function ownAttributes(elem: ElementEntity, stats: AttributeStats, state:
         mountExpressionAttributes(elem, expressionAttrs, state);
     }
 
-    if (stats.attributes.size) {
+    if (stats.pendingAttributes.size) {
         return preparePendingAttributes(elem, stats, pendingAttrs, state);
     }
 }
@@ -89,6 +91,54 @@ export function pendingAttributes(node: ENDAttributeStatement, attrs: Entity, st
             return createFnCall(b.name, args);
         }
     });
+}
+
+export function compileAttributeValue(value: ENDAttributeValue, state: CompileState, context?: AttributeType): Chunk {
+    if (value === null) {
+        // Attribute without value, decide how to output
+        if (context === 'component') {
+            return 'true';
+        }
+
+        if (context === 'params') {
+            return 'null';
+        }
+
+        return qStr('');
+    }
+
+    if (isLiteral(value)) {
+        // Static string attribute
+        if (context && typeof value.value !== 'string') {
+            return String(value.value);
+        }
+
+        return qStr(String(value.value != null ? value.value : ''));
+    }
+
+    if (isExpression(value)) {
+        // Dynamic expression, must be compiled to function
+        return compileExpression(value, state);
+    }
+
+    if (isInterpolatedLiteral(value)) {
+        // List of static and dynamic tokens, create concatenated expression
+        const body = sn('');
+        value.elements.forEach((token, i) => {
+            if (i !== 0) {
+                body.add(' + ');
+            }
+
+            if (typeof token === 'string') {
+                body.add(qStr(token));
+            } else if (isLiteral(token)) {
+                body.add(qStr(token.value as string));
+            } else {
+                body.add(['(', compileExpression(token, state), ')']);
+            }
+        });
+        return body;
+    }
 }
 
 /**
@@ -151,7 +201,7 @@ function mountExpressionAttributes(elem: ElementEntity, attrs: ENDAttribute[], s
 /**
  * Generates code that prepares pending props
  */
-function preparePendingAttributes(elem: ElementEntity, stats: AttributeStats, attributes: AttributeLookup, state: CompileState) {
+function preparePendingAttributes(elem: ElementEntity, stats: ElementStats, attributes: AttributeLookup, state: CompileState) {
     const cur = createObj('curPending', state);
     const prev = createObj('prevPending', state);
     elem.add(cur);
@@ -164,7 +214,7 @@ function preparePendingAttributes(elem: ElementEntity, stats: AttributeStats, at
         const toNull: string[] = [];
         const entities: Entity[] = [];
 
-        stats.attributes.forEach(attrName => {
+        stats.pendingAttributes.forEach(attrName => {
             const ns = getAttributeNS(attrName, state);
             if (ns) {
                 const value = attributes[attrName]
