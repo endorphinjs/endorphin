@@ -2,7 +2,7 @@ import {
     ENDTemplate, ENDElement, ENDAttributeStatement, ENDAttribute, ENDDirective,
     Literal, Program, ENDIfStatement, ENDChooseStatement,
     ENDForEachStatement, ENDInnerHTML, ENDVariableStatement, ENDPartial, ENDPartialStatement,
-    ENDStatement, Identifier
+    ENDStatement, Identifier, ENDAddClassStatement
 } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import { Chunk, AstVisitorMap, TemplateOutput, AstVisitorContinue } from '../types';
@@ -16,7 +16,7 @@ import VariableEntity from '../entities/VariableEntity';
 import EventEntity from '../entities/EventEntity';
 import ElementEntity from '../entities/ElementEntity';
 import CompileState from '../lib/CompileState';
-import { pendingAttributes, compileAttributeValue } from '../lib/attributes';
+import { compileAttributeValue, pendingAttributes, mountAddClass } from '../lib/attributes';
 import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
 import { qStr, isLiteral, toObjectLiteral, nameToJS, propSetter, isExpression } from '../lib/utils';
@@ -94,11 +94,12 @@ export default {
     ENDAttributeStatement(node: ENDAttributeStatement, state, next) {
         const { receiver } = state;
         if (receiver && receiver.pendingAttributes) {
-            if (receiver.isComponent) {
-                // TODO handle component
-            } else {
-                return pendingAttributes(node, receiver.pendingAttributes, state);
-            }
+            return pendingAttributes(node, receiver.pendingAttributes, state);
+            // if (receiver.isComponent) {
+            //     // TODO handle component
+            // } else {
+            //     return pendingAttributes(node, receiver.pendingAttributes, state);
+            // }
         }
     },
 
@@ -124,10 +125,10 @@ export default {
         }
     },
 
-    // ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
-    //     return entity('block', state)
-    //         .setShared(() => mountAddClass(node, state));
-    // },
+    ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
+        const { receiver }  = state;
+        return mountAddClass(node, receiver.pendingAttributes, state);
+    },
 
     Literal(node: Literal, state) {
         if (node.value != null) {
@@ -240,18 +241,6 @@ function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorCon
         unmount: ent => ent.unmount('unmountSlot'),
     });
 }
-
-// function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceNode {
-//     const chunks: ChunkList = node.tokens.map(token => {
-//         return isLiteral(token)
-//             ? qStr(token.value as string)
-//             : generateExpression(token, state);
-//     });
-//     return state.runtime('addPendingClass', [
-//         pendingAttributes(state),
-//         sn(chunks).join(' + ')
-//     ]);
-// }
 
 /**
  * Generates object literal from given attributes

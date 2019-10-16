@@ -81,6 +81,8 @@ function collectStats(node: ENDElement | ENDAttributeStatement, stats: Attribute
     node.directives.forEach(dir => {
         if (dir.prefix === 'on') {
             stats.events.add(dir.name);
+        } else if (dir.prefix === 'class') {
+            stats.attributes.add('class');
         }
     });
 }

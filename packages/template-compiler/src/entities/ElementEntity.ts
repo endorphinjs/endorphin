@@ -83,9 +83,11 @@ export default class ElementEntity extends Entity {
         return this.injectorEntity != null;
     }
 
-    /** Entity for receiving pending attributes */
-    get pendingAttributes(): Entity {
-        return this.attrState && this.attrState.pendingCur;
+    /**
+     * Receiver for pending attributes, if available
+     */
+    get pendingAttributes(): Entity | null {
+        return this.attrState && this.attrState.receiver;
     }
 
     /** Entity for receiving pending events */
@@ -197,7 +199,7 @@ export default class ElementEntity extends Entity {
      * as a separate entity after element content
      */
     mountComponent() {
-        const props = this.attrState && this.attrState.expression;
+        const props = this.attrState && this.attrState.receiver;
         const { state } = this;
 
         if (props && (this.attrState.hasExpressionAttrs || this.attrState.hasPendingAttrs)) {
@@ -241,17 +243,17 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeAttributes() {
-        if (this.attrState && this.attrState.pendingCur) {
+        if (this.attrState && this.attrState.hasPendingAttrs) {
             // There are pending dynamic attributes
             const { state } = this;
-            const { pendingCur, pendingPrev } = this.attrState;
+            const { receiver, prevReceiver } = this.attrState;
 
             const ent = state.entity({
                 shared: () => {
                     return state.runtime('finalizeAttributes', [
                         this.getSymbol(),
-                        pendingCur.getSymbol(),
-                        pendingPrev.getSymbol()
+                        receiver.getSymbol(),
+                        prevReceiver.getSymbol()
                     ]);
                 }
             });

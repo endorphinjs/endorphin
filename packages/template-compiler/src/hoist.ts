@@ -37,6 +37,7 @@ interface HoistState {
     classNames: Map<string, Program>;
     conditions: Identifier[];
     getSymbol: SymbolGenerator;
+    pendingClass?: ENDAttributeValue;
 }
 
 const nullVal = literal(null);
@@ -87,7 +88,14 @@ const visitors: WalkVisitorMap = {
         return node.directives.length ? node : null;
     },
     ENDAddClassStatement(node: ENDAddClassStatement, state) {
-        addClass(node.tokens, last(state.conditions), state);
+        if (state.globalScope) {
+            const classVal = addClass(node.tokens, last(state.conditions), state.attrs.get('class'));
+            state.attrs.set('class', classVal);
+        } else {
+            // For block context, we should accumulate all class names as separate
+            // expression and it as single `<e:add-class>` statement
+            state.pendingClass = addClass(node.tokens, last(state.conditions), state.pendingClass);
+        }
     },
     ENDIfStatement(node: ENDIfStatement, state, next) {
         // Handle <e:if>: if there are immediate attribute or variable statement
@@ -184,11 +192,24 @@ function blockScopeStatement(node: ENDForEachStatement | ENDPartial, state: Hois
 
     node.body = transform(node.body, next);
 
-    if (state.attrs.size || state.classNames.size) {
+    if (state.classNames) {
+        state.classNames.forEach((condition, name) => {
+            state.pendingClass = addClass([literal(name)], condition ? getExpression(condition) : null, state.pendingClass);
+        });
+    }
+
+    if (state.pendingClass) {
+        node.body.unshift({
+            type: 'ENDAddClassStatement',
+            tokens: [state.pendingClass],
+        } as ENDAddClassStatement);
+    }
+
+    if (state.attrs.size) {
         node.body.unshift({
             type: 'ENDAttributeStatement',
             attributes: finalizeAttributes(state.attrs),
-            directives: createClassDirectives(state.classNames)
+            directives: [],
         } as ENDAttributeStatement);
     }
 
@@ -216,9 +237,13 @@ function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | voi
         node.body = transform(node.body, next);
 
         // Move class names into "class" attribute
-        state.classNames.forEach((condition, name) => {
-            addClass([literal(name)], condition ? getExpression(condition) : null, state);
-        });
+        if (state.classNames.size) {
+            let classVal = state.attrs.get('class');
+            state.classNames.forEach((condition, name) => {
+                classVal = addClass([literal(name)], condition ? getExpression(condition) : null, classVal);
+            });
+            state.attrs.set('class', classVal);
+        }
 
         node.attributes = finalizeAttributes(state.attrs);
         node.directives = finalizeDirectives(node.directives, state);
@@ -317,7 +342,7 @@ function hoistClassName(dir: ENDDirective, state: HoistState) {
         }
     }
 
-    state.classNames.set(dir.name, expr ? program(expr) : null);
+    state.classNames.set(name, expr ? program(expr) : null);
 }
 
 /**
@@ -410,17 +435,16 @@ function finalizeAttributes(attrs: Map<string, ENDAttributeValue>): ENDAttribute
 function finalizeDirectives(prev: ENDDirective[], state: HoistState): ENDDirective[] {
     // Skip class directives: they should be moved into "class" attribute
     return prev.filter(dir => !isClassName(dir));
-        // .concat(createClassDirectives(state.classNames));
 }
 
-function createClassDirectives(classNames: Map<string, Program>): ENDDirective[] {
-    const result: ENDDirective[] = [];
-    classNames.forEach((value, name) => {
-        result.push({ type: 'ENDDirective', prefix: 'class', name, value });
-    });
+// function createClassDirectives(classNames: Map<string, Program>): ENDDirective[] {
+//     const result: ENDDirective[] = [];
+//     classNames.forEach((value, name) => {
+//         result.push({ type: 'ENDDirective', prefix: 'class', name, value });
+//     });
 
-    return result;
-}
+//     return result;
+// }
 
 function processAttributes(attributes: ENDAttribute[], directives: ENDDirective[], state: HoistState) {
     attributes.forEach(attr => {
@@ -489,13 +513,12 @@ function rewriteVarAccessors(expr: Program, state: HoistState) {
 }
 
 /**
- * Adds given class name (defined as a set of tokens) into `class` attribute
+ * Adds given class name (defined as a set of tokens) to given `class` attribute value
  */
-function addClass(tokens: ENDPlainStatement[], condition: Expression | null, state: HoistState) {
-    const { attrs } = state;
+function addClass(tokens: ENDPlainStatement[], condition: Expression | null, prevValue?: ENDAttributeValue): ENDAttributeValue {
     tokens = tokens.slice();
 
-    if (attrs.has('class')) {
+    if (prevValue) {
         const firstToken = tokens[0];
 
         // Add space before new class name
@@ -511,7 +534,7 @@ function addClass(tokens: ENDPlainStatement[], condition: Expression | null, sta
         ? conditionalExpr(condition, value, literal(''))
         : value;
 
-    attrs.set('class', concatAttrValues(attrs.get('class')!, isLiteral(expr) ? expr : program(expr)));
+    return concatAttrValues(prevValue!, isLiteral(expr) ? expr : program(expr));
 }
 
 /**

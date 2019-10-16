@@ -3,7 +3,7 @@
     <div a={c1 ? 2 : 1}>
         <e:for-each select={items}>
             <e:var __if0={@value.enabled} v={@__if0 ? 2 : @v}/>
-            <e:attr class:enabled={@__if0}/>
+            <e:add-class>{@__if0 ? "enabled" : ""}</e:add-class>
             <section b={@__if0 ? 11 : 10}/>
         </e:for-each>
     </div>

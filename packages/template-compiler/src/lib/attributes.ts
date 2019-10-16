@@ -1,4 +1,4 @@
-import { ENDElement, Identifier, ENDAttribute, ENDAttributeValue, ENDAttributeStatement } from '@endorphinjs/template-parser';
+import { ENDElement, Identifier, ENDAttribute, ENDAttributeValue, ENDAttributeStatement, ENDAddClassStatement } from '@endorphinjs/template-parser';
 import CompileState from './CompileState';
 import { isLiteral, nameToJS, sn, qStr, propGetter, isExpression, isInterpolatedLiteral } from './utils';
 import ElementEntity from '../entities/ElementEntity';
@@ -19,11 +19,9 @@ interface NSData {
 
 export interface AttributesState {
     /** Entity that accumulates expression attributes or props */
-    expression?: Entity;
-    /** Entity that contains current pending attributes */
-    pendingCur?: Entity;
+    receiver?: Entity;
     /** Entity that contains previous pending attributes */
-    pendingPrev?: Entity;
+    prevReceiver?: Entity;
 
     hasStaticAttrs: boolean;
     hasExpressionAttrs: boolean;
@@ -55,34 +53,49 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
     });
 
     const result: AttributesState = {
-        hasExpressionAttrs: expressionAttrs.length > 0,
         hasStaticAttrs: staticAttrs.length > 0,
+        hasExpressionAttrs: expressionAttrs.length > 0,
         hasPendingAttrs: stats.pendingAttributes.size > 0
     };
 
     // Create object to accumulate actual attribute values
     let attrSet: Entity | null = null;
-    if (expressionAttrs.length || (elem.isComponent && staticAttrs.length)) {
-        result.expression = attrSet = createObj('attrSet', state);
+    if (result.hasExpressionAttrs || result.hasPendingAttrs || (elem.isComponent && result.hasStaticAttrs)) {
+        result.receiver = attrSet = createObj('attrSet', state);
         elem.add(attrSet);
     }
 
-    if (staticAttrs.length) {
-        if (elem.isComponent) {
+    if (elem.isComponent) {
+        // Mount attributes as props
+        if (result.hasStaticAttrs) {
             mountStaticProps(elem, attrSet, staticAttrs, state);
-        } else {
+        }
+
+        if (result.hasExpressionAttrs) {
+            mountExpressionAttributes(elem, attrSet, expressionAttrs, state);
+        }
+
+        if (result.hasPendingAttrs) {
+            preparePendingAttributes(elem, attrSet, stats, pendingAttrs, state);
+        }
+    } else {
+        // NB keep object init closer to `receiver` for better minification
+        if (result.hasPendingAttrs) {
+            result.prevReceiver = createObj('prevPending', state);
+            elem.add(result.prevReceiver);
+        }
+
+        if (result.hasStaticAttrs) {
             mountStaticAttributes(elem, staticAttrs, state);
         }
-    }
 
-    if (expressionAttrs.length) {
-        mountExpressionAttributes(elem, attrSet, expressionAttrs, state);
-    }
+        if (result.hasExpressionAttrs) {
+            mountExpressionAttributes(elem, attrSet, expressionAttrs, state);
+        }
 
-    if (stats.pendingAttributes.size) {
-        const { cur, prev } =  preparePendingAttributes(elem, stats, pendingAttrs, state);
-        result.pendingCur = cur;
-        result.pendingPrev = prev;
+        if (result.hasPendingAttrs) {
+            preparePendingAttributes(elem, attrSet, stats, pendingAttrs, state);
+        }
     }
 
     return result;
@@ -91,7 +104,7 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
 /**
  * Mounts pending attributes from `<e:attr>` statement and returns entity for invoking it
  */
-export function pendingAttributes(node: ENDAttributeStatement, attrs: Entity, state: CompileState): Entity {
+export function pendingAttributes(node: ENDAttributeStatement, attrsReceiver: Entity, state: CompileState): Entity {
     const { receiver } = state;
     const blockName = nameToJS(receiver ? `${receiver.rawName}PendingAttrs` : `setPendingAttrs`);
     const accum = 'pending';
@@ -113,8 +126,12 @@ export function pendingAttributes(node: ENDAttributeStatement, attrs: Entity, st
 
         node.directives.forEach(dir => {
             if (dir.prefix === 'class') {
-                const value = compileAttributeValue(dir.value, state, 'component');
-                entities.push(entity(state, state.runtime('addPendingClassIf', [accum, qStr(dir.name), value])));
+                if (dir.value != null) {
+                    const value = compileAttributeValue(dir.value, state, 'component');
+                    entities.push(entity(state, state.runtime('addPendingClassIf', [accum, qStr(dir.name), value])));
+                } else {
+                    entities.push(entity(state, state.runtime('addPendingClass', [accum, qStr(dir.name)])));
+                }
             }
         });
         return entities;
@@ -122,9 +139,29 @@ export function pendingAttributes(node: ENDAttributeStatement, attrs: Entity, st
 
     return state.entity({
         shared: () => {
-            const args = addHostScope([attrs.getSymbol()], b, state);
+            const args = addHostScope([attrsReceiver.getSymbol()], b, state);
             return createFnCall(b.name, args);
         }
+    });
+}
+
+export function mountAddClass(node: ENDAddClassStatement, receiver: Entity, state: CompileState): Entity {
+    const accum = 'pending';
+    const b = state.runBlock('addPendingClass', block => {
+        block.mountArgs.push(accum);
+        const chunks: ChunkList = node.tokens.map(token => {
+            return isLiteral(token)
+                ? qStr(token.value as string)
+                : compileAttributeValue(token, state);
+        });
+
+        return state.entity({
+            mount: () => state.runtime('addPendingClass', [accum, sn(chunks).join(' + ')])
+        });
+    });
+
+    return state.entity({
+        shared: () => createFnCall(b.name, addHostScope([receiver.getSymbol()], b, state))
     });
 }
 
@@ -206,13 +243,13 @@ function mountStaticAttributes(elem: ElementEntity, attrs: ENDAttribute[], state
 /**
  * Mounts given attributes as static props: their values are not changed in runtime
  */
-function mountStaticProps(elem: ElementEntity, attrSet: Entity, attrs: ENDAttribute[], state: CompileState) {
+function mountStaticProps(elem: ElementEntity, receiver: Entity, attrs: ENDAttribute[], state: CompileState) {
     state.mount(() => {
         attrs.forEach(attr => {
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
             elem.add(
-                entity(state, sn([attrSet.getSymbol(), propGetter(name), ' = ', value]))
+                entity(state, sn([receiver.getSymbol(), propGetter(name), ' = ', value]))
             );
         });
     });
@@ -221,7 +258,7 @@ function mountStaticProps(elem: ElementEntity, attrSet: Entity, attrs: ENDAttrib
 /**
  * Mount given attributes as expressions: their attributes may change in runtime
  */
-function mountExpressionAttributes(elem: ElementEntity, attrSet: Entity, attrs: ENDAttribute[], state: CompileState) {
+function mountExpressionAttributes(elem: ElementEntity, receiver: Entity, attrs: ENDAttribute[], state: CompileState) {
     const blockName = nameToJS(`${elem.rawName}Attrs`);
     const b = state.runBlock(blockName, block => {
         block.mountArgs.push('elem', 'prev');
@@ -238,7 +275,7 @@ function mountExpressionAttributes(elem: ElementEntity, attrSet: Entity, attrs: 
     // Create entity which will invoke generated block
     elem.add(state.entity({
         shared() {
-            const args = addHostScope([elem.getSymbol(), attrSet.getSymbol()], b, state);
+            const args = addHostScope([elem.getSymbol(), receiver.getSymbol()], b, state);
             return createFnCall(b.name, args);
         }
     }));
@@ -247,13 +284,8 @@ function mountExpressionAttributes(elem: ElementEntity, attrSet: Entity, attrs: 
 /**
  * Generates code that prepares pending props
  */
-function preparePendingAttributes(elem: ElementEntity, stats: ElementStats, attributes: AttributeLookup, state: CompileState) {
-    const cur = createObj('curPending', state);
-    const prev = createObj('prevPending', state);
-    elem.add(cur);
-    elem.add(prev);
-
-    const blockName = nameToJS(`${elem.name}PreparePending`);
+function preparePendingAttributes(elem: ElementEntity, receiver: Entity, stats: ElementStats, attributes: AttributeLookup, state: CompileState) {
+    const blockName = nameToJS(`${elem.rawName}PreparePending`);
     const b = state.runBlock(blockName, block => {
         const accum = 'pending';
         block.mountArgs.push(accum);
@@ -288,13 +320,11 @@ function preparePendingAttributes(elem: ElementEntity, stats: ElementStats, attr
 
     const ent = state.entity({
         shared: () => {
-            const args = addHostScope([cur.getSymbol()], b, state);
-            return createFnCall(blockName, args);
+            const args = addHostScope([receiver.getSymbol()], b, state);
+            return createFnCall(b.name, args);
         }
     });
     elem.add(ent);
-
-    return { cur, prev };
 }
 
 function createObj(name: string, state: CompileState) {

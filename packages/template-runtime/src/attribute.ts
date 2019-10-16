@@ -189,17 +189,17 @@ export function setPendingAttributeNS(attrs: ValueMapNS, ns: string, name: strin
 /**
  * Adds given class name to pending attribute set
  */
-export function addPendingClass(data: AttributeChangeSet, className: string) {
+export function addPendingClass(data: ValueMap, className: string) {
 	if (className != null) {
-		const prev = data.c.class;
-		data.c.class = prev ? prev + ' ' + className : String(className);
+		const prev = data.class;
+		data.class = prev ? prev + ' ' + className : String(className);
 	}
 }
 
 /**
  * Adds given class name to pending attribute set if condition is truthy
  */
-export function addPendingClassIf(data: AttributeChangeSet, className: string, condition: any) {
+export function addPendingClassIf(data: ValueMap, className: string, condition: any) {
 	condition && addPendingClass(data, className);
 }
 
