@@ -1,7 +1,6 @@
 import { ENDElement, ENDTemplate, Literal, ENDAttributeValue, Program } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import Entity from './Entity';
-import ComponentMountEntity from './ComponentMountEntity';
 import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
@@ -11,7 +10,7 @@ import attributeStats, { ElementStats } from '../lib/attributeStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
-import { ownAttributes } from '../lib/attributes';
+import { ownAttributes, AttributesState } from '../lib/attributes';
 
 export default class ElementEntity extends Entity {
     injectorEntity: InjectorEntity;
@@ -25,10 +24,9 @@ export default class ElementEntity extends Entity {
     animateOut?: ENDAttributeValue;
 
     private slotMarks: { [slotName: string]: string } = {};
+    private attrState: AttributesState;
     private dynAttrs?: Entity;
     private dynEvents?: Entity;
-    private pendingCurAttributes?: Entity;
-    private pendingPrevAttributes?: Entity;
 
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
@@ -87,7 +85,7 @@ export default class ElementEntity extends Entity {
 
     /** Entity for receiving pending attributes */
     get pendingAttributes(): Entity {
-        return this.pendingCurAttributes;
+        return this.attrState && this.attrState.pendingCur;
     }
 
     /** Entity for receiving pending events */
@@ -188,11 +186,7 @@ export default class ElementEntity extends Entity {
 
     mountAttributes() {
         if (isElement(this.node)) {
-            const pending = ownAttributes(this, this.stats, this.state);
-            if (pending) {
-                this.pendingCurAttributes = pending.cur;
-                this.pendingPrevAttributes = pending.prev;
-            }
+            this.attrState = ownAttributes(this, this.stats, this.state);
         }
     }
 
@@ -203,7 +197,28 @@ export default class ElementEntity extends Entity {
      * as a separate entity after element content
      */
     mountComponent() {
-        this.add(new ComponentMountEntity(this, this.state));
+        const props = this.attrState && this.attrState.expression;
+        const { state } = this;
+
+        if (props && (this.attrState.hasExpressionAttrs || this.attrState.hasPendingAttrs)) {
+            // There are pending props for current component
+            this.add(state.entity({
+                mount: () => state.runtime('mountComponent', [this.getSymbol(), props.getSymbol()]),
+                update: () => state.runtime('updateComponent', [this.getSymbol(), props.getSymbol()]),
+                unmount: () => this.unmount('unmountComponent')
+            }));
+        } else {
+            this.add(state.entity({
+                mount: () => {
+                    const args = [this.getSymbol()];
+                    if (props) {
+                        args.push(props.getSymbol());
+                    }
+                    return state.runtime('mountComponent', args);
+                },
+                unmount: () => this.unmount('unmountComponent')
+            }));
+        }
 
         // Add empty source node to skip automatic symbol nulling
         // in unmount function
@@ -226,16 +241,17 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeAttributes() {
-        if (this.pendingCurAttributes) {
+        if (this.attrState && this.attrState.pendingCur) {
             // There are pending dynamic attributes
             const { state } = this;
+            const { pendingCur, pendingPrev } = this.attrState;
 
             const ent = state.entity({
                 shared: () => {
                     return state.runtime('finalizeAttributes', [
                         this.getSymbol(),
-                        this.pendingCurAttributes.getSymbol(),
-                        this.pendingPrevAttributes.getSymbol()
+                        pendingCur.getSymbol(),
+                        pendingPrev.getSymbol()
                     ]);
                 }
             });

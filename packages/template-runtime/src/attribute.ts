@@ -51,7 +51,7 @@ export function setAttribute(elem: Element, name: string, value: any) {
  * Updates element’s `name` attribute value only if it differs from previous value,
  * defined in `prev`
  */
-export function updateAttribute(elem: Element, prev: ValueMap, name: string, value: any) {
+export function updateAttribute(elem: Element, prev: ValueMap, name: string, value: any): number {
 	if (value !== prev[name]) {
 		const primitive = representedValue(value);
 		if (primitive === null) {
@@ -60,9 +60,10 @@ export function updateAttribute(elem: Element, prev: ValueMap, name: string, val
 			setAttribute(elem, name, primitive);
 		}
 		prev[name] = value;
+		return 1;
 	}
 
-	return value;
+	return 0;
 }
 
 /**
@@ -108,7 +109,7 @@ export function setAttributeNS(elem: Element, ns: string, name: string, value: a
  * Updates element’s `name` attribute value only if it differs from previous value,
  * defined in `prev`
  */
-export function updateAttributeNS(elem: Element, prevNS: ValueMapNS, ns: string, name: string, value: any) {
+export function updateAttributeNS(elem: Element, prevNS: ValueMapNS, ns: string, name: string, value: any): number {
 	const prev = ns in prevNS ? prevNS[ns] : (prevNS[ns] = obj());
 	if (value !== prev[name]) {
 		const primitive = representedValue(value);
@@ -118,9 +119,10 @@ export function updateAttributeNS(elem: Element, prevNS: ValueMapNS, ns: string,
 			setAttributeNS(elem, ns, name, primitive);
 		}
 		prev[name] = value;
+		return 1;
 	}
 
-	return value;
+	return 0;
 }
 
 /**

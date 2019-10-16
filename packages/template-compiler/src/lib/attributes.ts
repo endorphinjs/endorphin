@@ -17,12 +17,25 @@ interface NSData {
     ns: string;
 }
 
+export interface AttributesState {
+    /** Entity that accumulates expression attributes or props */
+    expression?: Entity;
+    /** Entity that contains current pending attributes */
+    pendingCur?: Entity;
+    /** Entity that contains previous pending attributes */
+    pendingPrev?: Entity;
+
+    hasStaticAttrs: boolean;
+    hasExpressionAttrs: boolean;
+    hasPendingAttrs: boolean;
+}
+
 type AttributeType = 'component' | 'params' | void;
 
 /**
  * Generates code for mounting own element’s attributes
  */
-export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: CompileState) {
+export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: CompileState): AttributesState {
     const node = elem.node as ENDElement;
     const staticAttrs: ENDAttribute[] = [];
     const expressionAttrs: ENDAttribute[] = [];
@@ -41,17 +54,38 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
         }
     });
 
+    const result: AttributesState = {
+        hasExpressionAttrs: expressionAttrs.length > 0,
+        hasStaticAttrs: staticAttrs.length > 0,
+        hasPendingAttrs: stats.pendingAttributes.size > 0
+    };
+
+    // Create object to accumulate actual attribute values
+    let attrSet: Entity | null = null;
+    if (expressionAttrs.length || (elem.isComponent && staticAttrs.length)) {
+        result.expression = attrSet = createObj('attrSet', state);
+        elem.add(attrSet);
+    }
+
     if (staticAttrs.length) {
-        mountStaticAttributes(elem, staticAttrs, state);
+        if (elem.isComponent) {
+            mountStaticProps(elem, attrSet, staticAttrs, state);
+        } else {
+            mountStaticAttributes(elem, staticAttrs, state);
+        }
     }
 
     if (expressionAttrs.length) {
-        mountExpressionAttributes(elem, expressionAttrs, state);
+        mountExpressionAttributes(elem, attrSet, expressionAttrs, state);
     }
 
     if (stats.pendingAttributes.size) {
-        return preparePendingAttributes(elem, stats, pendingAttrs, state);
+        const { cur, prev } =  preparePendingAttributes(elem, stats, pendingAttrs, state);
+        result.pendingCur = cur;
+        result.pendingPrev = prev;
     }
+
+    return result;
 }
 
 /**
@@ -61,6 +95,7 @@ export function pendingAttributes(node: ENDAttributeStatement, attrs: Entity, st
     const { receiver } = state;
     const blockName = nameToJS(receiver ? `${receiver.rawName}PendingAttrs` : `setPendingAttrs`);
     const accum = 'pending';
+    const isComponent = receiver && receiver.isComponent;
     const b = state.runBlock(blockName, block => {
         block.mountArgs.push(accum);
         const entities: Entity[] = [];
@@ -68,7 +103,7 @@ export function pendingAttributes(node: ENDAttributeStatement, attrs: Entity, st
         node.attributes.forEach(attr => {
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
-            const ns = getAttributeNS(name, state);
+            const ns = !isComponent ? getAttributeNS(name, state) : null;
             const chunk: Chunk = ns
                 ? state.runtime('setPendingAttributeNS', [accum, ns.ns, qStr(ns.name), value])
                 : sn([`${accum + propGetter(name)} = `, value]);
@@ -169,25 +204,36 @@ function mountStaticAttributes(elem: ElementEntity, attrs: ENDAttribute[], state
 }
 
 /**
+ * Mounts given attributes as static props: their values are not changed in runtime
+ */
+function mountStaticProps(elem: ElementEntity, attrSet: Entity, attrs: ENDAttribute[], state: CompileState) {
+    state.mount(() => {
+        attrs.forEach(attr => {
+            const name = (attr.name as Identifier).name;
+            const value = compileAttributeValue(attr.value, state);
+            elem.add(
+                entity(state, sn([attrSet.getSymbol(), propGetter(name), ' = ', value]))
+            );
+        });
+    });
+}
+
+/**
  * Mount given attributes as expressions: their attributes may change in runtime
  */
-function mountExpressionAttributes(elem: ElementEntity, attrs: ENDAttribute[], state: CompileState) {
+function mountExpressionAttributes(elem: ElementEntity, attrSet: Entity, attrs: ENDAttribute[], state: CompileState) {
     const blockName = nameToJS(`${elem.rawName}Attrs`);
     const b = state.runBlock(blockName, block => {
         block.mountArgs.push('elem', 'prev');
         return attrs.map(attr => {
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
-            const ns = getAttributeNS(name, state);
+            const ns = !elem.isComponent ? getAttributeNS(name, state) : null;
             return ns
                 ? entity(state, state.runtime('updateAttributeNS', ['elem', 'prev', ns.ns, qStr(ns.name), value]))
                 : entity(state, state.runtime('updateAttribute', ['elem', 'prev', qStr(name), value]));
         });
     });
-
-    // Create object to accumulate actual attribute values
-    const attrSet = createObj('attrSet', state);
-    elem.add(attrSet);
 
     // Create entity which will invoke generated block
     elem.add(state.entity({

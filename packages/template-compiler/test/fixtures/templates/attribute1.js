@@ -8,8 +8,8 @@ function mainAttrs$0(elem, prev, host) {
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const main$0 = scope.main$0 = appendChild(target$0, elem("main"));
-	setAttribute(main$0, "a3", "4");
 	const attrSet$0 = scope.attrSet$0 = obj();
+	setAttribute(main$0, "a3", "4");
 	mainAttrs$0(main$0, attrSet$0, host);
 	return template$0Update;
 }
