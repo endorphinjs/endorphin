@@ -81,7 +81,7 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
         }
     } else {
         // NB keep object init closer to `receiver` for better minification
-        if (result.hasPendingAttrs) {
+        if (result.hasPendingAttrs || stats.partials) {
             result.prevReceiver = createObj('prevPending', state);
             elem.add(result.prevReceiver);
         }

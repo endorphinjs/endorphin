@@ -243,7 +243,7 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeAttributes() {
-        if (this.attrState && this.attrState.hasPendingAttrs) {
+        if (this.stats.partials || this.attrState.hasPendingAttrs) {
             // There are pending dynamic attributes
             const { state } = this;
             const { receiver, prevReceiver } = this.attrState;

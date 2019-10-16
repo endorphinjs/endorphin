@@ -19,7 +19,7 @@ import CompileState from '../lib/CompileState';
 import { compileAttributeValue, pendingAttributes, mountAddClass } from '../lib/attributes';
 import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
-import { qStr, isLiteral, toObjectLiteral, nameToJS, propSetter, isExpression, sn, propGetter } from '../lib/utils';
+import { qStr, isLiteral, toObjectLiteral, nameToJS, isExpression, sn, propGetter } from '../lib/utils';
 
 const partialAttrsReceiver = ':a';
 
@@ -108,20 +108,19 @@ export default {
             return new EventEntity(dir, state);
         }
 
-        // if (dir.prefix === 'class') {
-        //     return new ClassEntity(dir, state);
-        // }
-
-        if (dir.prefix === 'partial' && state.receiver && state.receiver.isComponent) {
+        if (dir.prefix === 'partial') {
             // For components and partials (empty receiver), we should always
             // use pending attributes
-            // return state.entity({
-            //     mount() {
-            //         const value = compileAttributeValue(dir.value, state, 'component');
-            //         return sn([pendingAttributesCur(state), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
-            //             state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
-            //     }
-            // });
+            const { receiver } = state;
+            if (receiver && receiver.pendingAttributes) {
+                return state.entity({
+                    mount() {
+                        const value = compileAttributeValue(dir.value, state, 'component');
+                        return sn([receiver.pendingAttributes.getSymbol(), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
+                            state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
+                    }
+                });
+            }
         }
     },
 
@@ -270,7 +269,7 @@ function attributeMap(params: ENDAttribute[], state: CompileState): Map<Chunk, C
 }
 
 function objectKey(node: Identifier | Program, state: CompileState) {
-    return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
+    return isExpression(node) ? generateExpression(node, state) : node.name;
 }
 
 function handleElement(element: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): ElementEntity {
