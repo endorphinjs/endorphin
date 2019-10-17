@@ -1,5 +1,5 @@
 import {
-    ENDTemplate, ENDElement, ENDAttributeStatement, ENDAttribute, ENDDirective,
+    ENDTemplate, ENDElement, ENDAttributeStatement, ENDAttribute,
     Literal, Program, ENDIfStatement, ENDChooseStatement,
     ENDForEachStatement, ENDInnerHTML, ENDVariableStatement, ENDPartial, ENDPartialStatement,
     ENDStatement, Identifier, ENDAddClassStatement
@@ -13,15 +13,16 @@ import ConditionEntity from '../entities/ConditionEntity';
 import IteratorEntity from '../entities/IteratorEntity';
 import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
-import EventEntity from '../entities/EventEntity';
 import ElementEntity from '../entities/ElementEntity';
 import CompileState from '../lib/CompileState';
-import { compileAttributeValue, pendingAttributes, mountAddClass } from '../lib/attributes';
+import { compileAttributeValue, pendingAttributes, mountAddClass, mountPartialOverride } from '../lib/attributes';
+import mountEvent from '../lib/events';
 import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
-import { qStr, isLiteral, toObjectLiteral, nameToJS, isExpression, sn, propGetter } from '../lib/utils';
+import { qStr, isLiteral, toObjectLiteral, nameToJS, isExpression, sn, propGetter, isEvent } from '../lib/utils';
 
 const partialAttrsReceiver = ':a';
+const partialEventReceiver = ':e';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
@@ -93,35 +94,47 @@ export default {
         });
     },
 
-    ENDAttributeStatement(node: ENDAttributeStatement, state, next) {
-        const { receiver } = state;
+    ENDAttributeStatement(node: ENDAttributeStatement, state) {
         // No receiver means we are running inside partial
-        const attrReceiver = receiver
-            ? receiver.pendingAttributes
-            : new PartialReceiver(partialAttrsReceiver, state);
+        const { receiver } = state;
+        const result = state.entity();
 
-        return pendingAttributes(node, attrReceiver, state);
-    },
+        let _attrReceiver: Entity | null = null;
+        let _eventReceiver: Entity | null = null;
 
-    ENDDirective(dir: ENDDirective, state) {
-        if (dir.prefix === 'on') {
-            return new EventEntity(dir, state);
-        }
-
-        if (dir.prefix === 'partial') {
-            // For components and partials (empty receiver), we should always
-            // use pending attributes
-            const { receiver } = state;
-            if (receiver && receiver.pendingAttributes) {
-                return state.entity({
-                    mount() {
-                        const value = compileAttributeValue(dir.value, state, 'component');
-                        return sn([receiver.pendingAttributes.getSymbol(), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
-                            state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
-                    }
-                });
+        const attributeReceiver = () => {
+            if (!_attrReceiver) {
+                _attrReceiver = receiver
+                    ? receiver.pendingAttributes
+                    : new PartialReceiver(partialAttrsReceiver, state);
             }
+
+            return _attrReceiver;
+        };
+
+        const eventReceiver = () => {
+            if (!_eventReceiver) {
+                _eventReceiver = receiver
+                    ? receiver.pendingEvents
+                    : new PartialReceiver(partialEventReceiver, state);
+            }
+
+            return _eventReceiver;
+        };
+
+        if (node.attributes.length) {
+            result.add(pendingAttributes(node, attributeReceiver(), state));
         }
+
+        node.directives.forEach(dir => {
+            if (isEvent(dir)) {
+                result.add(mountEvent(dir, eventReceiver(), state));
+            } else if (dir.prefix === 'partial' && receiver && receiver.isComponent) {
+                result.add(mountPartialOverride(dir, attributeReceiver(), state));
+            }
+        });
+
+        return result;
     },
 
     ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
@@ -187,16 +200,21 @@ export default {
 
     ENDPartialStatement(node: ENDPartialStatement, state) {
         const getter = state.runtime('getPartial', [state.host, qStr(node.id), state.partials]);
+        const { receiver } = state;
 
-        const attrReceiver = state.receiver
-            ? state.receiver.pendingAttributes
+        const attrReceiver = receiver
+            ? receiver.pendingAttributes
             : new PartialReceiver(partialAttrsReceiver, state);
+
+        const eventReceiver = receiver
+            ? receiver.pendingEvents
+            : new PartialReceiver(partialEventReceiver, state);
 
         return state.entity('partial', {
             mount: () => {
                 const params = attributeMap(node.params, state);
-                params.set(partialAttrsReceiver, attrReceiver.getSymbol());
-                // params.set('$$_events', pendingEvents(state));
+                params.set(attrReceiver.rawName, attrReceiver.getSymbol());
+                params.set(eventReceiver.rawName, eventReceiver.getSymbol());
 
                 return state.runtime('mountPartial', [
                     state.host,
@@ -291,7 +309,7 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
     }
 
     element.mountAttributes();
-    element.setContent(node.directives, next);
+    element.mountDirectives();
 
     if (isSlot) {
         element.add(mountSlot(element, state, next));

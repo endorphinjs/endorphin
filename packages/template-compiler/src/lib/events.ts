@@ -3,17 +3,17 @@ import {
     ENDCaller, ENDAttributeValue, CallExpression, IdentifierContext, ThisExpression,
     ENDGetter, MemberExpression, JSNode
 } from '@endorphinjs/template-parser';
-import Entity from './Entity';
 import CompileState from '../lib/CompileState';
 import generateExpression from '../expression';
 import baseVisitors from '../visitors/expression';
 import {
     sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction,
-    isCallExpression, isPrefix, pendingEvents, isPropKey
+    isCallExpression, isPrefix, isPropKey
 } from '../lib/utils';
 import { ENDCompileError } from '../lib/error';
 import { ExpressionVisitorMap } from '../types';
 import { thisExpr, identifier, callExpr } from '../lib/ast-constructor';
+import Entity from '../entities/Entity';
 
 const enum UsedArgs {
     Host = 1 << 0,
@@ -35,23 +35,21 @@ const argNames: { [type in UsedArgs]: string } = {
     [UsedArgs.Scope]: 'scope',
 };
 
-export default class EventEntity extends Entity {
-    constructor(readonly node: ENDDirective, readonly state: CompileState) {
-        super(node.name.split(':')[0], state);
-
-        const eventType = this.rawName;
-        const { element, receiver } = state;
-        const handler = createEventHandler(node, state);
-
-        if (!receiver || receiver.isPendingEvent(node.name)) {
-            // Event is dynamic, e.g. can be changed with condition
-            this.setShared(() =>
-                state.runtime('setPendingEvent', [pendingEvents(state), qStr(eventType), handler, state.scope]));
-        } else {
-            this.setMount(() => state.runtime('addEvent', [element.getSymbol(), qStr(eventType), handler, state.host, state.scope]));
-            this.setUnmount(() => sn([this.scopeName, ' = ', this.state.runtime('removeEvent', [qStr(eventType), this.getSymbol()])]));
-        }
+export default function mountEvent(node: ENDDirective, eventReceiver: Entity, state: CompileState) {
+    const eventType = node.name.split(':')[0];
+    const handler = createEventHandler(node, state);
+    const { receiver } = state;
+    if (!receiver || receiver.isPendingEvent(eventType)) {
+        // Mount as pending event
+        return state.entity(eventType, {
+            shared: () => state.runtime('setPendingEvent', [eventReceiver.getSymbol(), qStr(eventType), handler, state.scope])
+        });
     }
+
+    return state.entity(eventType, {
+        mount: () => state.runtime('addEvent', [receiver.getSymbol(), qStr(eventType), handler, state.host, state.scope]),
+        unmount: (ent: Entity) => sn([ent.scopeName, ' = ', state.runtime('removeEvent', [qStr(eventType), ent.getSymbol()])])
+    });
 }
 
 function createEventHandler(node: ENDDirective, state: CompileState): string {
@@ -199,8 +197,8 @@ function createVisitors(eventArg: string, argsState: UsedArgsState): ExpressionV
             if (node.path.length === 2) {
                 // For simple cases like accessing properties of event handler,
                 // use object notation instead of getter
-                const [ object ] = node.path;
-                let [ , property ] = node.path;
+                const [object] = node.path;
+                let [, property] = node.path;
                 if (isEventArgument(object, eventArg) && (isIdentifier(property) || isLiteral(property))) {
                     if (isLiteral(property) && typeof property.value === 'string' && isPropKey(property.value)) {
                         property = {

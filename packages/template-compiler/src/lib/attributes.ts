@@ -1,4 +1,7 @@
-import { ENDElement, Identifier, ENDAttribute, ENDAttributeValue, ENDAttributeStatement, ENDAddClassStatement } from '@endorphinjs/template-parser';
+import {
+    ENDElement, Identifier, ENDAttribute, ENDAttributeValue, ENDAttributeStatement,
+    ENDAddClassStatement, ENDDirective
+} from '@endorphinjs/template-parser';
 import CompileState from './CompileState';
 import { isLiteral, nameToJS, sn, qStr, propGetter, isExpression, isInterpolatedLiteral } from './utils';
 import ElementEntity from '../entities/ElementEntity';
@@ -20,6 +23,10 @@ interface NSData {
 export interface AttributesState {
     /** Entity that accumulates expression attributes or props */
     receiver?: Entity;
+
+    /** Entity that accumulates pending events */
+    eventsReceiver?: Entity;
+
     /** Entity that contains previous pending attributes */
     prevReceiver?: Entity;
 
@@ -64,6 +71,14 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
     if (useAttrReceiver) {
         // Create object to accumulate actual attribute values
         elem.add(result.receiver = createObj('attrSet', state));
+    }
+
+    if (stats.partials || stats.pendingEvents.size) {
+        result.eventsReceiver = state.entity('eventSet', {
+            mount: () => state.runtime('pendingEvents', [state.host, elem.getSymbol()]),
+            unmount: (ent: Entity) => ent.unmount('detachPendingEvents')
+        });
+        elem.add(result.eventsReceiver);
     }
 
     if (elem.isComponent) {
@@ -172,6 +187,23 @@ export function mountAddClass(node: ENDAddClassStatement, receiver: Entity, stat
 
     return state.entity({
         shared: () => createFnCall(b.name, addHostScope([receiver.getSymbol()], b, state))
+    });
+}
+
+/**
+ * Mounts prop for overriding component partial
+ */
+export function mountPartialOverride(node: ENDDirective, receiver: Entity, state: CompileState): Entity {
+    return state.entity({
+        mount: () => {
+            const value = compileAttributeValue(node.value, state, 'component');
+            return sn([
+                receiver.getSymbol(),
+                propGetter(`${node.prefix}:${node.name}`),
+                ' = ',
+                state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])
+            ]);
+        }
     });
 }
 

@@ -1,5 +1,4 @@
 <template>
-    <e:var a=1/>
     <main>
         <e:for-each select={list}>
             <partial:content item={@value} active={@value.id === #active} pos={@index}/>
@@ -10,7 +9,7 @@
     <e:var a=2 __if0={@value.visible}/>
     <section data-id={@value.id} class="{@value.id === #active ? "selected" : ""}{@__if0 && @value.enabled ? " enabled" : ""}">
         <e:for-each select={@item.items}>
-            <span>{@value}</span>
+            <span>{@value} {@a}</span>
         </e:for-each>
     </section>
 </template>

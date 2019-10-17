@@ -4,6 +4,7 @@
         <e:for-each select={items}>
             <e:var __if0={@value.enabled} v={@__if0 ? 2 : @v}/>
             <e:add-class>{@__if0 ? "enabled" : ""}</e:add-class>
+            <e:if test={@__if0}>{@v}</e:if>
             <section b={@__if0 ? 11 : 10}/>
         </e:for-each>
     </div>

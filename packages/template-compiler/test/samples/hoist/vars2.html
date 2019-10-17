@@ -1,0 +1,10 @@
+<template>
+    <ul>
+        <e:var foo=1 />
+        <e:for-each select={items}>
+            <e:variable bar={@foo} />
+            <li on:click={handleClick(@index, @foo, @bar)}>item</li>
+        </e:for-each>
+        <e:variable foo=2 />
+    </ul>
+</template>

@@ -12,7 +12,7 @@
         <e:var a=2/>
         <e:attr class:enabled={@value.enabled} e:if={@value.visible}/>
         <e:for-each select={@item.items}>
-            <span>{@value}</span>
+            <span>{@value} {@a}</span>
         </e:for-each>
     </section>
 </template>

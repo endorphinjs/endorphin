@@ -5,12 +5,13 @@ import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, sn, qStr, getControlName, getAttrValue } from '../lib/utils';
+import { isElement, sn, qStr, getControlName, getAttrValue, isEvent } from '../lib/utils';
 import attributeStats, { ElementStats } from '../lib/attributeStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
-import { ownAttributes, AttributesState } from '../lib/attributes';
+import { ownAttributes, AttributesState, mountPartialOverride } from '../lib/attributes';
+import mountEvent from '../lib/events';
 
 export default class ElementEntity extends Entity {
     injectorEntity: InjectorEntity;
@@ -91,12 +92,8 @@ export default class ElementEntity extends Entity {
     }
 
     /** Entity for receiving pending events */
-    get pendingEvents(): Entity {
-        if (!this.dynEvents) {
-            this.mountPendingEvents();
-        }
-
-        return this.dynEvents;
+    get pendingEvents(): Entity | null {
+        return this.attrState && this.attrState.eventsReceiver;
     }
 
     // TODO remove
@@ -118,6 +115,13 @@ export default class ElementEntity extends Entity {
         }
 
         return `${this.state.scope}.${this.slotMarks[slot]}`;
+    }
+
+    /**
+     * Check if given event is pending, e.g. will be changed in runtime
+     */
+    isPendingEvent(name: string) {
+        return this.stats && this.stats.pendingEvents.has(name);
     }
 
     /**
@@ -189,6 +193,21 @@ export default class ElementEntity extends Entity {
     mountAttributes() {
         if (isElement(this.node)) {
             this.attrState = ownAttributes(this, this.stats, this.state);
+        }
+    }
+
+    mountDirectives() {
+        if (isElement(this.node)) {
+            const { state } = this;
+            this.node.directives.forEach(dir => {
+                if (isEvent(dir)) {
+                    this.add(mountEvent(dir, this.pendingEvents, this.state));
+                } else if (dir.prefix === 'partial' && this.isComponent) {
+                    // For components and partials (empty receiver), we should always
+                    // use pending attributes
+                    this.add(mountPartialOverride(dir, this.pendingAttributes, state));
+                }
+            });
         }
     }
 
@@ -266,10 +285,10 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeEvents() {
-        if (this.hasPendingEvents) {
+        if (this.pendingEvents) {
             const { state } = this;
             this.add(state.entity({
-                shared: () => state.runtime('finalizePendingEvents', [this.dynEvents.getSymbol()]),
+                shared: () => state.runtime('finalizePendingEvents', [this.pendingEvents.getSymbol()]),
             }));
         }
     }
@@ -364,16 +383,6 @@ export default class ElementEntity extends Entity {
         }
 
         return null;
-    }
-
-    private mountPendingEvents() {
-        const { state } = this;
-        this.dynEvents = state.entity('_e', {
-            mount: () => state.runtime('pendingEvents', [this.state.host, this.getSymbol()]),
-            unmount: ent => ent.unmount('detachPendingEvents')
-        });
-
-        this.add(this.dynEvents);
     }
 }
 

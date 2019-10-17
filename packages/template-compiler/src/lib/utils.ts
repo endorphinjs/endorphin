@@ -1,7 +1,7 @@
 import { SourceNode } from 'source-map';
 import {
     Node, Identifier, Program, ENDElement, ENDAttributeStatement, LiteralValue,
-    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix, ENDAttributeValueExpression
+    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix, ENDAttributeValueExpression, ENDDirective
 } from '@endorphinjs/template-parser';
 import * as entities from 'entities';
 import { Chunk, ChunkList, HelpersMap, PlainObject } from '../types';
@@ -301,4 +301,8 @@ export function isValidChunk(chunk: Chunk | null): boolean {
     return chunk instanceof SourceNode
         ? chunk.children.length !== 0
         : chunk && chunk.length !== 0;
+}
+
+export function isEvent(dir: ENDDirective): boolean {
+    return dir.prefix === 'on';
 }
