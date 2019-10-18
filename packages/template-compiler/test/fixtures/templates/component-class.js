@@ -1,4 +1,4 @@
-import { createComponent, createInjector, get, insert, mountComponent, mountIterator, obj, unmountComponent, unmountIterator, updateClass, updateComponent, updateIterator } from "endorphin";
+import { createComponent, createInjector, get, insert, mountComponent, mountIterator, unmountComponent, unmountIterator, updateClass, updateComponent, updateIterator } from "endorphin";
 import * as MyComponent from "./my-component.html";
 
 function forSelect$0(host) {
@@ -16,24 +16,24 @@ function myComponentAttrs$0(elem, prev, host, scope) {
 function forContent$0(host, injector, scope) {
 	setVars$0(host, scope);
 	const myComponent$0 = scope.myComponent$0 = insert(injector, createComponent("my-component", MyComponent, host));
-	const attrSet$0 = scope.attrSet$0 = obj();
-	myComponentAttrs$0(myComponent$0, attrSet$0, host, scope);
-	mountComponent(myComponent$0, attrSet$0);
+	const propSet$0 = scope.propSet$0 = {}
+	myComponentAttrs$0(myComponent$0, propSet$0, host, scope);
+	mountComponent(myComponent$0, propSet$0);
 	return forContent$0Update;
 }
 
 forContent$0.dispose = forContent$0Unmount;
 
 function forContent$0Update(host, scope) {
-	const { myComponent$0, attrSet$0 } = scope;
+	const { myComponent$0, propSet$0 } = scope;
 	setVars$0(host, scope);
-	myComponentAttrs$0(myComponent$0, attrSet$0, host, scope);
-	updateComponent(myComponent$0, attrSet$0);
+	myComponentAttrs$0(myComponent$0, propSet$0, host, scope);
+	updateComponent(myComponent$0, propSet$0);
 }
 
 function forContent$0Unmount(scope) {
 	scope.myComponent$0 = unmountComponent(scope.myComponent$0);
-	scope.attrSet$0 = null;
+	scope.propSet$0 = null;
 }
 
 export default function template$0(host, scope) {

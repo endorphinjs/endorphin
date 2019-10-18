@@ -1,17 +1,13 @@
-import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, obj, setAttribute, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot } from "endorphin";
+import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, setAttribute, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
 function ifBody$0(host, injector, scope) {
 	const slotInner$1 = scope.slotInner$1 = insert(injector, createComponent("slot-inner", SlotInner, host), "");
-	const attrSet$0 = obj();
-	attrSet$0.a = 1;
-	mountComponent(slotInner$1, attrSet$0);
+	mountComponent(slotInner$1, {a: 1});
 	const div$0 = insert(injector, elem("div"), "inner");
 	setAttribute(div$0, "slot", "inner");
 	const slotInner$2 = scope.slotInner$2 = appendChild(div$0, createComponent("slot-inner", SlotInner, host));
-	const attrSet$1 = obj();
-	attrSet$1.a = 2;
-	mountComponent(slotInner$2, attrSet$1);
+	mountComponent(slotInner$2, {a: 2});
 	scope.su$0 = scope.su$1 = 1;
 }
 

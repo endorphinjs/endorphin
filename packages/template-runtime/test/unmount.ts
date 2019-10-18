@@ -22,7 +22,7 @@ describe('Unmount', () => {
 		for (const p in vars) {
 			// XXX allow attribute sets in outer scope, we expect they will be
 			// garbage collected by VM
-			if (/\$\w+$/.test(p) && !p.startsWith('attrSet')  && vars[p] != null && typeof vars[p] === 'object') {
+			if (/\$\w+$/.test(p) && !/^(attrSet|propSet)/.test(p) && vars[p] != null && typeof vars[p] === 'object') {
 				refs++;
 			}
 		}

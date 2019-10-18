@@ -1,4 +1,4 @@
-import { appendChild, createComponent, createInjector, elem, elemWithText, get, insert, mountBlock, mountComponent, obj, unmountBlock, unmountComponent, updateAttribute, updateBlock, updateComponent } from "endorphin";
+import { appendChild, createComponent, createInjector, elem, elemWithText, get, insert, mountBlock, mountComponent, unmountBlock, unmountComponent, updateAttribute, updateBlock, updateComponent } from "endorphin";
 
 function e_selfAttrs$0(elem, prev, host) {
 	updateAttribute(elem, prev, "item", host.props.link);
@@ -6,23 +6,23 @@ function e_selfAttrs$0(elem, prev, host) {
 
 function chooseBody$0(host, injector, scope) {
 	const e_self$0 = scope.e_self$0 = insert(injector, createComponent(host.nodeName, host.componentModel.definition, host));
-	const attrSet$0 = scope.attrSet$0 = obj();
-	e_selfAttrs$0(e_self$0, attrSet$0, host);
-	mountComponent(e_self$0, attrSet$0);
+	const propSet$0 = scope.propSet$0 = {}
+	e_selfAttrs$0(e_self$0, propSet$0, host);
+	mountComponent(e_self$0, propSet$0);
 	return chooseBody$0Update;
 }
 
 chooseBody$0.dispose = chooseBody$0Unmount;
 
 function chooseBody$0Update(host, scope) {
-	const { e_self$0, attrSet$0 } = scope;
-	e_selfAttrs$0(e_self$0, attrSet$0, host);
-	updateComponent(e_self$0, attrSet$0);
+	const { e_self$0, propSet$0 } = scope;
+	e_selfAttrs$0(e_self$0, propSet$0, host);
+	updateComponent(e_self$0, propSet$0);
 }
 
 function chooseBody$0Unmount(scope) {
 	scope.e_self$0 = unmountComponent(scope.e_self$0);
-	scope.attrSet$0 = null;
+	scope.propSet$0 = null;
 }
 
 function chooseBody$1(host, injector) {

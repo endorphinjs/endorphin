@@ -89,8 +89,8 @@ export default function template$0(host, scope) {
 	const refs$0 = scope.refs$0 = obj();
 	const main$0 = scope.main$0 = insert(inj$1, elem("main"));
 	const inj$0 = createInjector(main$0);
-	const attrSet$0 = scope.attrSet$0 = obj();
 	const eventSet$0 = scope.eventSet$0 = pendingEvents(host, main$0);
+	const attrSet$0 = scope.attrSet$0 = obj();
 	const prevPending$0 = scope.prevPending$0 = obj();
 	mainPreparePending$0(attrSet$0, host, scope);
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);

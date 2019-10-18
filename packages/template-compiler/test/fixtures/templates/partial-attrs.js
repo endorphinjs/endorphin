@@ -19,8 +19,8 @@ export default function template$0(host, scope) {
 	const refs$0 = scope.refs$0 = obj();
 	const div$0 = scope.div$0 = appendChild(target$0, elem("div"));
 	const inj$0 = createInjector(div$0);
-	const attrSet$0 = scope.attrSet$0 = obj();
 	const eventSet$0 = scope.eventSet$0 = pendingEvents(host, div$0);
+	const attrSet$0 = scope.attrSet$0 = obj();
 	const prevPending$0 = scope.prevPending$0 = obj();
 	divPreparePending$0(attrSet$0, host);
 	scope.partial$0 = mountPartial(host, inj$0, getPartial(host, "button", partials), {
@@ -37,7 +37,7 @@ export default function template$0(host, scope) {
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { attrSet$0, eventSet$0 } = scope;
+	const { eventSet$0, attrSet$0 } = scope;
 	divPreparePending$0(attrSet$0, host);
 	updatePartial(scope.partial$0, getPartial(host, "button", partials), {
 		enabled: true,

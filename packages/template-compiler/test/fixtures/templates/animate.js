@@ -56,8 +56,8 @@ function forContent$0Unmount(scope) {
 function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
 	const inj$1 = createInjector(div$0);
-	const attrSet$0 = scope.attrSet$0 = obj();
 	const eventSet$0 = scope.eventSet$0 = pendingEvents(host, div$0);
+	const attrSet$0 = scope.attrSet$0 = obj();
 	const prevPending$0 = scope.prevPending$0 = obj();
 	divPreparePending$0(attrSet$0, host);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);

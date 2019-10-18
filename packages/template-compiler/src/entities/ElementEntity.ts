@@ -26,8 +26,6 @@ export default class ElementEntity extends Entity {
 
     private slotMarks: { [slotName: string]: string } = {};
     private attrState: AttributesState;
-    private dynAttrs?: Entity;
-    private dynEvents?: Entity;
 
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
@@ -96,16 +94,6 @@ export default class ElementEntity extends Entity {
         return this.attrState && this.attrState.eventsReceiver;
     }
 
-    // TODO remove
-    get hasPendingAttributes(): boolean {
-        return !!this.dynAttrs;
-    }
-
-    // TODO remove
-    get hasPendingEvents(): boolean {
-        return !!this.dynEvents;
-    }
-
     /**
      * Returns slot update symbol for given name
      */
@@ -122,15 +110,6 @@ export default class ElementEntity extends Entity {
      */
     isPendingEvent(name: string) {
         return this.stats && this.stats.pendingEvents.has(name);
-    }
-
-    /**
-     * Check if given directive is dynamic
-     */
-    isDynamicDirective(prefix: string, name: string): boolean {
-        // TODO remove
-        return false;
-        // return this.stats.isDynamicDirective(prefix, name);
     }
 
     add(item: Entity) {
@@ -231,9 +210,17 @@ export default class ElementEntity extends Entity {
         } else {
             this.add(state.entity({
                 mount: () => {
-                    const args = [this.getSymbol()];
+                    const args: ChunkList = [this.getSymbol()];
                     if (props) {
-                        args.push(props.getSymbol());
+                        // Shortcut: we can pass static props directly to component
+                        // instead of storing it as variable
+                        const ix = this.children.indexOf(props);
+                        if (ix !== -1) {
+                            this.children.splice(ix, 1);
+                            args.push(props.code.mount);
+                        } else {
+                            args.push(props.getSymbol());
+                        }
                     }
                     return state.runtime('mountComponent', args);
                 },

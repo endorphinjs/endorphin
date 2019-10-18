@@ -3,7 +3,7 @@ import {
     ENDAddClassStatement, ENDDirective
 } from '@endorphinjs/template-parser';
 import CompileState from './CompileState';
-import { isLiteral, nameToJS, sn, qStr, propGetter, isExpression, isInterpolatedLiteral } from './utils';
+import { isLiteral, nameToJS, sn, qStr, propGetter, isExpression, isInterpolatedLiteral, propSetter } from './utils';
 import ElementEntity from '../entities/ElementEntity';
 import { ChunkList, Chunk } from '../types';
 import { ElementStats } from './attributeStats';
@@ -67,14 +67,6 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
         hasPendingAttrs: stats.pendingAttributes.size > 0
     };
 
-    const useAttrReceiver = result.hasExpressionAttrs || result.hasPendingAttrs
-        || stats.partials || (elem.isComponent && result.hasStaticAttrs);
-
-    if (useAttrReceiver) {
-        // Create object to accumulate actual attribute values
-        elem.add(result.receiver = createObj('attrSet', state));
-    }
-
     if (stats.partials || stats.pendingEvents.size) {
         result.eventsReceiver = state.entity('eventSet', {
             mount: () => state.runtime('pendingEvents', [state.host, elem.getSymbol()]),
@@ -85,8 +77,9 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
 
     if (elem.isComponent) {
         // Mount attributes as props
-        if (result.hasStaticAttrs) {
-            mountStaticProps(elem, result.receiver, staticAttrs, state);
+        if (result.hasStaticAttrs || result.hasExpressionAttrs || result.hasExpressionAttrs) {
+            result.receiver = mountStaticProps(staticAttrs, state);
+            elem.add(result.receiver);
         }
 
         if (result.hasExpressionAttrs) {
@@ -98,6 +91,11 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
         }
     } else {
         // NB keep object init closer to `receiver` for better minification
+        if (result.hasExpressionAttrs || result.hasPendingAttrs || stats.partials) {
+            // Create object to accumulate actual attribute values
+            elem.add(result.receiver = createObj('attrSet', state));
+        }
+
         if (result.hasPendingAttrs || stats.partials) {
             result.prevReceiver = createObj('prevPending', state);
             elem.add(result.prevReceiver);
@@ -287,15 +285,21 @@ function mountStaticAttributes(elem: ElementEntity, attrs: ENDAttribute[], state
 /**
  * Mounts given attributes as static props: their values are not changed in runtime
  */
-function mountStaticProps(elem: ElementEntity, receiver: Entity, attrs: ENDAttribute[], state: CompileState) {
-    state.mount(() => {
-        attrs.forEach(attr => {
-            const name = (attr.name as Identifier).name;
-            const value = compileAttributeValue(attr.value, state, 'component');
-            elem.add(
-                entity(state, sn([receiver.getSymbol(), propGetter(name), ' = ', value]))
-            );
-        });
+function mountStaticProps(attrs: ENDAttribute[], state: CompileState) {
+    return state.entity('propSet', {
+        mount: () => {
+            const out = sn('{');
+            attrs.forEach((attr, i) => {
+                const name = (attr.name as Identifier).name;
+                const value = compileAttributeValue(attr.value, state, 'component');
+                if (i > 0) {
+                    out.add(', ');
+                }
+                out.add([propSetter(name), ': ', value]);
+            });
+            out.add('}');
+            return out;
+        }
     });
 }
 

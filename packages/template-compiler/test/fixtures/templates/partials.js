@@ -48,8 +48,8 @@ export default function template$0(host, scope) {
 	const refs$0 = scope.refs$0 = obj();
 	const ul$0 = scope.ul$0 = appendChild(target$0, elem("ul"));
 	const inj$0 = createInjector(ul$0);
-	const attrSet$0 = scope.attrSet$0 = obj();
 	const eventSet$0 = scope.eventSet$0 = pendingEvents(host, ul$0);
+	const attrSet$0 = scope.attrSet$0 = obj();
 	const prevPending$0 = scope.prevPending$0 = obj();
 	scope.for$0 = mountIterator(host, inj$0, forSelect$0, forContent$0);
 	finalizePendingEvents(eventSet$0);
