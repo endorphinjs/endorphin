@@ -291,7 +291,7 @@ function mountStaticProps(elem: ElementEntity, receiver: Entity, attrs: ENDAttri
     state.mount(() => {
         attrs.forEach(attr => {
             const name = (attr.name as Identifier).name;
-            const value = compileAttributeValue(attr.value, state);
+            const value = compileAttributeValue(attr.value, state, 'component');
             elem.add(
                 entity(state, sn([receiver.getSymbol(), propGetter(name), ' = ', value]))
             );
