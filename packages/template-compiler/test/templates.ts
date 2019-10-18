@@ -68,7 +68,7 @@ describe('Template compiler', () => {
         compare('svg.html');
     });
 
-    it.only('debug', () => {
+    it.skip('debug', () => {
         compare('templates/partials.html', { optimize: true }, true);
     });
 });

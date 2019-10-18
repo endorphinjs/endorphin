@@ -1,38 +1,39 @@
-import { addPendingClass, addPendingClassIf, createComponent, createInjector, get, insert, mountComponent, mountIterator, propsSet, unmountComponent, unmountIterator, updateComponent, updateIterator } from "endorphin";
+import { createComponent, createInjector, get, insert, mountComponent, mountIterator, obj, unmountComponent, unmountIterator, updateClass, updateComponent, updateIterator } from "endorphin";
 import * as MyComponent from "./my-component.html";
 
 function forSelect$0(host) {
 	return host.state.items;
 }
 
-function ifAttr$0(host, scope) {
-	if (get(scope.value, "animation", "type")) {
-		addPendingClass(scope._p$0, "animate-" + get(scope.value, "animation", "type"));
-	}
+function setVars$0(host, scope) {
+	scope.__if0 = get(scope.value, "animation", "type");
+}
+
+function myComponentAttrs$0(elem, prev, host, scope) {
+	updateClass(elem, prev, ((scope.__if0 ? ("animate-" + get(scope.value, "animation", "type")) : "")) + ((get(scope.value, "reordered") ? " reordered" : "")));
 }
 
 function forContent$0(host, injector, scope) {
+	setVars$0(host, scope);
 	const myComponent$0 = scope.myComponent$0 = insert(injector, createComponent("my-component", MyComponent, host));
-	const _p$0 = scope._p$0 = propsSet(myComponent$0);
-	addPendingClassIf(_p$0, "reordered", get(scope.value, "reordered"));
-	ifAttr$0(host, scope);
-	mountComponent(myComponent$0, _p$0.c);
+	const attrSet$0 = scope.attrSet$0 = obj();
+	myComponentAttrs$0(myComponent$0, attrSet$0, host, scope);
+	mountComponent(myComponent$0, attrSet$0);
 	return forContent$0Update;
 }
 
 forContent$0.dispose = forContent$0Unmount;
 
 function forContent$0Update(host, scope) {
-	const { _p$0 } = scope;
-	_p$0.c.class = null;
-	addPendingClassIf(_p$0, "reordered", get(scope.value, "reordered"));
-	ifAttr$0(host, scope);
-	updateComponent(scope.myComponent$0, _p$0.c);
+	const { myComponent$0, attrSet$0 } = scope;
+	setVars$0(host, scope);
+	myComponentAttrs$0(myComponent$0, attrSet$0, host, scope);
+	updateComponent(myComponent$0, attrSet$0);
 }
 
 function forContent$0Unmount(scope) {
 	scope.myComponent$0 = unmountComponent(scope.myComponent$0);
-	scope._p$0 = null;
+	scope.attrSet$0 = null;
 }
 
 export default function template$0(host, scope) {

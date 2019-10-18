@@ -51,7 +51,7 @@ function e7Attrs$0(elem, prev, host) {
 }
 
 function e8Attrs$0(elem, prev, host) {
-	updateAttribute(elem, prev, "foo", (host.props.cond ? host.props.baz : null));
+	updateAttribute(elem, prev, "foo", (host.props.cond ? host.props.baz : undefined));
 }
 
 export default function template$0(host, scope) {

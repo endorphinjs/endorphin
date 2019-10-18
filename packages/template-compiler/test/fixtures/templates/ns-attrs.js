@@ -8,7 +8,7 @@ function imageAttrs$0(elem, prev, host) {
 
 function image2Attrs$0(elem, prev, host) {
 	updateAttributeNS(elem, prev, ns$1, "href", (host.props.cond ? host.state.url2 : host.state.url));
-	updateAttribute(elem, prev, "title", (host.props.cond ? "foo" : null));
+	updateAttribute(elem, prev, "title", (host.props.cond ? "foo" : undefined));
 }
 
 export default function template$0(host, scope) {

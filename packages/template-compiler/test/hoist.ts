@@ -28,6 +28,7 @@ describe('Hoist variables', () => {
         testHoist('condition.html', 'Hoist conditional expressions');
         testHoist('attributes.html', 'Hoist attributes');
         testHoist('class.html', 'Hoist class names');
+        testHoist('component-class.html', 'Hoist component class names');
         testHoist('add-class.html', 'Hoist <add-class>');
         testHoist('choose.html', 'Hoist <e:choose>');
         testHoist('for-each.html', 'Hoist <for-each>');

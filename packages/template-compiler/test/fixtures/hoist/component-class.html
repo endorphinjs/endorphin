@@ -1,0 +1,6 @@
+<template>
+    <e:for-each select={#items}>
+        <e:var __if0={@value.animation.type}/>
+        <my-component class="{@__if0 ? "animate-" + @value.animation.type : ""}{@value.reordered ? " reordered" : ""}"/>
+    </e:for-each>
+</template>

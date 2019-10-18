@@ -213,8 +213,8 @@ export default {
         return state.entity('partial', {
             mount: () => {
                 const params = attributeMap(node.params, state);
-                params.set(attrReceiver.rawName, attrReceiver.getSymbol());
-                params.set(eventReceiver.rawName, eventReceiver.getSymbol());
+                params.set(partialAttrsReceiver, attrReceiver.getSymbol());
+                params.set(partialEventReceiver, eventReceiver.getSymbol());
 
                 return state.runtime('mountPartial', [
                     state.host,
@@ -226,6 +226,7 @@ export default {
             update: ent => {
                 const params = attributeMap(node.params, state);
                 params.set(partialAttrsReceiver, attrReceiver.getSymbol());
+                params.set(partialEventReceiver, eventReceiver.getSymbol());
                 return state.runtime('updatePartial', [ent.getSymbol(), getter, toObjectLiteral(params, state.indent, 1)]);
             },
             unmount: ent => ent.unmount('unmountPartial')

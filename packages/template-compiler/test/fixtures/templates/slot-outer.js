@@ -1,8 +1,8 @@
-import { appendChild, createComponent, elemWithText, insert, mountBlock, mountComponent, mountIterator, propsSet, setAttribute, unmountBlock, unmountComponent, unmountIterator, updateBlock, updateComponent, updateIncomingSlot, updateIterator } from "endorphin";
+import { appendChild, createComponent, elemWithText, insert, mountBlock, mountComponent, mountIterator, obj, setAttribute, unmountBlock, unmountComponent, unmountIterator, updateAttribute, updateBlock, updateComponent, updateIncomingSlot, updateIterator } from "endorphin";
 import * as SubComponent from "./slot-inner.html";
 
-function setVars$0(host, scope) {
-	scope.foo = host.props.bar;
+function subComponentAttrs$0(elem, prev, host) {
+	updateAttribute(elem, prev, "id", host.props.id);
 }
 
 function ifBody$0(host, injector, scope) {
@@ -80,25 +80,23 @@ export default function template$0(host, scope) {
 	appendChild(target$0, elemWithText("h1", "Hello world"));
 	const subComponent$0 = scope.subComponent$0 = appendChild(target$0, createComponent("sub-component", SubComponent, host));
 	const inj$0 = subComponent$0.componentModel.input;
-	const _p$0 = scope._p$0 = propsSet(subComponent$0);
-	_p$0.c.id = host.props.id;
-	setVars$0(host, scope);
+	const attrSet$0 = scope.attrSet$0 = obj();
+	subComponentAttrs$0(subComponent$0, attrSet$0, host);
 	insert(inj$0, elemWithText("div", "foo"), "");
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
 	scope.for$0 = mountIterator(host, inj$0, forSelect$0, forContent$0);
 	scope.if$2 = mountBlock(host, inj$0, ifEntry$2);
-	mountComponent(subComponent$0, _p$0.c);
+	mountComponent(subComponent$0, attrSet$0);
 	return template$0Update;
 }
 
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	const { subComponent$0, _p$0 } = scope;
+	const { subComponent$0, attrSet$0 } = scope;
 	scope.su$0 = scope.su$1 = scope.su$2 = scope.su$3 = 0;
-	_p$0.c.id = host.props.id;
-	setVars$0(host, scope);
+	subComponentAttrs$0(subComponent$0, attrSet$0, host);
 	updateBlock(scope.if$0);
 	updateBlock(scope.if$1);
 	updateIterator(scope.for$0);
@@ -107,7 +105,7 @@ function template$0Update(host, scope) {
 	updateIncomingSlot(subComponent$0, "header", scope.su$1);
 	updateIncomingSlot(subComponent$0, "footer", scope.su$2);
 	updateIncomingSlot(subComponent$0, "error", scope.su$3);
-	updateComponent(subComponent$0, _p$0.c);
+	updateComponent(subComponent$0, attrSet$0);
 }
 
 function template$0Unmount(scope) {
@@ -116,5 +114,4 @@ function template$0Unmount(scope) {
 	scope.for$0 = unmountIterator(scope.for$0);
 	scope.if$2 = unmountBlock(scope.if$2);
 	scope.subComponent$0 = unmountComponent(scope.subComponent$0);
-	scope._p$0 = null;
 }

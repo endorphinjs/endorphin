@@ -1,4 +1,4 @@
-import { animate, attributeSet, createComponent, createInjector, detachPendingEvents, domRemove, elem, elemWithText, finalizeAttributes, finalizeAttributesNS, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountBlock, mountComponent, mountInnerHTML, mountIterator, mountPartial, obj, pendingEvents, stopAnimation, text, unmountBlock, unmountComponent, unmountInnerHTML, unmountIterator, unmountPartial, updateBlock, updateInnerHTML, updateIterator, updatePartial } from "endorphin";
+import { animate, createComponent, createInjector, detachPendingEvents, domRemove, elem, elemWithText, finalizeAttributes, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountBlock, mountComponent, mountInnerHTML, mountIterator, mountPartial, obj, pendingEvents, stopAnimation, text, unmountBlock, unmountComponent, unmountInnerHTML, unmountIterator, unmountPartial, updateBlock, updateInnerHTML, updateIterator, updatePartial } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -9,8 +9,9 @@ export const partials = {
 	}
 };
 
-function attrValue$0(host) {
-	return "left: " + (host.props.left) + "px";
+function divPreparePending$0(pending, host) {
+	pending.class = "overlay";
+	pending.style = "left: " + (host.props.left) + "px";
 }
 
 function ifBody$1(host, injector) {
@@ -33,8 +34,8 @@ function forSelect$0(host) {
 
 function forContent$0(host, injector, scope) {
 	scope.partial$0 = mountPartial(host, injector, getPartial(host, "test", partials), {
-		$$_attrs: scope._a$0,
-		$$_events: scope._e$0
+		":a": scope.attrSet$0,
+		":e": scope.eventSet$0
 	});
 	return forContent$0Update;
 }
@@ -42,7 +43,10 @@ function forContent$0(host, injector, scope) {
 forContent$0.dispose = forContent$0Unmount;
 
 function forContent$0Update(host, scope) {
-	updatePartial(scope.partial$0, getPartial(host, "test", partials), {});
+	updatePartial(scope.partial$0, getPartial(host, "test", partials), {
+		":a": scope.attrSet$0,
+		":e": scope.eventSet$0
+	});
 }
 
 function forContent$0Unmount(scope) {
@@ -52,38 +56,37 @@ function forContent$0Unmount(scope) {
 function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
 	const inj$1 = createInjector(div$0);
-	const _a$0 = scope._a$0 = attributeSet();
-	const _e$0 = scope._e$0 = pendingEvents(host, div$0);
-	_a$0.c.class = "overlay";
-	_a$0.c.style = attrValue$0(host, scope);
+	const attrSet$0 = scope.attrSet$0 = obj();
+	const eventSet$0 = scope.eventSet$0 = pendingEvents(host, div$0);
+	const prevPending$0 = scope.prevPending$0 = obj();
+	divPreparePending$0(attrSet$0, host);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 	scope.html$0 = mountInnerHTML(host, inj$1, html$0);
 	scope.for$0 = mountIterator(host, inj$1, forSelect$0, forContent$0);
 	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host));
 	mountComponent(innerComponent$0);
-	finalizePendingEvents(_e$0);
-	finalizeAttributes(div$0, _a$0) | finalizeAttributesNS(div$0, _a$0);
+	finalizePendingEvents(eventSet$0);
+	finalizeAttributes(div$0, attrSet$0, prevPending$0);
 }
 
 function animatedDiv$0Update(host, scope) {
-	const { _a$0, div$0 } = scope;
-	_a$0.c.class = "overlay";
-	_a$0.c.style = attrValue$0(host, scope);
+	const { attrSet$0 } = scope;
+	divPreparePending$0(attrSet$0, host);
 	updateBlock(scope.if$1);
 	updateInnerHTML(scope.html$0);
 	updateIterator(scope.for$0);
-	finalizePendingEvents(scope._e$0);
-	finalizeAttributes(div$0, _a$0) | finalizeAttributesNS(div$0, _a$0);
+	finalizePendingEvents(scope.eventSet$0);
+	finalizeAttributes(scope.div$0, attrSet$0, scope.prevPending$0);
 }
 
 function animatedDiv$0Unmount(scope) {
-	scope._e$0 = detachPendingEvents(scope._e$0);
+	scope.eventSet$0 = detachPendingEvents(scope.eventSet$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.html$0 = unmountInnerHTML(scope.html$0);
 	scope.for$0 = unmountIterator(scope.for$0);
 	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
 	scope.div$0 = domRemove(scope.div$0);
-	scope._a$0 = null;
+	scope.attrSet$0 = scope.prevPending$0 = null;
 }
 
 function ifBody$0(host, injector, scope) {
@@ -162,7 +165,6 @@ function template$0Update(host, scope) {
 function template$0Unmount(scope) {
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.if$2 = unmountBlock(scope.if$2);
-	scope.refs$0 = null;
 }
 
 function partialTest$0(host, injector) {

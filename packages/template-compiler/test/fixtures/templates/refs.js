@@ -56,5 +56,4 @@ function template$0Update(host, scope) {
 function template$0Unmount(scope) {
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.slotInner$0 = unmountComponent(scope.slotInner$0);
-	scope.refs$0 = scope.div$0 = null;
 }

@@ -79,5 +79,4 @@ function template$0Unmount(scope) {
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.slotInner$0 = unmountComponent(scope.slotInner$0);
-	scope.text$0 = scope.text$1 = scope.text$3 = null;
 }

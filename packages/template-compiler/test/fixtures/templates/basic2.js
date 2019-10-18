@@ -11,12 +11,6 @@ export default function template$0(host, scope) {
 	return template$0Update;
 }
 
-template$0.dispose = template$0Unmount;
-
 function template$0Update(host, scope) {
 	updateText(scope.text$1, host.props.bar);
-}
-
-function template$0Unmount(scope) {
-	scope.text$1 = null;
 }

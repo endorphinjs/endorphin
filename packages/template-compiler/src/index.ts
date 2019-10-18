@@ -91,9 +91,7 @@ export default function transform(code: string, url?: string, options?: CompileO
 export function parse(code: string, url?: string, options?: CompileOptions): ParsedTemplate {
     const helpers = prepareHelpers(options && options.helpers || {});
     const ast = parseTemplate(code, url, { helpers: Object.keys(helpers) });
-    if (options && options.optimize) {
-        hoist(ast);
-    }
+    hoist(ast);
     return { code, url, ast };
 }
 

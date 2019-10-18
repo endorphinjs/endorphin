@@ -5,4 +5,9 @@
         </e:if>
         <e:attr class:c3={bar2} class:c6={bar3} e:if={foo2}/>
     </div>
+    <main>
+        <e:if test={cond2}>
+            <e:add-class e:if={cond3 && !cond4}>bg-{#bg}</e:add-class>
+        </e:if>
+    </main>
 </template>

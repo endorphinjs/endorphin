@@ -1,4 +1,8 @@
-import { animate, createInjector, domRemove, elem, elemWithText, insert, mountBlock, setAttributeExpression, setClass, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
+import { animate, createInjector, domRemove, elem, elemWithText, insert, mountBlock, obj, setClass, unmountBlock, updateAttribute, updateBlock } from "endorphin";
+
+function divAttrs$0(elem, prev, host) {
+	updateAttribute(elem, prev, "title", host.state.title);
+}
 
 function ifBody$1(host, injector) {
 	insert(injector, elemWithText("p", "Something 1"));
@@ -15,19 +19,20 @@ function animatedDiv$0(host, injector, scope) {
 	const inj$1 = createInjector(div$0);
 	setClass(div$0, "css-anim");
 	const div$1 = scope.div$1 = insert(inj$1, elemWithText("div", "CSS Animation"));
-	scope.titleAttr$0 = setAttributeExpression(div$1, "title", host.state.title);
+	const attrSet$0 = scope.attrSet$0 = obj();
+	divAttrs$0(div$1, attrSet$0, host);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 }
 
 function animatedDiv$0Update(host, scope) {
-	scope.titleAttr$0 = updateAttributeExpression(scope.div$1, "title", host.state.title, scope.titleAttr$0);
+	divAttrs$0(scope.div$1, scope.attrSet$0, host);
 	updateBlock(scope.if$1);
 }
 
 function animatedDiv$0Unmount(scope) {
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.div$0 = domRemove(scope.div$0);
-	scope.titleAttr$0 = scope.div$1 = null;
+	scope.attrSet$0 = scope.div$1 = null;
 }
 
 function ifBody$2(host, injector) {

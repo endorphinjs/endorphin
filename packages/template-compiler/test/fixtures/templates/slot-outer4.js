@@ -26,5 +26,4 @@ function template$0Update(host, scope) {
 
 function template$0Unmount(scope) {
 	scope.slotInner$0 = unmountComponent(scope.slotInner$0);
-	scope.text$0 = scope.text$1 = scope.text$2 = null;
 }

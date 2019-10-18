@@ -31,6 +31,7 @@ interface VariableInfo {
 }
 
 interface HoistState {
+    // XXX need better name for `globalScope`: actually, it indicated element scope
     /** Indicates current variable scope is global for template */
     globalScope: boolean;
     vars: Map<string, VariableInfo>;
@@ -44,7 +45,7 @@ interface HoistState {
     pendingClass?: ENDAttributeValue;
 }
 
-const nullVal = literal(null);
+const emptyVal = literal(undefined);
 const conditionalType = ['ENDIfStatement', 'ENDChooseStatement', 'ENDForEachStatement'];
 
 /**
@@ -88,7 +89,8 @@ const visitors: WalkVisitorMap = {
         return node;
     },
     ENDElement(node: ENDElement, state, next) {
-        const { attrs, events, classNames, conditions } = state;
+        const { attrs, events, classNames, conditions, globalScope } = state;
+        state.globalScope = true;
         state.attrs = new Map();
         state.events = new Map();
         state.classNames = new Map();
@@ -114,6 +116,7 @@ const visitors: WalkVisitorMap = {
             state.attrs.set('class', classVal);
         }
 
+        state.globalScope = globalScope;
         node.attributes = finalizeAttributes(state.attrs);
         node.directives = finalizeDirectives(node.directives, state);
         state.attrs = attrs;
@@ -194,7 +197,7 @@ const visitors: WalkVisitorMap = {
 
             const condition = last(state.conditions);
             if (condition) {
-                expr = conditionalExpr(condition, expr || nullVal, empty);
+                expr = conditionalExpr(condition, expr || emptyVal, empty);
             }
 
             const parentExpr = localVar(state.getSymbol('choose'));
@@ -303,12 +306,12 @@ function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): st
     const condition = last(state.conditions);
 
     // For local scopes, we should fallback to previous variable value, if any
-    const fallback = state.globalScope ? nullVal : localVar(name);
+    const fallback = state.globalScope ? emptyVal : localVar(name);
     const newValue = condition
         ? program(conditionalExpr(condition, castValue(value), fallback))
         : value;
 
-    if (fallback !== nullVal && !info) {
+    if (fallback !== emptyVal && !info) {
         markUsed(name, state);
     }
 
@@ -599,7 +602,7 @@ function castValue(value?: ENDAttributeValue): Expression {
         }
     }
 
-    return nullVal;
+    return emptyVal;
 }
 
 /**

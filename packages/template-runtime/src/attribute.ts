@@ -75,6 +75,13 @@ export function setClass(elem: Element, value: any) {
 }
 
 /**
+ * Shorthand to update class name, specific to Endorphin compiled code
+ */
+export function updateClass(elem: Element, prev: ValueMap, value: any) {
+	return updateAttribute(elem, prev, 'class', value === '' ? undefined : value);
+}
+
+/**
  * Sets attribute value as expression. Unlike regular primitive attributes,
  * expression values must be represented, e.g. non-primitive values must be
  * converted to string representations. Also, expression resolved to `false`,

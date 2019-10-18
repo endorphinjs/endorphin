@@ -45,12 +45,14 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
     const staticAttrs: ENDAttribute[] = [];
     const expressionAttrs: ENDAttribute[] = [];
     const pendingAttrs: AttributeLookup = {};
+    const isSlot = node.name.name === 'slot';
 
     node.attributes.forEach(attr => {
         const name = (attr.name as Identifier).name;
         if (stats.pendingAttributes.has(name)) {
             pendingAttrs[name] = attr.value;
-        } else {
+        } else if (!isSlot || name !== 'name') {
+            // Do not add name attribute for slot, it will be added automatically by `mountSlot()`
             if (!attr.value || isLiteral(attr.value)) {
                 staticAttrs.push(attr);
             } else {
@@ -308,6 +310,10 @@ function mountExpressionAttributes(elem: ElementEntity, receiver: Entity, attrs:
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
             const ns = !elem.isComponent ? getAttributeNS(name, state) : null;
+            if (name === 'class') {
+                return entity(state, state.runtime('updateClass', ['elem', 'prev', value]));
+            }
+
             return ns
                 ? entity(state, state.runtime('updateAttributeNS', ['elem', 'prev', ns.ns, qStr(ns.name), value]))
                 : entity(state, state.runtime('updateAttribute', ['elem', 'prev', qStr(name), value]));

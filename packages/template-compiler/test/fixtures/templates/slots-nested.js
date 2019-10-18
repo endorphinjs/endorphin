@@ -1,4 +1,4 @@
-import { appendChild, createComponent, createInjector, elem, insert, mountBlock, mountComponent, propsSet, setAttribute, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot } from "endorphin";
+import { appendChild, createComponent, createInjector, elem, insert, mountBlock, mountComponent, obj, setAttribute, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot } from "endorphin";
 import * as MyComponent1 from "./my-component1.html";
 import * as MyComponent2 from "./my-component2.html";
 import * as InnerComponent from "./inner-component.html";
@@ -44,11 +44,11 @@ export default function template$0(host, scope) {
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	const myComponent2$0 = scope.myComponent2$0 = insert(inj$0, createComponent("my-component2", MyComponent2, host), "header");
 	const inj$1 = myComponent2$0.componentModel.input;
-	const _p$0 = propsSet(myComponent2$0);
-	_p$0.c.slot = "header";
+	const attrSet$0 = obj();
+	attrSet$0.slot = "header";
 	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$0);
-	mountComponent(myComponent2$0, _p$0.c);
+	mountComponent(myComponent2$0, attrSet$0);
 	const div$0 = insert(inj$0, elem("div"), "footer");
 	const inj$2 = createInjector(div$0);
 	setAttribute(div$0, "slot", "footer");

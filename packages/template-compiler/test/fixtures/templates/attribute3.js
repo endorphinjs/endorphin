@@ -20,7 +20,7 @@ function setVars$0(host, scope) {
 }
 
 function mainPendingAttrs$0(pending, host, scope) {
-	pending.title = (scope.__if0 ? get(scope.value, "title") : null);
+	pending.title = (scope.__if0 ? get(scope.value, "title") : undefined);
 }
 
 function addPendingClass$0(pending, host, scope) {
