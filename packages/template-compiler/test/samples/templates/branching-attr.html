@@ -1,0 +1,20 @@
+<!-- Branching with custom attributes -->
+<template>
+    <blockquote>
+        <p>Lorem ipsum 1</p>
+        <e:choose>
+            <e:when test={expr1 === 1}>
+                <e:attr a=1/>
+                <div>sub 1</div>
+            </e:when>
+            <e:when test={expr1 === 2}>
+                <div>sub 2</div>
+            </e:when>
+            <e:otherwise>
+                <e:attr a=3/>
+                <div>sub 3</div>
+            </e:otherwise>
+        </e:choose>
+        <p>Lorem ipsum 2</p>
+    </blockquote>
+</template>

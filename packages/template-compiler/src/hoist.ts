@@ -149,12 +149,12 @@ const visitors: WalkVisitorMap = {
     },
     ENDAddClassStatement(node: ENDAddClassStatement, state) {
         if (state.globalScope) {
-            const classVal = addClass(node.tokens, last(state.conditions), state.attrs.get('class'));
+            const classVal = addClass(node.tokens, getCondition(state), state.attrs.get('class'));
             state.attrs.set('class', classVal);
         } else {
             // For block context, we should accumulate all class names as separate
             // expression and it as single `<e:add-class>` statement
-            state.pendingClass = addClass(node.tokens, last(state.conditions), state.pendingClass);
+            state.pendingClass = addClass(node.tokens, getCondition(state), state.pendingClass);
         }
     },
     ENDIfStatement(node: ENDIfStatement, state, next) {
@@ -196,7 +196,7 @@ const visitors: WalkVisitorMap = {
                 }
             }
 
-            const condition = last(state.conditions);
+            const condition = getCondition(state);
             if (condition) {
                 expr = conditionalExpr(condition, expr || emptyVal, empty);
             }
@@ -209,7 +209,7 @@ const visitors: WalkVisitorMap = {
                 const lv = localVar(state.getSymbol('case'));
                 const test = program(binaryExpr(parentExpr, literal(i + 1), '==='));
 
-                state.vars.set(lv.name, varInfo(test, true));
+                state.vars.set(lv.name, varInfo(test));
                 c.test = program(lv);
                 state.conditions.push(lv);
                 c.consequent = transform(c.consequent, next);
@@ -310,7 +310,7 @@ function transform<T extends ENDStatement>(items: T[], next: WalkNext): T[] {
 function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): string {
     const { vars } = state;
     const info = vars.get(name);
-    const condition = last(state.conditions);
+    const condition = getCondition(state);
 
     // For local scopes, we should fallback to previous variable value, if any
     const fallback = state.globalScope ? emptyVal : localVar(name);
@@ -350,7 +350,7 @@ function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): st
 function hoistAttribute(attr: ENDAttribute, state: HoistState) {
     const { name } = attr.name as Identifier;
     let { value } = attr;
-    const condition = last(state.conditions);
+    const condition = getCondition(state);
 
     if (condition) {
         const prev = state.attrs.get(name);
@@ -366,7 +366,7 @@ function hoistAttribute(attr: ENDAttribute, state: HoistState) {
 function hoistClassName(dir: ENDDirective, state: HoistState) {
     const { name, value } = dir;
     const { classNames } = state;
-    const condition = last(state.conditions);
+    const condition = getCondition(state);
     let expr: Expression | null = null;
 
     if (condition && value) {
@@ -555,7 +555,7 @@ function rewriteVarAccessors(expr: Program, state: HoistState) {
 /**
  * Adds given class name (defined as a set of tokens) to given `class` attribute value
  */
-function addClass(tokens: ENDPlainStatement[], condition: Expression | null, prevValue?: ENDAttributeValue): ENDAttributeValue {
+function addClass(tokens: ENDPlainStatement[], condition: Expression | void, prevValue?: ENDAttributeValue): ENDAttributeValue {
     tokens = tokens.slice();
 
     if (prevValue) {
@@ -636,7 +636,7 @@ function concatToJS(tokens: ENDBaseAttributeValue[]): Expression {
 }
 
 function createCondition(expr: Program, state: HoistState) {
-    const condition = last(state.conditions);
+    const condition = getCondition(state);
 
     if (condition) {
         // Current condition is nested in another condition.
@@ -726,6 +726,14 @@ function isClassName(dir: ENDDirective): boolean {
 
 function isEvent(dir: ENDDirective): boolean {
     return dir.prefix === 'on';
+}
+
+function getCondition(state: HoistState): Identifier | void {
+    const condition = last(state.conditions);
+    if (condition) {
+        markUsed(condition.name, state);
+        return condition;
+    }
 }
 
 function getVar(name: string, state: HoistState) {
