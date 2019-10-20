@@ -257,6 +257,8 @@ export interface ENDProgram extends ENDNode {
     body: ENDProgramStatement[];
     stylesheets: ENDStylesheet[];
     scripts: ENDScript[];
+    /** List of local variables (JS-safe) used in partial. Added by template optimizer */
+    variables: string[];
 }
 
 export interface ENDTemplate extends ENDNode {
@@ -351,6 +353,12 @@ export interface ENDForEachStatement extends ENDNode {
     body: ENDStatement[];
     select: Program;
     key?: Program;
+    /** Name of local variable for referencing iterator index */
+    indexName: string;
+    /** Name of local variable for referencing iterator key */
+    keyName: string;
+    /** Name of local variable for referencing iterator value */
+    valueName: string;
 }
 
 export interface ENDPartialStatement extends ENDNode {

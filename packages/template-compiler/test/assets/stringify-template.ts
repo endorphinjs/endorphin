@@ -18,6 +18,9 @@ export default function stringify(program: ENDProgram): string {
     };
 
     const next: WalkNext = node => walk(node, state, next);
+    if (program.variables.length) {
+        state.out = `[vars: ${program.variables.join(' ')}]\n`;
+    }
     program.body.forEach(next);
     return state.out;
 }

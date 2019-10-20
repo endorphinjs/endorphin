@@ -1,4 +1,5 @@
+[vars: chooseExpr caseExpr caseExpr_1 caseExpr_2 caseExpr_3]
 <template>
-    <e:var __choose0={c1 ? c2_1 ? 1 : c2_2 ? 2 : c2_3 ? 3 : 4 : 0} __case0={@__choose0 === 1} __case1={@__choose0 === 2} __case2={@__choose0 === 3} __case3={@__choose0 === 4}/>
-    <div a={@__case1 ? 2 : @__case0 ? 1 : undefined} b={@__case2 ? 3 : @__case1 ? 2 : undefined} c={@__case3 ? 10 : undefined}/>
+    <e:var chooseExpr={c1 ? c2_1 ? 1 : c2_2 ? 2 : c2_3 ? 3 : 4 : 0} caseExpr={@chooseExpr === 1} caseExpr_1={@chooseExpr === 2} caseExpr_2={@chooseExpr === 3} caseExpr_3={@chooseExpr === 4}/>
+    <div a={@caseExpr_1 ? 2 : @caseExpr ? 1 : undefined} b={@caseExpr_2 ? 3 : @caseExpr_1 ? 2 : undefined} c={@caseExpr_3 ? 10 : undefined}/>
 </template>

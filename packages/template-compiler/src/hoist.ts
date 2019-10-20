@@ -7,7 +7,7 @@ import {
     ENDPlainStatement, ENDPartial, ENDPartialStatement, ENDInnerHTML, ENDTemplate,
     walk as walkExpr
 } from '@endorphinjs/template-parser';
-import { isLiteral, isIdentifier } from './lib/utils';
+import { isLiteral, isIdentifier, nameToJS } from './lib/utils';
 import { identifier, literal, variable, program, conditionalExpr, binaryExpr, attributeExpression } from './lib/ast-constructor';
 import astEqual from './lib/ast-equal';
 import createSymbolGenerator, { SymbolGenerator } from './lib/SymbolGenerator';
@@ -26,16 +26,16 @@ interface VariableInfo {
     /** Actual variable value */
     value: ENDAttributeValue;
 
-    /** Indicates given was accessed for reading */
+    /** Indicates current variable is read in template */
     used: boolean;
 }
 
+type VariableMap = Map<string, VariableInfo>;
+
 interface HoistState {
-    // XXX need better name for `globalScope`: actually, it indicated element scope
-    /** Indicates current variable scope is global for template */
-    globalScope: boolean;
-    vars: Map<string, VariableInfo>;
-    varsScope: Map<string, VariableInfo>[];
+    element?: ENDElement;
+    vars: VariableMap;
+    varsScope: VariableMap[];
     attrs: Map<string, ENDAttributeValue>;
     events: Map<string, ENDDirective>;
     classNames: Map<string, Program>;
@@ -43,7 +43,23 @@ interface HoistState {
     getSymbol: SymbolGenerator;
     path: ENDNode[];
     pendingClass?: ENDAttributeValue;
+    /** Lookup table for rewriting local variables to JS identifiers */
+    jsLookup: Map<string, string>;
+    /** List of variable names that shouldn’t be renamed */
+    preserved: Map<string, number>;
+    /** List of all runtime variables used in current template */
+    runtime: Set<string>;
+    options: HoistOptions;
 }
+
+interface HoistOptions {
+    /** Warns about template issues */
+    warn(msg: string, node?: ENDNode): void;
+}
+
+const defaultOptions: HoistOptions = {
+    warn() { /* empty */ }
+};
 
 const emptyVal = literal(undefined);
 const conditionalType = ['ENDIfStatement', 'ENDChooseStatement', 'ENDForEachStatement'];
@@ -52,9 +68,10 @@ const conditionalType = ['ENDIfStatement', 'ENDChooseStatement', 'ENDForEachStat
  * Hoists internal variables and expressions in given template to reduce nesting
  * of element attributes
  */
-export default function hoist(prog: ENDProgram): ENDProgram {
+export default function hoist(prog: ENDProgram, opt?: Partial<HoistOptions>): ENDProgram {
+    const options: HoistOptions = { ...defaultOptions, ...opt };
     const state: HoistState = {
-        globalScope: true,
+        element: null,
         vars: new Map(),
         varsScope: [],
         attrs: new Map(),
@@ -62,7 +79,11 @@ export default function hoist(prog: ENDProgram): ENDProgram {
         classNames: new Map(),
         conditions: [],
         path: [],
-        getSymbol: createSymbolGenerator('__')
+        getSymbol: createSymbolGenerator('', num => num ? '_' + num.toString(36) : ''),
+        jsLookup: new Map(),
+        preserved: new Map(),
+        runtime: new Set(),
+        options
     };
 
     const next: WalkNext = node => {
@@ -72,25 +93,24 @@ export default function hoist(prog: ENDProgram): ENDProgram {
         return result;
     };
     prog.body.forEach(next);
+    prog.variables = Array.from(state.runtime);
     return prog;
 }
 
 const visitors: WalkVisitorMap = {
     ENDTemplate(node: ENDTemplate, state, next) {
-        const { vars, globalScope } = state;
-        state.globalScope = true;
+        const { vars } = state;
         state.vars = new Map();
         node.body = transform(node.body, next);
         if (state.vars.size) {
-            node.body.unshift(finalizeVars(state.vars));
+            node.body.unshift(finalizeVars(state));
         }
-        state.globalScope = globalScope;
         state.vars = vars;
         return node;
     },
     ENDElement(node: ENDElement, state, next) {
-        const { attrs, events, classNames, conditions, globalScope } = state;
-        state.globalScope = true;
+        const { attrs, events, classNames, conditions, element } = state;
+        state.element = node;
         state.attrs = new Map();
         state.events = new Map();
         state.classNames = new Map();
@@ -116,7 +136,7 @@ const visitors: WalkVisitorMap = {
             state.attrs.set('class', classVal);
         }
 
-        state.globalScope = globalScope;
+        state.element = element;
         node.attributes = finalizeAttributes(state.attrs);
         node.directives = finalizeDirectives(node.directives, state);
         state.attrs = attrs;
@@ -148,7 +168,7 @@ const visitors: WalkVisitorMap = {
         return node.directives.length ? node : null;
     },
     ENDAddClassStatement(node: ENDAddClassStatement, state) {
-        if (state.globalScope) {
+        if (state.element) {
             const classVal = addClass(node.tokens, getCondition(state), state.attrs.get('class'));
             state.attrs.set('class', classVal);
         } else {
@@ -201,12 +221,12 @@ const visitors: WalkVisitorMap = {
                 expr = conditionalExpr(condition, expr || emptyVal, empty);
             }
 
-            const parentExpr = localVar(state.getSymbol('choose'));
+            const parentExpr = localVar(state.getSymbol('chooseExpr'));
             state.vars.set(parentExpr.name, varInfo(program(expr), true));
 
             node.cases = node.cases.filter((c, i) => {
                 // Hoist condition as local variable
-                const lv = localVar(state.getSymbol('case'));
+                const lv = localVar(state.getSymbol('caseExpr'));
                 const test = program(binaryExpr(parentExpr, literal(i + 1), '==='));
 
                 state.vars.set(lv.name, varInfo(test));
@@ -231,8 +251,27 @@ const visitors: WalkVisitorMap = {
 
         return node.cases.length ? node : null;
     },
-    ENDForEachStatement: blockScopeStatement,
-    ENDPartial: blockScopeStatement,
+    ENDForEachStatement(node: ENDForEachStatement, state, next) {
+        // In `<for-each>` statement, we can’t determine final shape of parent element
+        // until all elements are iterated so we delegate it to runtime via
+        // pending attributes
+        rewrite(node.select, state);
+        if (node.key) {
+            rewrite(node.key, state);
+        }
+
+        markPreserved(state, node.indexName, node.keyName, node.valueName);
+        node.body = innerScope(node.body, state, next);
+        unmarkPreserved(state, node.indexName, node.keyName, node.valueName);
+        return node;
+    },
+    ENDPartial(node: ENDPartial, state, next) {
+        const params = node.params.map(param => (param.name as Identifier).name);
+        markPreserved(state, ...params);
+        node.body = innerScope(node.body, state, next);
+        unmarkPreserved(state, ...params);
+        return node;
+    },
     ENDPartialStatement(node: ENDPartialStatement, state) {
         node.params.forEach(p => rewrite(p.value, state));
         return node;
@@ -246,52 +285,40 @@ const visitors: WalkVisitorMap = {
     }
 };
 
-function blockScopeStatement(node: ENDForEachStatement | ENDPartial, state: HoistState, next: WalkNext) {
-    // Every <e:for-each> statement creates new variables scope.
-    // Moreover, all immediate attribute statements must be kept as statements
-    // because we can’t determine value until we iterate all items
-    const { vars, attrs, classNames, conditions, globalScope } = state;
-    state.globalScope = false;
+/**
+ * Enters inner scope to handle element contents. Inner scope is used to delegate
+ * element contents handling (attributes and contents) to runtime when it’s not
+ * possible to properly determine contents in compile time
+ */
+function innerScope(statements: ENDStatement[], state: HoistState, next: WalkNext): ENDStatement[] {
+    const { vars, attrs, classNames, conditions } = state;
     state.varsScope.push(vars);
     state.vars = new Map();
     state.attrs = new Map();
     state.classNames = new Map();
     state.conditions = [];
 
-    node.body = transform(node.body, next);
+    statements = transform(statements, next);
 
-    if (state.classNames) {
-        state.classNames.forEach((condition, name) => {
-            state.pendingClass = addClass([literal(name)], condition ? getExpression(condition) : null, state.pendingClass);
-        });
+    const addons: Array<ENDStatement | void> = [
+        finalizePendingClass(state),
+        finalizePendingAttributes(state),
+        finalizeVars(state)
+    ];
+
+    for (const n of addons) {
+        if (n) {
+            statements.unshift(n);
+        }
     }
 
-    if (state.pendingClass) {
-        node.body.unshift({
-            type: 'ENDAddClassStatement',
-            tokens: [state.pendingClass],
-        } as ENDAddClassStatement);
-    }
-
-    if (state.attrs.size) {
-        node.body.unshift({
-            type: 'ENDAttributeStatement',
-            attributes: finalizeAttributes(state.attrs),
-            directives: [],
-        } as ENDAttributeStatement);
-    }
-
-    if (state.vars.size) {
-        node.body.unshift(finalizeVars(state.vars));
-    }
-
-    state.globalScope = globalScope;
     state.varsScope.pop();
     state.vars = vars;
     state.attrs = attrs;
     state.classNames = classNames;
     state.conditions = conditions;
-    return node;
+
+    return statements;
 }
 
 function walk(node: WalkNode, state: HoistState, next: WalkNext): WalkNode | void {
@@ -308,40 +335,39 @@ function transform<T extends ENDStatement>(items: T[], next: WalkNext): T[] {
  * @returns Actual variable name for referencing in case if it was remapped
  */
 function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): string {
-    const { vars } = state;
-    const info = vars.get(name);
+    const isDefined = state.jsLookup.has(name);
+    let jsName = getJSName(name, state);
+    const info = state.vars.get(jsName);
     const condition = getCondition(state);
 
-    // For local scopes, we should fallback to previous variable value, if any
-    const fallback = state.globalScope ? emptyVal : localVar(name);
+    let fallback: Expression = emptyVal;
+    if (!info && isDefined) {
+        // For inner scopes (like `<for-each>`, fallback to previous value)
+        const ref = localVar(state.jsLookup.get(name));
+        markUsed(ref.name, state);
+        fallback = ref;
+    }
+
     const newValue = condition
         ? program(conditionalExpr(condition, castValue(value), fallback))
         : value;
 
-    if (fallback !== emptyVal && !info) {
-        markUsed(name, state);
+    if (info && !info.used) {
+        // Variable is already defined in *current scope*.
+        // If it’s not used, simply update value, otherwise we should map it to a new variable
+        info.value = newValue;
+        return jsName;
     }
 
-    if (info) {
-        // Variable is already defined. If it’s not used, simply update value,
-        // otherwise we should map it to new variable
-        if (!info.used) {
-            info.value = newValue;
-            return name;
-        }
-
-        if (!info.ref) {
-            // Generate new variable name
-            const m = name.match(/__(\d+)$/);
-            const num = m ? Number(m[1]) + 1 : 0;
-            return info.ref = hoistVar(state, `${name}__${num}`, value);
-        }
-
-        return info.ref = hoistVar(state, info.ref, value);
+    if (isDefined) {
+        // Variable is already defined and used: map it to a new name to
+        // define in a single block
+        jsName = allocIdent(name, state);
+        state.jsLookup.set(name, jsName);
     }
 
-    vars.set(name, varInfo(newValue));
-    return name;
+    state.vars.set(jsName, varInfo(newValue));
+    return jsName;
 }
 
 /**
@@ -453,15 +479,16 @@ function concatLiterals(left: Literal, right: Literal): Literal {
 /**
  * Creates variable statement from given scope
  */
-function finalizeVars(vars: Map<string, VariableInfo>): ENDVariableStatement {
+function finalizeVars(state: HoistState): ENDVariableStatement {
     const result: ENDVariableStatement = {
         type: 'ENDVariableStatement',
         variables: []
     };
 
-    vars.forEach((info, name) => {
+    state.vars.forEach((info, name) => {
         if (info.used) {
             result.variables.push(variable(name, info.value));
+            state.runtime.add(name);
         }
     });
 
@@ -484,6 +511,31 @@ function finalizeDirectives(prev: ENDDirective[], state: HoistState): ENDDirecti
     // Skip class directives: they should be moved into "class" attribute
     return prev.filter(dir => !isClassName(dir) && !isEvent(dir))
         .concat(Array.from(state.events.values()));
+}
+
+function finalizePendingClass(state: HoistState): ENDAddClassStatement | void {
+    if (state.classNames) {
+        state.classNames.forEach((condition, name) => {
+            state.pendingClass = addClass([literal(name)], condition ? getExpression(condition) : null, state.pendingClass);
+        });
+    }
+
+    if (state.pendingClass) {
+        return {
+            type: 'ENDAddClassStatement',
+            tokens: [state.pendingClass],
+        } as ENDAddClassStatement;
+    }
+}
+
+function finalizePendingAttributes(state: HoistState): ENDAttributeStatement | void {
+    if (state.attrs.size) {
+        return {
+            type: 'ENDAttributeStatement',
+            attributes: finalizeAttributes(state.attrs),
+            directives: [],
+        } as ENDAttributeStatement;
+    }
 }
 
 function processAttributes(attributes: ENDAttribute[], directives: ENDDirective[], state: HoistState) {
@@ -541,12 +593,19 @@ function rewriteVarAccessors(expr: Program, state: HoistState) {
     walkExpr(expr, {
         Identifier(node: Identifier) {
             if (node.context === 'variable') {
-                const info = getVar(node.name, state);
-                if (info && info.ref) {
-                    node.name = info.ref;
-                }
+                const { name } = node;
+                if (!state.preserved.has(name)) {
+                    // In case if variable name is not preserved by template statement,
+                    // (like `<for-each>`) we should rename it to JS name from
+                    // current scope
+                    if (!state.jsLookup.has(name)) {
+                        state.options.warn(`Accessing local variable "${name}" before assignment`, node);
+                        state.vars.set(getJSName(name, state), varInfo(emptyVal));
+                    }
 
-                markUsed(node.name, state);
+                    node.name = getJSName(name, state);
+                    markUsed(node.name, state);
+                }
             }
         }
     });
@@ -657,7 +716,7 @@ function createCondition(expr: Program, state: HoistState) {
         }
     }
 
-    const lv = localVar(varName || state.getSymbol('if'));
+    const lv = localVar(varName || state.getSymbol('ifExpr'));
     if (!varName) {
         state.vars.set(lv.name, varInfo(expr, true));
     }
@@ -736,6 +795,24 @@ function getCondition(state: HoistState): Identifier | void {
     }
 }
 
+/**
+ * Returns safe JS variable identifier for given local variable name
+ */
+function getJSName(name: string, state: HoistState): string {
+    if (!state.jsLookup.has(name)) {
+        state.jsLookup.set(name, allocIdent(name, state));
+    }
+
+    return state.jsLookup.get(name);
+}
+
+/**
+ * Allocates new JS-safe name for given local variable name
+ */
+function allocIdent(name: string, state: HoistState): string {
+    return state.getSymbol(nameToJS(name));
+}
+
 function getVar(name: string, state: HoistState) {
     if (state.vars.has(name)) {
         return state.vars.get(name);
@@ -744,6 +821,24 @@ function getVar(name: string, state: HoistState) {
     for (const vars of state.varsScope) {
         if (vars.has(name)) {
             return vars.get(name);
+        }
+    }
+}
+
+function markPreserved(state: HoistState, ...names: string[]) {
+    for (const name of names) {
+        const value = state.preserved.get(name) || 0;
+        state.preserved.set(name, value + 1);
+    }
+}
+
+function unmarkPreserved(state: HoistState, ...names: string[]) {
+    for (const name of names) {
+        const value = state.preserved.get(name) || 0;
+        if (value < 2) {
+            state.preserved.delete(name);
+        } else {
+            state.preserved.set(name, value - 1);
         }
     }
 }
