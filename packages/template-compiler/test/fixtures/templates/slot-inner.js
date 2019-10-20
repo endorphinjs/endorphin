@@ -16,9 +16,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.showError) {
-		return ifBody$0;
-	}
+	return host.props.showError ? ifBody$0 : null;
 }
 
 function defaultSlotFooter$0(host, injector) {
@@ -42,9 +40,7 @@ function ifBody$1Unmount(scope) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.showFooter) {
-		return ifBody$1;
-	}
+	return host.props.showFooter ? ifBody$1 : null;
 }
 
 export default function template$0(host, scope) {

@@ -17,9 +17,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.c1) {
-		return ifBody$0;
-	}
+	return host.props.c1 ? ifBody$0 : null;
 }
 
 function ifBody$1(host, injector, scope) {
@@ -35,9 +33,7 @@ function ifBody$1Unmount(scope) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.c2) {
-		return ifBody$1;
-	}
+	return host.props.c2 ? ifBody$1 : null;
 }
 
 function forSelect$0(host) {
@@ -70,9 +66,7 @@ function ifBody$2Unmount(scope) {
 }
 
 function ifEntry$2(host) {
-	if (host.props.error) {
-		return ifBody$2;
-	}
+	return host.props.error ? ifBody$2 : null;
 }
 
 export default function template$0(host, scope) {

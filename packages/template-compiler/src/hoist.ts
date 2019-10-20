@@ -180,6 +180,7 @@ const visitors: WalkVisitorMap = {
         // Handle <e:choose>: basically, it’s an if/else if/else statement which
         // means that a <e:case> statement can be handler only if previous test
         // case fails.
+        const count = node.cases.length;
         node.cases.forEach(c => rewrite(c.test, state));
         if (node.cases.some(shouldHoistConditionTest)) {
             // Create expression which will pick a single case from choose statement
@@ -215,6 +216,12 @@ const visitors: WalkVisitorMap = {
                 state.conditions.pop();
                 return c.consequent.length;
             });
+            if (node.cases.length === count) {
+                // We can internal optimization here: instead of writing
+                // multiple `if ... else if...` in generated code to pick a single
+                // block, we can store them in array and pick one from choose expression
+                node.test = program(parentExpr);
+            }
         } else {
             node.cases = node.cases.filter(c => {
                 c.consequent = transform(c.consequent, next);

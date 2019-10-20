@@ -19,9 +19,7 @@ function ifBody$1(host, injector) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.foo) {
-		return ifBody$1;
-	}
+	return host.props.foo ? ifBody$1 : null;
 }
 
 function html$0(host) {
@@ -55,15 +53,15 @@ function forContent$0Unmount(scope) {
 
 function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
-	const inj$1 = createInjector(div$0);
+	const inj$0 = createInjector(div$0);
 	const eventSet$0 = scope.eventSet$0 = pendingEvents(host, div$0);
 	const attrSet$0 = scope.attrSet$0 = obj();
 	const prevPending$0 = scope.prevPending$0 = obj();
 	divPreparePending$0(attrSet$0, host);
-	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
-	scope.html$0 = mountInnerHTML(host, inj$1, html$0);
-	scope.for$0 = mountIterator(host, inj$1, forSelect$0, forContent$0);
-	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host));
+	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
+	scope.html$0 = mountInnerHTML(host, inj$0, html$0);
+	scope.for$0 = mountIterator(host, inj$0, forSelect$0, forContent$0);
+	const innerComponent$0 = scope.innerComponent$0 = insert(inj$0, createComponent("inner-component", InnerComponent, host));
 	mountComponent(innerComponent$0);
 	finalizePendingEvents(eventSet$0);
 	finalizeAttributes(div$0, attrSet$0, prevPending$0);
@@ -106,9 +104,7 @@ function ifBody$0Unmount(scope, host) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.enabled) {
-		return ifBody$0;
-	}
+	return host.props.enabled ? ifBody$0 : null;
 }
 
 function animatedOuterComponent$0(host, injector, scope) {
@@ -138,18 +134,16 @@ function ifBody$2Unmount(scope, host) {
 }
 
 function ifEntry$2(host) {
-	if (host.props.enabled) {
-		return ifBody$2;
-	}
+	return host.props.enabled ? ifBody$2 : null;
 }
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const inj$0 = createInjector(target$0);
+	const inj$1 = createInjector(target$0);
 	const refs$0 = scope.refs$0 = obj();
-	insert(inj$0, elemWithText("p", "test"));
-	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
-	scope.if$2 = mountBlock(host, inj$0, ifEntry$2);
+	insert(inj$1, elemWithText("p", "test"));
+	scope.if$0 = mountBlock(host, inj$1, ifEntry$0);
+	scope.if$2 = mountBlock(host, inj$1, ifEntry$2);
 	finalizePendingRefs(host, refs$0);
 	return template$0Update;
 }

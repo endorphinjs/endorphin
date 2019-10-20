@@ -30,11 +30,7 @@ function chooseBody$1(host, injector) {
 }
 
 function chooseEntry$0(host) {
-	if (get(host.props.item, "link")) {
-		return chooseBody$0;
-	} else {
-		return chooseBody$1;
-	}
+	return get(host.props.item, "link") ? chooseBody$0 : chooseBody$1;
 }
 
 export default function template$0(host, scope) {

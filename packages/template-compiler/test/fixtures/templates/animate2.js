@@ -9,19 +9,17 @@ function ifBody$1(host, injector) {
 }
 
 function ifEntry$1(host) {
-	if (host.state.something) {
-		return ifBody$1;
-	}
+	return host.state.something ? ifBody$1 : null;
 }
 
 function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
-	const inj$1 = createInjector(div$0);
+	const inj$0 = createInjector(div$0);
 	setClass(div$0, "css-anim");
-	const div$1 = scope.div$1 = insert(inj$1, elemWithText("div", "CSS Animation"));
+	const div$1 = scope.div$1 = insert(inj$0, elemWithText("div", "CSS Animation"));
 	const attrSet$0 = scope.attrSet$0 = obj();
 	divAttrs$0(div$1, attrSet$0, host);
-	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
+	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
 }
 
 function animatedDiv$0Update(host, scope) {
@@ -40,9 +38,7 @@ function ifBody$2(host, injector) {
 }
 
 function ifEntry$2(host) {
-	if (host.state.something) {
-		return ifBody$2;
-	}
+	return host.state.something ? ifBody$2 : null;
 }
 
 function ifBody$0(host, injector, scope) {
@@ -67,15 +63,13 @@ function ifBody$0Unmount(scope, host) {
 }
 
 function ifEntry$0(host) {
-	if (host.state.css) {
-		return ifBody$0;
-	}
+	return host.state.css ? ifBody$0 : null;
 }
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const inj$0 = createInjector(target$0);
-	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
+	const inj$1 = createInjector(target$0);
+	scope.if$0 = mountBlock(host, inj$1, ifEntry$0);
 	return template$0Update;
 }
 

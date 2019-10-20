@@ -20,9 +20,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.cond) {
-		return ifBody$0;
-	}
+	return host.props.cond ? ifBody$0 : null;
 }
 
 export default function template$0(host, scope) {

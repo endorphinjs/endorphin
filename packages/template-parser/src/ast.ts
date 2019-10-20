@@ -333,6 +333,11 @@ export interface ENDIfStatement extends ENDNode {
 export interface ENDChooseStatement extends ENDNode {
     type: 'ENDChooseStatement';
     cases: ENDChooseCase[];
+    /**
+     * Added internally by expression hoister: contains expression for picking
+     * one of inner `<choose>` statement
+     */
+    test?: Program;
 }
 
 export interface ENDChooseCase extends ENDNode {

@@ -8,8 +8,8 @@ export function expand() {};
 
 function animatedOuterComponent$0(host, injector, scope) {
 	const outerComponent$0 = scope.outerComponent$0 = insert(injector, createComponent("outer-component", OuterComponent, host));
-	const inj$1 = outerComponent$0.componentModel.input;
-	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host), "");
+	const inj$0 = outerComponent$0.componentModel.input;
+	const innerComponent$0 = scope.innerComponent$0 = insert(inj$0, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$0);
 	mountComponent(outerComponent$0);
 }
@@ -34,16 +34,14 @@ function ifBody$0Unmount(scope, host) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.enabled) {
-		return ifBody$0;
-	}
+	return host.props.enabled ? ifBody$0 : null;
 }
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const inj$0 = createInjector(target$0);
-	insert(inj$0, elemWithText("p", "test"));
-	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
+	const inj$1 = createInjector(target$0);
+	insert(inj$1, elemWithText("p", "test"));
+	scope.if$0 = mountBlock(host, inj$1, ifEntry$0);
 	return template$0Update;
 }
 

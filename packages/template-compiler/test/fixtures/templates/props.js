@@ -13,9 +13,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.cond) {
-		return ifBody$0;
-	}
+	return host.props.cond ? ifBody$0 : null;
 }
 
 function e1Attrs$0(elem, prev, host) {
@@ -38,9 +36,7 @@ function ifBody$1Unmount(scope) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.cond) {
-		return ifBody$1;
-	}
+	return host.props.cond ? ifBody$1 : null;
 }
 
 function e1Attrs$2(elem, prev, host) {
@@ -63,9 +59,7 @@ function ifBody$2Unmount(scope) {
 }
 
 function ifEntry$2(host) {
-	if (host.props.cond) {
-		return ifBody$2;
-	}
+	return host.props.cond ? ifBody$2 : null;
 }
 
 function e1Attrs$4(elem, prev, host) {

@@ -43,9 +43,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if ((count(host, host.state.actions) > 1)) {
-		return ifBody$0;
-	}
+	return (count(host, host.state.actions) > 1) ? ifBody$0 : null;
 }
 
 function animatedMsgMenu$0(host, injector, scope) {
@@ -78,9 +76,7 @@ function ifBody$1Unmount(scope, host) {
 }
 
 function ifEntry$1(host) {
-	if (host.state.showMenu) {
-		return ifBody$1;
-	}
+	return host.state.showMenu ? ifBody$1 : null;
 }
 
 export default function template$0(host, scope) {

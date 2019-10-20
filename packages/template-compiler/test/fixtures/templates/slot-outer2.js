@@ -20,9 +20,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.enabled) {
-		return ifBody$0;
-	}
+	return host.props.enabled ? ifBody$0 : null;
 }
 
 function ifBody$1(host, injector, scope) {
@@ -37,9 +35,7 @@ function ifBody$1Unmount(scope) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.active) {
-		return ifBody$1;
-	}
+	return host.props.active ? ifBody$1 : null;
 }
 
 export default function template$0(host, scope) {

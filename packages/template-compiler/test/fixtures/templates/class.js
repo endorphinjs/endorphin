@@ -25,9 +25,7 @@ function ifBody$0(host, injector) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.cond1) {
-		return ifBody$0;
-	}
+	return host.props.cond1 ? ifBody$0 : null;
 }
 
 function ifBody$1(host, injector) {
@@ -35,9 +33,7 @@ function ifBody$1(host, injector) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.cond2) {
-		return ifBody$1;
-	}
+	return host.props.cond2 ? ifBody$1 : null;
 }
 
 function e5Attrs$0(elem, prev, host) {
