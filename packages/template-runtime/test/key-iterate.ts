@@ -106,5 +106,32 @@ describe('Key iterate', () => {
 		strictEqual(cur[1], prev[1]);
 		strictEqual(cur[2], prev[0]);
 		strictEqual(cur[4], prev[4]);
+
+		component.setProps({
+			items: [
+				{ id: 1, marked: true },
+				{ id: 2, marked: false },
+				{ id: 3, marked: false },
+				{ id: 4, marked: true },
+				{ id: 5, marked: false },
+				{ id: 6, marked: false },
+				{ id: 7, marked: false }
+			]
+		});
+
+		// Elements may be changed as a pair
+		component.setProps({
+			items: [
+				{ id: 1, marked: true },
+				{ id: 4, marked: true },
+				{ id: 5, marked: false },
+				{ id: 2, marked: false },
+				{ id: 3, marked: false },
+				{ id: 6, marked: false },
+				{ id: 7, marked: false }
+			]
+		});
+
+		strictEqual(component.innerHTML, read('fixtures/key-iterate4.html'));
 	});
 });
