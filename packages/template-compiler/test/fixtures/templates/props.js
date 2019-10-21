@@ -1,4 +1,4 @@
-import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, text, unmountBlock, unmountComponent, updateAttribute, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
+import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, propsSet, text, unmountBlock, unmountComponent, updateAttribute, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
 import * as E1 from "./attrs.html";
 
 function ifBody$0(host, injector, scope) {
@@ -69,33 +69,33 @@ function e1Attrs$4(elem, prev, host) {
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const e1$0 = scope.e1$0 = appendChild(target$0, createComponent("e1", E1, host));
-	mountComponent(e1$0, {foo: "bar1"});
+	mountComponent(e1$0, propsSet(e1$0, {foo: "bar1"}));
 	const e1$1 = scope.e1$1 = appendChild(target$0, createComponent("e1", E1, host));
 	const inj$0 = e1$1.componentModel.input;
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
-	mountComponent(e1$1, {foo: "bar2"});
+	mountComponent(e1$1, propsSet(e1$1, {foo: "bar2"}));
 	const e1$2 = scope.e1$2 = appendChild(target$0, createComponent("e1", E1, host));
-	const propSet$2 = scope.propSet$2 = {}
+	const propSet$2 = scope.propSet$2 = propsSet(e1$2);
 	e1Attrs$0(e1$2, propSet$2, host);
 	mountComponent(e1$2, propSet$2);
 	const e1$3 = scope.e1$3 = appendChild(target$0, createComponent("e1", E1, host));
 	const inj$1 = e1$3.componentModel.input;
-	const propSet$3 = scope.propSet$3 = {}
+	const propSet$3 = scope.propSet$3 = propsSet(e1$3);
 	e1Attrs$1(e1$3, propSet$3, host);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 	mountComponent(e1$3, propSet$3);
 	const e1$4 = scope.e1$4 = appendChild(target$0, createComponent("e1", E1, host));
-	const propSet$4 = scope.propSet$4 = {}
+	const propSet$4 = scope.propSet$4 = propsSet(e1$4);
 	e1Attrs$2(e1$4, propSet$4, host);
 	mountComponent(e1$4, propSet$4);
 	const e1$5 = scope.e1$5 = appendChild(target$0, createComponent("e1", E1, host));
 	const inj$2 = e1$5.componentModel.input;
-	const propSet$5 = scope.propSet$5 = {}
+	const propSet$5 = scope.propSet$5 = propsSet(e1$5);
 	e1Attrs$3(e1$5, propSet$5, host);
 	scope.if$2 = mountBlock(host, inj$2, ifEntry$2);
 	mountComponent(e1$5, propSet$5);
 	const e1$6 = scope.e1$6 = appendChild(target$0, createComponent("e1", E1, host));
-	const propSet$6 = scope.propSet$6 = {}
+	const propSet$6 = scope.propSet$6 = propsSet(e1$6);
 	e1Attrs$4(e1$6, propSet$6, host);
 	mountComponent(e1$6, propSet$6);
 	return template$0Update;

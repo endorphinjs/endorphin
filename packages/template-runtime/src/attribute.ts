@@ -31,12 +31,9 @@ export function attributeSet(): AttributeChangeSet {
 /**
  * Create pending props change set
  */
-export function propsSet(elem: Component): AttributeChangeSet {
-	const props = assign(obj(), elem.componentModel.defaultProps);
-	// NB in components, pending `c` props are tested against actual `.props`,
-	// the `p` property is not used. To keep up with the same hidden JS class,
-	// create `p` property as well and point it to `c` to reduce object allocations
-	return { c: props, p: props };
+export function propsSet(elem: Component, initial?: {}): {} {
+	const base = obj(elem.componentModel.defaultProps);
+	return initial ? assign(base, initial) : base;
 }
 
 /**

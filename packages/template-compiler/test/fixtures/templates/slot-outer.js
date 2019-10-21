@@ -1,4 +1,4 @@
-import { appendChild, createComponent, elemWithText, insert, mountBlock, mountComponent, mountIterator, setAttribute, unmountBlock, unmountComponent, unmountIterator, updateAttribute, updateBlock, updateComponent, updateIncomingSlot, updateIterator } from "endorphin";
+import { appendChild, createComponent, elemWithText, insert, mountBlock, mountComponent, mountIterator, propsSet, setAttribute, unmountBlock, unmountComponent, unmountIterator, updateAttribute, updateBlock, updateComponent, updateIncomingSlot, updateIterator } from "endorphin";
 import * as SubComponent from "./slot-inner.html";
 
 function subComponentAttrs$0(elem, prev, host) {
@@ -74,7 +74,7 @@ export default function template$0(host, scope) {
 	appendChild(target$0, elemWithText("h1", "Hello world"));
 	const subComponent$0 = scope.subComponent$0 = appendChild(target$0, createComponent("sub-component", SubComponent, host));
 	const inj$0 = subComponent$0.componentModel.input;
-	const propSet$0 = scope.propSet$0 = {}
+	const propSet$0 = scope.propSet$0 = propsSet(subComponent$0);
 	subComponentAttrs$0(subComponent$0, propSet$0, host);
 	insert(inj$0, elemWithText("div", "foo"), "");
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);

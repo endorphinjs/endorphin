@@ -78,7 +78,7 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
     if (elem.isComponent) {
         // Mount attributes as props
         if (result.hasStaticAttrs || result.hasExpressionAttrs || result.hasPendingAttrs) {
-            result.receiver = mountStaticProps(staticAttrs, state);
+            result.receiver = mountStaticProps(elem, staticAttrs, state);
             elem.add(result.receiver);
         }
 
@@ -285,20 +285,24 @@ function mountStaticAttributes(elem: ElementEntity, attrs: ENDAttribute[], state
 /**
  * Mounts given attributes as static props: their values are not changed in runtime
  */
-function mountStaticProps(attrs: ENDAttribute[], state: CompileState) {
+function mountStaticProps(elem: ElementEntity, attrs: ENDAttribute[], state: CompileState) {
     return state.entity('propSet', {
         mount: () => {
-            const out = sn('{');
-            attrs.forEach((attr, i) => {
-                const name = (attr.name as Identifier).name;
-                const value = compileAttributeValue(attr.value, state, 'component');
-                if (i > 0) {
-                    out.add(', ');
-                }
-                out.add([propSetter(name), ': ', value]);
-            });
-            out.add('}');
-            return out;
+            const args: ChunkList = [elem.getSymbol()];
+            if (attrs.length) {
+                const initial = sn('{');
+                attrs.forEach((attr, i) => {
+                    const name = (attr.name as Identifier).name;
+                    const value = compileAttributeValue(attr.value, state, 'component');
+                    if (i > 0) {
+                        initial.add(', ');
+                    }
+                    initial.add([propSetter(name), ': ', value]);
+                });
+                initial.add('}');
+                args.push(initial);
+            }
+            return state.runtime('propsSet', args);
         }
     });
 }

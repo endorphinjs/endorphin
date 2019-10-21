@@ -1,4 +1,4 @@
-import { appendChild, assign, createComponent, elem, elemWithText, insert, mountComponent, obj, subscribeStore, text, unmountComponent, updateAttribute, updateComponent, updateText } from "endorphin";
+import { appendChild, assign, createComponent, elem, elemWithText, insert, mountComponent, obj, propsSet, subscribeStore, text, unmountComponent, updateAttribute, updateComponent, updateText } from "endorphin";
 import * as InnerComponent from "./inner-component.js";
 
 export const partials = {
@@ -23,12 +23,12 @@ export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	appendChild(target$0, elemWithText("h2", "Default partials"));
 	const innerComponent$0 = scope.innerComponent$0 = appendChild(target$0, createComponent("inner-component", InnerComponent, host));
-	const propSet$0 = scope.propSet$0 = {}
+	const propSet$0 = scope.propSet$0 = propsSet(innerComponent$0);
 	innerComponentAttrs$0(innerComponent$0, propSet$0, host);
 	mountComponent(innerComponent$0, propSet$0);
 	appendChild(target$0, elemWithText("h2", "Override partials"));
 	const innerComponent$1 = scope.innerComponent$1 = appendChild(target$0, createComponent("inner-component", InnerComponent, host));
-	const propSet$1 = scope.propSet$1 = {}
+	const propSet$1 = scope.propSet$1 = propsSet(innerComponent$1);
 	innerComponentAttrs$1(innerComponent$1, propSet$1, host);
 	propSet$1["partial:item"] = assign({ host }, partials["my-item"]);
 	mountComponent(innerComponent$1, propSet$1);

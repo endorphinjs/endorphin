@@ -2,9 +2,9 @@ import { appendChild, createInjector, elem, elemWithText, insert, mountBlock, ob
 let __chooseExpr, __caseExpr, __caseExpr_2;
 
 function setVars$0(host) {
-	__chooseExpr = ((host.props.expr1 === 1) ? 1 : ((host.props.expr1 === 2) ? 2 : 3));
-	__caseExpr = (__chooseExpr === 1);
-	__caseExpr_2 = (__chooseExpr === 3);
+	__chooseExpr = ((host.props.expr1 === 1) ? 0 : ((host.props.expr1 === 2) ? 1 : 2));
+	__caseExpr = (__chooseExpr === 0);
+	__caseExpr_2 = (__chooseExpr === 2);
 }
 
 function blockquoteAttrs$0(elem, prev) {

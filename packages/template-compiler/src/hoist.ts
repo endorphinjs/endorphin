@@ -147,7 +147,7 @@ const visitors: WalkVisitorMap = {
     },
     ENDVariableStatement(node: ENDVariableStatement, state) {
         // Move variables up to parent scope
-        node.variables.forEach(v => hoistVar(state, v.name, v.value));
+        node.variables.forEach(v => hoistVar(state, v.name, rewrite(v.value, state)));
         return null;
     },
     ENDAttributeStatement(node: ENDAttributeStatement, state) {
@@ -205,14 +205,14 @@ const visitors: WalkVisitorMap = {
         if (node.cases.some(shouldHoistConditionTest)) {
             // Create expression which will pick a single case from choose statement
             let expr: Expression;
-            const empty = literal(0);
+            const empty = literal(-1);
 
             for (let i = node.cases.length - 1; i >= 0; i--) {
                 const c = node.cases[i];
                 if (c.test) {
-                    expr = conditionalExpr(castValue(c.test), literal(i + 1), expr || empty);
+                    expr = conditionalExpr(castValue(c.test), literal(i), expr || empty);
                 } else {
-                    expr = literal(i + 1);
+                    expr = literal(i);
                 }
             }
 
@@ -227,7 +227,7 @@ const visitors: WalkVisitorMap = {
             node.cases = node.cases.filter((c, i) => {
                 // Hoist condition as local variable
                 const lv = localVar(state.getSymbol('caseExpr'));
-                const test = program(binaryExpr(parentExpr, literal(i + 1), '==='));
+                const test = program(binaryExpr(parentExpr, literal(i), '==='));
 
                 state.vars.set(lv.name, varInfo(test));
                 c.test = program(lv);
@@ -241,6 +241,15 @@ const visitors: WalkVisitorMap = {
                 // multiple `if ... else if...` in generated code to pick a single
                 // block, we can store them in array and pick one from choose expression
                 node.test = program(parentExpr);
+            } else {
+                // Some blocks are skipped, ensure test conditions are marked
+                // as used so they are exported to output
+                node.cases.forEach(c => {
+                    const test = getExpression(c.test);
+                    if (test && isIdentifier(test) && test.context === 'variable') {
+                        markUsed(test.name, state);
+                    }
+                });
             }
         } else {
             node.cases = node.cases.filter(c => {

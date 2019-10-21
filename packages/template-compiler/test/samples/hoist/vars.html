@@ -1,12 +1,12 @@
 <template>
     <h1>Test hoist</h1>
-    <e:var foo=1 bar={baz}/>
+    <e:var foo=1 foo-bar=2 bar={baz} bam={baz + @foo-bar}/>
     <p>Text</p>
     <e:var foo2=2 bar2={#bam}/>
 
     <!-- Output variable then redefine -->
     <p title={@foo}>foo var 1</p>
     <e:var foo=3 bar={#baz2}/>
-    <p title={@foo}>foo var {@bar}</p>
+    <p title={@foo}>foo var {@bar} {@bam}</p>
     <!-- Variables `foo2` and `bar2` should not be outputted since they are not used -->
 </template>
