@@ -4,7 +4,7 @@ import BlockContext from './BlockContext';
 import Entity, { RenderOptions, entity } from '../entities/Entity';
 import ElementEntity from '../entities/ElementEntity';
 import createSymbolGenerator, { SymbolGenerator } from './SymbolGenerator';
-import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue } from './utils';
+import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAttrValue, propGetter } from './utils';
 import { Chunk, ComponentImport, RuntimeSymbols, ChunkList, UsageContext } from '../types';
 import { CompileOptions } from '..';
 import { RefStats } from './RefStats';
@@ -154,9 +154,9 @@ export default class CompileState {
     /** Current namespaces */
     private namespaceMap: NamespaceMap = {};
 
+    private _scoped: Map<string, number> = new Map();
     private _renderContext?: UsageContext;
     private _warned: Set<string> = new Set();
-    private cache: Map<Node, { [name: string]: any }> = new Map();
 
     constructor(options?: CompileOptions) {
         this.options = Object.assign({}, defaultOptions, options);
@@ -427,6 +427,44 @@ export default class CompileState {
     }
 
     /**
+     * Marks given local variable names as bound to component scope
+     */
+    markScoped(...names: string[]) {
+        for (const name of names) {
+            const value = this._scoped.get(name) || 0;
+            this._scoped.set(name, value + 1);
+        }
+    }
+
+    /**
+     * Removes local scope marks from given local variable names
+     */
+    unmarkScoped(...names: string[]) {
+        for (const name of names) {
+            const value = this._scoped.get(name) || 0;
+            if (value < 2) {
+                this._scoped.delete(name);
+            } else {
+                this._scoped.set(name, value - 1);
+            }
+        }
+    }
+
+    /**
+     * Check if given variable name is bound to local scope
+     */
+    isScoped(name: string): boolean {
+        return this._scoped.has(name);
+    }
+
+    /**
+     * Returns reverence to local variable
+     */
+    localVar(name: string) {
+        return this.isScoped(name) ? `${this.scope}${propGetter(name)}` : `__${name}`;
+    }
+
+    /**
      * Displays warning with given message
      */
     warn(msg: string, pos?: number): void {
@@ -452,26 +490,6 @@ export default class CompileState {
         if (chunk) {
             this.output.add(chunk);
             this.output.add('\n');
-        }
-    }
-
-    /**
-     * Returns cached value for given node
-     */
-    getCache(node: Node, key: string): any {
-        if (this.cache.has(node)) {
-            return this.cache.get(node)[key];
-        }
-    }
-
-    /**
-     * Puts given value into cache
-     */
-    putCache(node: Node, key: string, value: any) {
-        if (!this.cache.has(node)) {
-            this.cache.set(node, { [key]: value });
-        } else {
-            this.cache.get(node)[key] = value;
         }
     }
 

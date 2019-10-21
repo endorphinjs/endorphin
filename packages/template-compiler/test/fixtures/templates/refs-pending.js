@@ -1,5 +1,6 @@
 import { animate, createInjector, detachPendingEvents, domRemove, elem, finalizeAttributes, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountBlock, mountPartial, obj, pendingEvents, setPendingRef, stopAnimation, unmountBlock, unmountPartial, updateBlock, updateClass, updatePartial } from "endorphin";
 import { count } from "main";
+let __isMine;
 
 export const partials = {
 	button: {
@@ -13,8 +14,12 @@ export const partials = {
 	}
 };
 
-function mainPreparePending$0(pending, host, scope) {
-	pending.class = (scope["is-mine"] ? "is-mine" : "");
+function setVars$0() {
+	__isMine = undefined;
+}
+
+function mainPreparePending$0(pending) {
+	pending.class = (__isMine ? "is-mine" : "");
 }
 
 function ifBody$0(host, injector, scope) {
@@ -83,12 +88,13 @@ export default function template$0(host, scope) {
 	const target$0 = host.componentView;
 	const inj$1 = createInjector(target$0);
 	const refs$0 = scope.refs$0 = obj();
+	setVars$0(host);
 	const main$0 = scope.main$0 = insert(inj$1, elem("main"));
 	const inj$0 = createInjector(main$0);
 	const eventSet$0 = scope.eventSet$0 = pendingEvents(host, main$0);
 	const attrSet$0 = scope.attrSet$0 = obj();
 	const prevPending$0 = scope.prevPending$0 = obj();
-	mainPreparePending$0(attrSet$0, host, scope);
+	mainPreparePending$0(attrSet$0);
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	finalizePendingEvents(eventSet$0);
 	finalizeAttributes(main$0, attrSet$0, prevPending$0);
@@ -101,7 +107,8 @@ template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { attrSet$0 } = scope;
-	mainPreparePending$0(attrSet$0, host, scope);
+	setVars$0(host);
+	mainPreparePending$0(attrSet$0);
 	updateBlock(scope.if$0);
 	finalizePendingEvents(scope.eventSet$0);
 	finalizeAttributes(scope.main$0, attrSet$0, scope.prevPending$0);

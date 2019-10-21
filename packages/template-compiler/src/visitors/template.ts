@@ -173,8 +173,12 @@ export default {
     },
 
     ENDForEachStatement(node: ENDForEachStatement, state, next) {
-        return new IteratorEntity(node, state)
-            .setContent(node.body, next);
+        // Mark iterator vars as scope-bound
+        const vars = [node.indexName, node.keyName, node.valueName];
+        state.markScoped(...vars);
+        const ent = new IteratorEntity(node, state).setContent(node.body, next);
+        state.unmarkScoped(...vars);
+        return ent;
     },
 
     ENDInnerHTML(node: ENDInnerHTML, state) {
@@ -188,6 +192,8 @@ export default {
     },
 
     ENDPartial(node: ENDPartial, state, next) {
+        const localVars = node.params.map(p => (p.name as Identifier).name);
+        state.markScoped(...localVars);
         const block = state.runChildBlock(`partial${nameToJS(node.id, true)}`, (b, elem) => {
             elem.setContent(node.body, next);
         });
@@ -196,6 +202,7 @@ export default {
             name: block.name,
             defaults: generateObject(node.params, state, 2)
         });
+        state.unmarkScoped(...localVars);
     },
 
     ENDPartialStatement(node: ENDPartialStatement, state) {

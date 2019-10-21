@@ -19,6 +19,10 @@ export default {
             return state.helper(node.name);
         }
 
+        if (node.context === 'variable') {
+            return state.localVar(node.name);
+        }
+
         if (node.context && node.context !== 'argument' && node.context !== 'definition') {
             const prefix = next({
                 type: 'ENDGetterPrefix',

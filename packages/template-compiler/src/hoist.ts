@@ -54,7 +54,7 @@ interface HoistState {
 
 interface HoistOptions {
     /** Warns about template issues */
-    warn(msg: string, node?: ENDNode): void;
+    warn(msg: string, pos?: number): void;
 }
 
 const defaultOptions: HoistOptions = {
@@ -599,7 +599,7 @@ function rewriteVarAccessors(expr: Program, state: HoistState) {
                     // (like `<for-each>`) we should rename it to JS name from
                     // current scope
                     if (!state.jsLookup.has(name)) {
-                        state.options.warn(`Accessing local variable "${name}" before assignment`, node);
+                        state.options.warn(`Accessing local variable "${name}" before assignment`, node.start);
                         state.vars.set(getJSName(name, state), varInfo(emptyVal));
                     }
 

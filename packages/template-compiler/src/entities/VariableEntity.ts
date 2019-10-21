@@ -2,23 +2,31 @@ import { ENDVariableStatement, ENDAttributeValue } from '@endorphinjs/template-p
 import Entity, { entity } from './Entity';
 import CompileState from '../lib/CompileState';
 import generateExpression from '../expression';
-import { sn, propGetter, isLiteral, isExpression } from '../lib/utils';
+import { sn, isLiteral, isExpression } from '../lib/utils';
 
 export default class VariableEntity extends Entity {
     constructor(readonly node: ENDVariableStatement, readonly state: CompileState) {
         super('vars', state);
         const fn = state.runBlock('setVars', () => {
             return node.variables.map(v => entity(v.name, state, {
-                mount: () => sn([`${state.scope}${propGetter(v.name)} = `, compileValue(v.value, state)])
+                mount: () => sn([`${state.localVar(v.name)} = `, compileValue(v.value, state) || 'null'])
             }));
         });
-        this.setShared(() => `${fn.mountSymbol}(${state.host}, ${state.scope})`);
+        this.setShared(() => {
+            const scopeArg = fn.scopeUsage.mount ? `, ${state.scope}` : '';
+            const hostArg = fn.hostUsage || fn.scopeUsage.mount ? state.host : '';
+            return `${fn.mountSymbol}(${hostArg}${scopeArg})`;
+        });
     }
 }
 
 function compileValue(value: ENDAttributeValue, state: CompileState) {
     if (isLiteral(value)) {
-        return sn(JSON.stringify(value.value), value);
+        const json = typeof value.value === 'undefined'
+            ? 'undefined' // JSON.stringify would return empty string
+            : JSON.stringify(value.value);
+
+        return sn(json, value);
     }
 
     if (isExpression(value)) {

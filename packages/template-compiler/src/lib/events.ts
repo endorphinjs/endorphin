@@ -1,14 +1,14 @@
 import {
     ENDDirective, Expression, ENDGetterPrefix, Identifier, ExpressionStatement,
     ENDCaller, ENDAttributeValue, CallExpression, IdentifierContext, ThisExpression,
-    ENDGetter, MemberExpression, JSNode
+    ENDGetter, MemberExpression, JSNode, walk
 } from '@endorphinjs/template-parser';
 import CompileState from '../lib/CompileState';
 import generateExpression from '../expression';
 import baseVisitors from '../visitors/expression';
 import {
     sn, nameToJS, isExpression, isIdentifier, isLiteral, qStr, isArrowFunction,
-    isCallExpression, isPrefix, isPropKey
+    isCallExpression, isPrefix, isPropKey, propGetter
 } from '../lib/utils';
 import { ENDCompileError } from '../lib/error';
 import { ExpressionVisitorMap } from '../types';
@@ -37,19 +37,48 @@ const argNames: { [type in UsedArgs]: string } = {
 
 export default function mountEvent(node: ENDDirective, eventReceiver: Entity, state: CompileState) {
     const eventType = node.name.split(':')[0];
-    const handler = createEventHandler(node, state);
     const { receiver } = state;
-    if (!receiver || receiver.isPendingEvent(eventType)) {
-        // Mount as pending event
-        return state.entity(eventType, {
-            shared: () => state.runtime('setPendingEvent', [eventReceiver.getSymbol(), qStr(eventType), handler, state.scope])
-        });
+    const entity = state.entity();
+    const localVars = getLocalVariables(node).filter(name => !state.isScoped(name));
+
+    if (localVars.length) {
+        const fn = bindLocalVars(localVars, state);
+        entity.add(state.entity({
+            shared() {
+                return sn(`${fn}(${state.host}, ${state.scope})`);
+            }
+        }));
+        state.markScoped(...localVars);
     }
 
-    return state.entity(eventType, {
-        mount: () => state.runtime('addEvent', [receiver.getSymbol(), qStr(eventType), handler, state.host, state.scope]),
-        unmount: (ent: Entity) => sn([ent.scopeName, ' = ', state.runtime('removeEvent', [qStr(eventType), ent.getSymbol()])])
-    });
+    const handler = createEventHandler(node, state);
+
+    if (localVars.length) {
+        state.unmarkScoped(...localVars);
+    }
+
+    if (!receiver || receiver.isPendingEvent(eventType)) {
+        // Mount as pending event
+        entity.add(state.entity(eventType, {
+            shared: () => state.runtime('setPendingEvent', [eventReceiver.getSymbol(), qStr(eventType), handler, state.scope])
+        }));
+    } else {
+        entity.add(state.entity(eventType, {
+            mount: () => state.runtime('addEvent', [receiver.getSymbol(), qStr(eventType), handler, state.host, state.scope]),
+            unmount: (ent: Entity) => sn([ent.scopeName, ' = ', state.runtime('removeEvent', [qStr(eventType), ent.getSymbol()])])
+        }));
+    }
+
+    return entity;
+}
+
+/**
+ * Returns list of runtime variables used in event handler that should be bound
+ * to component instance
+ */
+export function getLocalVariables(node: ENDDirective): string[] {
+    const handler = getHandler(node.value);
+    return handler ? collectLocalVars(handler) : [];
 }
 
 function createEventHandler(node: ENDDirective, state: CompileState): string {
@@ -239,4 +268,33 @@ function handleContext(ctx: IdentifierContext, state: UsedArgsState) {
 
 function isEventArgument(node: JSNode, name: string): node is Identifier {
     return isIdentifier(node) && node.context === 'argument' && node.name === name;
+}
+
+/**
+ * Collect runtime variables used in given event handler
+ */
+function collectLocalVars(expr: Expression): string[] {
+    const result: string[] = [];
+    walk(expr, {
+        Identifier(node: Identifier) {
+            if (node.context === 'variable') {
+                result.push(node.name);
+            }
+        }
+    });
+    return result;
+}
+
+function bindLocalVars(vars: string[], state: CompileState) {
+    return state.runBlock('bindEventVars', () => {
+        const body = sn();
+        const ident = identifier('', 'variable');
+        vars.forEach((v, i) => {
+            const indent = i ? '\n' + state.indent : '';
+            ident.name = v;
+            body.add([`${indent}${state.scope}${propGetter(v)} = `, generateExpression(ident, state), ';']);
+        });
+
+        return state.entity({ mount: () => body });
+    }).mountSymbol;
 }

@@ -9,7 +9,7 @@ export const partials = {
 	}
 };
 
-function divPreparePending$0(pending, host) {
+function divPreparePending$0(pending) {
 	pending.foo = "bar";
 	pending.a = "1";
 }
@@ -22,7 +22,7 @@ export default function template$0(host, scope) {
 	const eventSet$0 = scope.eventSet$0 = pendingEvents(host, div$0);
 	const attrSet$0 = scope.attrSet$0 = obj();
 	const prevPending$0 = scope.prevPending$0 = obj();
-	divPreparePending$0(attrSet$0, host);
+	divPreparePending$0(attrSet$0);
 	scope.partial$0 = mountPartial(host, inj$0, getPartial(host, "button", partials), {
 		enabled: true,
 		":a": attrSet$0,
@@ -38,7 +38,7 @@ template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { eventSet$0, attrSet$0 } = scope;
-	divPreparePending$0(attrSet$0, host);
+	divPreparePending$0(attrSet$0);
 	updatePartial(scope.partial$0, getPartial(host, "button", partials), {
 		enabled: true,
 		":a": attrSet$0,

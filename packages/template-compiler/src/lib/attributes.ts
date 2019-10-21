@@ -77,7 +77,7 @@ export function ownAttributes(elem: ElementEntity, stats: ElementStats, state: C
 
     if (elem.isComponent) {
         // Mount attributes as props
-        if (result.hasStaticAttrs || result.hasExpressionAttrs || result.hasExpressionAttrs) {
+        if (result.hasStaticAttrs || result.hasExpressionAttrs || result.hasPendingAttrs) {
             result.receiver = mountStaticProps(staticAttrs, state);
             elem.add(result.receiver);
         }
