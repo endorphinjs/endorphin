@@ -1,0 +1,19 @@
+[vars: a b a_1 b_1]
+<template>
+    <e:var a=1 b=1 a_1={foo2 ? 2 : undefined} b_1={foo3 ? 1 + 2 : undefined}/>
+    <h1>Test condition</h1>
+    <e:if test={foo}>
+        <p>Text foo</p>
+        <e:if test={#bar}>
+            <div>Text bar</div>
+        </e:if>
+    </e:if>
+    <e:if test={foo2}>
+        <p title={@a}>var a 1</p>
+        <p title={@a_1}>var a 2</p>
+    </e:if>
+    <e:if test={foo3}>
+        <p title={@b}>var b 1</p>
+        <p title={@b_1}>var b 2</p>
+    </e:if>
+</template>

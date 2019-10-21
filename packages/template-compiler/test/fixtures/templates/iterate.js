@@ -9,16 +9,14 @@ function ifBody$1(host, injector) {
 }
 
 function ifEntry$1(host, scope) {
-	if (get(scope.value, "marked")) {
-		return ifBody$1;
-	}
+	return get(scope.value, "marked") ? ifBody$1 : null;
 }
 
 function forContent$0(host, injector, scope) {
 	const li$0 = insert(injector, elem("li"));
-	const inj$1 = createInjector(li$0);
-	insert(inj$1, text("\n                    item\n                    "));
-	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
+	const inj$0 = createInjector(li$0);
+	insert(inj$0, text("\n                    item\n                    "));
+	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
 	return forContent$0Update;
 }
 
@@ -35,8 +33,8 @@ function forContent$0Unmount(scope) {
 function ifBody$0(host, injector, scope) {
 	insert(injector, elemWithText("p", "will iterate"));
 	const ul$0 = insert(injector, elem("ul"));
-	const inj$2 = createInjector(ul$0);
-	scope.for$0 = mountIterator(host, inj$2, forSelect$0, forContent$0);
+	const inj$1 = createInjector(ul$0);
+	scope.for$0 = mountIterator(host, inj$1, forSelect$0, forContent$0);
 	return ifBody$0Update;
 }
 
@@ -51,16 +49,14 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.items) {
-		return ifBody$0;
-	}
+	return host.props.items ? ifBody$0 : null;
 }
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const inj$0 = createInjector(target$0);
-	insert(inj$0, elemWithText("h1", "Hello world"));
-	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
+	const inj$2 = createInjector(target$0);
+	insert(inj$2, elemWithText("h1", "Hello world"));
+	scope.if$0 = mountBlock(host, inj$2, ifEntry$0);
 	return template$0Update;
 }
 

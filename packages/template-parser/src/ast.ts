@@ -129,7 +129,7 @@ export interface Property extends JSNode {
     shorthand?: boolean;
 }
 
-interface BaseExpression extends JSNode {
+export interface BaseExpression extends JSNode {
     left: Expression;
     operator: string;
     right: Expression;
@@ -257,6 +257,8 @@ export interface ENDProgram extends ENDNode {
     body: ENDProgramStatement[];
     stylesheets: ENDStylesheet[];
     scripts: ENDScript[];
+    /** List of local variables (JS-safe) used in partial. Added by template optimizer */
+    variables: string[];
 }
 
 export interface ENDTemplate extends ENDNode {
@@ -333,6 +335,11 @@ export interface ENDIfStatement extends ENDNode {
 export interface ENDChooseStatement extends ENDNode {
     type: 'ENDChooseStatement';
     cases: ENDChooseCase[];
+    /**
+     * Added internally by expression hoister: contains expression for picking
+     * one of inner `<choose>` statement
+     */
+    test?: Program;
 }
 
 export interface ENDChooseCase extends ENDNode {
@@ -346,6 +353,12 @@ export interface ENDForEachStatement extends ENDNode {
     body: ENDStatement[];
     select: Program;
     key?: Program;
+    /** Name of local variable for referencing iterator index */
+    indexName: string;
+    /** Name of local variable for referencing iterator key */
+    keyName: string;
+    /** Name of local variable for referencing iterator value */
+    valueName: string;
 }
 
 export interface ENDPartialStatement extends ENDNode {

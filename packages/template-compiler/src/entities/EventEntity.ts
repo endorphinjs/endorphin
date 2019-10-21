@@ -43,7 +43,7 @@ export default class EventEntity extends Entity {
         const { element, receiver } = state;
         const handler = createEventHandler(node, state);
 
-        if (!receiver || receiver.isDynamicDirective(node.prefix, node.name)) {
+        if (!receiver || receiver.isPendingEvent(node.name)) {
             // Event is dynamic, e.g. can be changed with condition
             this.setShared(() =>
                 state.runtime('setPendingEvent', [pendingEvents(state), qStr(eventType), handler, state.scope]));

@@ -5,17 +5,24 @@ import { sn } from '../lib/utils';
 import generateExpression from '../expression';
 import { TemplateContinue, TemplateOutput } from '../types';
 
+type ConditionStatement = ENDIfStatement | ENDChooseCase;
+
 export default class ConditionEntity extends Entity {
     constructor(readonly node: ENDIfStatement | ENDChooseStatement, state: CompileState) {
         super(node.type === 'ENDIfStatement' ? 'if' : 'choose', state);
     }
 
-    setContent(statements: Array<ENDIfStatement | ENDChooseCase>, next: TemplateContinue): this {
+    setContent(statements: ConditionStatement[], next: TemplateContinue): this {
         const { state } = this;
-        this.setMount(() => state.runtime('mountBlock', [state.host, state.injector, conditionEntry(this.rawName, statements, state, next)]))
-            .setUpdate(() => state.runtime('updateBlock', [this.getSymbol()]))
-            .setUnmount(() => this.unmount('unmountBlock'));
+        this.setMount(() => {
+            const fn = this.node.type === 'ENDChooseStatement' && this.node.test
+                ? pickEntry(this.rawName, this.node.test, statements, state, next)
+                : conditionEntry(this.rawName, statements, state, next);
 
+            return state.runtime('mountBlock', [state.host, state.injector, fn]);
+        });
+        this.setUpdate(() => state.runtime('updateBlock', [this.getSymbol()]));
+        this.setUnmount(() => this.unmount('unmountBlock'));
         return this;
     }
 
@@ -35,29 +42,43 @@ export default class ConditionEntity extends Entity {
  * Generates condition entry function: tests condition and returns another function
  * for rendering matched block
  */
-function conditionEntry(name: string, conditions: Array<ENDIfStatement | ENDChooseCase>, state: CompileState, next: TemplateContinue): string {
+function conditionEntry(name: string, conditions: ConditionStatement[], state: CompileState, next: TemplateContinue): string {
     return state.runBlock(`${name}Entry`, () => {
         return state.entity({
             mount: () => {
-                const indent = state.indent;
-                const innerIndent = indent.repeat(2);
-                const body = sn();
-
+                const body = sn('return ');
+                const lastIx = conditions.length - 1;
                 conditions.forEach((block, i) => {
-                    if (block.test) {
-                        body.add([`${i === 0 ? '' : ' else '}if (`, generateExpression(block.test, state), ') ']);
-                    } else {
-                        body.add(' else ');
-                    }
-
                     const blockContent = state.runChildBlock(`${name}Body`, (ctx, element) =>
                         element.setContent(block.consequent, next));
 
-                    body.add(`{\n${innerIndent}return ${blockContent.mountSymbol};\n${indent}}`);
+                    if (block.test) {
+                        body.add([generateExpression(block.test, state), ' ? ', blockContent.mountSymbol, ' : ', i === lastIx ? 'null' : '']);
+                    } else {
+                        body.add(blockContent.mountSymbol);
+                    }
                 });
 
                 return body;
             }
+        });
+    }).mountSymbol;
+}
+
+/**
+ * Generates a special, simplified function for picking from one of the choose
+ * statements using pre-calculated `expr` expression
+ */
+function pickEntry(name: string, expr: Program, conditions: ConditionStatement[], state: CompileState, next: TemplateContinue): string {
+    const blocks = conditions.map(block => {
+        const ctx = state.runChildBlock(`${name}Body`, (_, element) =>
+            element.setContent(block.consequent, next));
+        return ctx.mountSymbol;
+    });
+
+    return state.runBlock(`${name}Entry`, () => {
+        return state.entity({
+            mount: () => sn([`return [${blocks.join(', ')}][`, generateExpression(expr, state), ']'])
         });
     }).mountSymbol;
 }

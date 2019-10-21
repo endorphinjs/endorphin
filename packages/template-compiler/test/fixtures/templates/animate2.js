@@ -1,33 +1,36 @@
-import { animate, createInjector, domRemove, elem, elemWithText, insert, mountBlock, setAttributeExpression, setClass, unmountBlock, updateAttributeExpression, updateBlock } from "endorphin";
+import { animate, createInjector, domRemove, elem, elemWithText, insert, mountBlock, obj, setClass, unmountBlock, updateAttribute, updateBlock } from "endorphin";
+
+function divAttrs$0(elem, prev, host) {
+	updateAttribute(elem, prev, "title", host.state.title);
+}
 
 function ifBody$1(host, injector) {
 	insert(injector, elemWithText("p", "Something 1"));
 }
 
 function ifEntry$1(host) {
-	if (host.state.something) {
-		return ifBody$1;
-	}
+	return host.state.something ? ifBody$1 : null;
 }
 
 function animatedDiv$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
-	const inj$1 = createInjector(div$0);
+	const inj$0 = createInjector(div$0);
 	setClass(div$0, "css-anim");
-	const div$1 = scope.div$1 = insert(inj$1, elemWithText("div", "CSS Animation"));
-	scope.titleAttr$0 = setAttributeExpression(div$1, "title", host.state.title);
-	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
+	const div$1 = scope.div$1 = insert(inj$0, elemWithText("div", "CSS Animation"));
+	const attrSet$0 = scope.attrSet$0 = obj();
+	divAttrs$0(div$1, attrSet$0, host);
+	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
 }
 
 function animatedDiv$0Update(host, scope) {
-	scope.titleAttr$0 = updateAttributeExpression(scope.div$1, "title", host.state.title, scope.titleAttr$0);
+	divAttrs$0(scope.div$1, scope.attrSet$0, host);
 	updateBlock(scope.if$1);
 }
 
 function animatedDiv$0Unmount(scope) {
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.div$0 = domRemove(scope.div$0);
-	scope.titleAttr$0 = scope.div$1 = null;
+	scope.attrSet$0 = scope.div$1 = null;
 }
 
 function ifBody$2(host, injector) {
@@ -35,9 +38,7 @@ function ifBody$2(host, injector) {
 }
 
 function ifEntry$2(host) {
-	if (host.state.something) {
-		return ifBody$2;
-	}
+	return host.state.something ? ifBody$2 : null;
 }
 
 function ifBody$0(host, injector, scope) {
@@ -62,15 +63,13 @@ function ifBody$0Unmount(scope, host) {
 }
 
 function ifEntry$0(host) {
-	if (host.state.css) {
-		return ifBody$0;
-	}
+	return host.state.css ? ifBody$0 : null;
 }
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	const inj$0 = createInjector(target$0);
-	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
+	const inj$1 = createInjector(target$0);
+	scope.if$0 = mountBlock(host, inj$1, ifEntry$0);
 	return template$0Update;
 }
 

@@ -1,17 +1,17 @@
-import { ENDElement, ENDTemplate, ENDAttribute, Literal, ENDAttributeValue, Identifier, Program } from '@endorphinjs/template-parser';
+import { ENDElement, ENDTemplate, Literal, ENDAttributeValue, Program } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
 import Entity from './Entity';
-import { compileAttributeValue } from './AttributeEntity';
-import ComponentMountEntity from './ComponentMountEntity';
 import InjectorEntity from './InjectorEntity';
 import TextEntity from './TextEntity';
 import UsageStats from '../lib/UsageStats';
 import CompileState from '../lib/CompileState';
-import { isElement, isExpression, sn, isIdentifier, qStr, getControlName, getAttrValue, propSetter, propGetter } from '../lib/utils';
-import ElementStats from '../lib/ElementStats';
+import { isElement, sn, qStr, getControlName, getAttrValue, isEvent } from '../lib/utils';
+import attributeStats, { ElementStats } from '../lib/attributeStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
+import { ownAttributes, AttributesState, mountPartialOverride } from '../lib/attributes';
+import mountEvent from '../lib/events';
 
 export default class ElementEntity extends Entity {
     injectorEntity: InjectorEntity;
@@ -25,14 +25,12 @@ export default class ElementEntity extends Entity {
     animateOut?: ENDAttributeValue;
 
     private slotMarks: { [slotName: string]: string } = {};
-    private dynAttrs?: Entity;
-    private dynEvents?: Entity;
+    private attrState: AttributesState;
 
     constructor(readonly node: ENDElement | ENDTemplate | null, readonly state: CompileState) {
         super(node && isElement(node) ? node.name.name : 'target', state);
         if (node) {
-            const stats = this.stats = new ElementStats(node);
-
+            this.stats = attributeStats(node);
             if (isElement(node)) {
                 this.isComponent = state.isComponent(node)
                     || getControlName(node.name.name) === 'self';
@@ -49,15 +47,6 @@ export default class ElementEntity extends Entity {
                         }
                     }
                 });
-
-                // Mount pending attributes and events in same block as element
-                if (stats.hasPartials || stats.hasDynamicAttributes() || stats.hasDynamicClass()) {
-                    this.mountPendingAttributes();
-                }
-
-                if (stats.hasPartials || stats.hasDynamicEvents()) {
-                    this.mountPendingEvents();
-                }
             }
         } else {
             // Empty node means we’re in element defined in outer block
@@ -93,35 +82,16 @@ export default class ElementEntity extends Entity {
         return this.injectorEntity != null;
     }
 
-    /** Entity for receiving pending attributes */
-    get pendingAttributes(): Entity {
-        if (!this.dynAttrs) {
-            this.mountPendingAttributes();
-        }
-
-        return this.dynAttrs;
+    /**
+     * Receiver for pending attributes, if available
+     */
+    get pendingAttributes(): Entity | null {
+        return this.attrState && this.attrState.receiver;
     }
 
     /** Entity for receiving pending events */
-    get pendingEvents(): Entity {
-        if (!this.dynEvents) {
-            this.mountPendingEvents();
-        }
-
-        return this.dynEvents;
-    }
-
-    get hasPendingAttributes(): boolean {
-        return !!this.dynAttrs;
-    }
-
-    get hasPendingEvents(): boolean {
-        return !!this.dynEvents;
-    }
-
-    /** Whether element contains partials */
-    get hasPartials(): boolean {
-        return this.stats && this.stats.hasPartials;
+    get pendingEvents(): Entity | null {
+        return this.attrState && this.attrState.eventsReceiver;
     }
 
     /**
@@ -136,51 +106,16 @@ export default class ElementEntity extends Entity {
     }
 
     /**
-     * Check if given attribute name is dynamic, e.g. can be changed by nested
-     * statements
+     * Check if given event is pending, e.g. will be changed in runtime
      */
-    isDynamicAttribute(attr: ENDAttribute): boolean {
-        const { stats } = this;
-
-        if (stats.hasPartials) {
-            return true;
-        }
-
-        if (isIdentifier(attr.name)) {
-            const name = attr.name.name;
-            return name === 'class'
-                ? this.hasDynamicClass()
-                : stats.isDynamicAttribute(attr.name.name);
-        }
-
-        return false;
-    }
-
-    /**
-     * Check if given directive is dynamic
-     */
-    isDynamicDirective(prefix: string, name: string): boolean {
-        return this.stats.isDynamicDirective(prefix, name);
-    }
-
-    /**
-     * Check if current element contains dynamic class names
-     */
-    hasDynamicClass(): boolean {
-        return this.stats.hasDynamicClass();
-    }
-
-    /**
-     * Check if current element contains conditional class names
-     */
-    hasConditionalClassNames(): boolean {
-        return this.stats.hasConditionalClassNames();
+    isPendingEvent(name: string) {
+        return this.stats && this.stats.pendingEvents.has(name);
     }
 
     add(item: Entity) {
         if ((item instanceof ElementEntity || item instanceof TextEntity) && item.code.mount) {
             item.setMount(() =>
-                !this.isComponent && this.stats && this.stats.isStaticContent
+                !this.isComponent && this.stats && this.stats.staticContent
                     ? this.addDOM(item)
                     : this.addInjector(item));
         }
@@ -234,6 +169,27 @@ export default class ElementEntity extends Entity {
         }
     }
 
+    mountAttributes() {
+        if (isElement(this.node)) {
+            this.attrState = ownAttributes(this, this.stats, this.state);
+        }
+    }
+
+    mountDirectives() {
+        if (isElement(this.node)) {
+            const { state } = this;
+            this.node.directives.forEach(dir => {
+                if (isEvent(dir)) {
+                    this.add(mountEvent(dir, this.pendingEvents, this.state));
+                } else if (dir.prefix === 'partial' && this.isComponent) {
+                    // For components and partials (empty receiver), we should always
+                    // use pending attributes
+                    this.add(mountPartialOverride(dir, this.pendingAttributes, state));
+                }
+            });
+        }
+    }
+
     /**
      * Adds entity to mount, update and unmount component
      * Since component should be mounted and updated *after* it’s
@@ -241,7 +197,36 @@ export default class ElementEntity extends Entity {
      * as a separate entity after element content
      */
     mountComponent() {
-        this.add(new ComponentMountEntity(this, this.state));
+        const props = this.attrState && this.attrState.receiver;
+        const { state } = this;
+
+        if (props && (this.attrState.hasExpressionAttrs || this.attrState.hasPendingAttrs)) {
+            // There are pending props for current component
+            this.add(state.entity({
+                mount: () => state.runtime('mountComponent', [this.getSymbol(), props.getSymbol()]),
+                update: () => state.runtime('updateComponent', [this.getSymbol(), props.getSymbol()]),
+                unmount: () => this.unmount('unmountComponent')
+            }));
+        } else {
+            this.add(state.entity({
+                mount: () => {
+                    const args: ChunkList = [this.getSymbol()];
+                    if (props) {
+                        // Shortcut: we can pass static props directly to component
+                        // instead of storing it as variable
+                        const ix = this.children.indexOf(props);
+                        if (ix !== -1) {
+                            this.children.splice(ix, 1);
+                            args.push(props.code.mount);
+                        } else {
+                            args.push(props.getSymbol());
+                        }
+                    }
+                    return state.runtime('mountComponent', args);
+                },
+                unmount: () => this.unmount('unmountComponent')
+            }));
+        }
 
         // Add empty source node to skip automatic symbol nulling
         // in unmount function
@@ -264,38 +249,18 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeAttributes() {
-        if (this.hasPendingAttributes) {
+        if (this.stats.partials || this.attrState.hasPendingAttrs) {
             // There are pending dynamic attributes
             const { state } = this;
-            let noNS = this.stats.hasDynamicClass();
-            let withNS = false;
+            const { receiver, prevReceiver } = this.attrState;
 
-            if (this.stats.hasPartials) {
-                noNS = withNS = true;
-            } else {
-                this.stats.attributeNames().forEach(attrName => {
-                    const m = attrName.match(/^([\w\-]+):/);
-                    if (m && m[1] !== 'xmlns') {
-                        withNS = true;
-                    } else {
-                        noNS = true;
-                    }
-                });
-            }
-
-            // Check which types of attributes we have to finalize
             const ent = state.entity({
                 shared: () => {
-                    const output = sn();
-                    if (noNS) {
-                        output.add(state.runtime('finalizeAttributes', [this.getSymbol(), this.dynAttrs.getSymbol()]));
-                    }
-
-                    if (withNS) {
-                        output.add(state.runtime('finalizeAttributesNS', [this.getSymbol(), this.dynAttrs.getSymbol()]));
-                    }
-
-                    return output.join(' | ');
+                    return state.runtime('finalizeAttributes', [
+                        this.getSymbol(),
+                        receiver.getSymbol(),
+                        prevReceiver.getSymbol()
+                    ]);
                 }
             });
 
@@ -307,10 +272,10 @@ export default class ElementEntity extends Entity {
      * Adds entity to finalize attributes of current element
      */
     finalizeEvents() {
-        if (this.hasPendingEvents) {
+        if (this.pendingEvents) {
             const { state } = this;
             this.add(state.entity({
-                shared: () => state.runtime('finalizePendingEvents', [this.dynEvents.getSymbol()]),
+                shared: () => state.runtime('finalizePendingEvents', [this.pendingEvents.getSymbol()]),
             }));
         }
     }
@@ -348,36 +313,6 @@ export default class ElementEntity extends Entity {
 
             this.add(ent);
         }
-    }
-
-    /**
-     * Returns map of static props of current element
-     */
-    getStaticProps(): Map<Chunk, Chunk> {
-        const props: Map<Chunk, Chunk> = new Map();
-
-        if (isElement(this.node)) {
-            const { attributes, directives } = this.node;
-            const { state } = this;
-
-            attributes.forEach(attr => {
-                if (!this.isDynamicAttribute(attr)) {
-                    props.set(objectKey(attr.name, this.state), compileAttributeValue(attr.value, state, 'component'));
-                }
-            });
-
-            directives.forEach(dir => {
-                if (dir.prefix === 'partial') {
-                    const value = compileAttributeValue(dir.value, state, 'component');
-                    props.set(
-                        propSetter(`${dir.prefix}:${dir.name}`),
-                        state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])
-                    );
-                }
-            });
-        }
-
-        return props;
     }
 
     /**
@@ -436,49 +371,6 @@ export default class ElementEntity extends Entity {
 
         return null;
     }
-
-    private mountPendingAttributes() {
-        const { state, stats } = this;
-
-        if (this.isComponent) {
-            this.dynAttrs = state.entity('_p', {
-                mount: () => state.runtime('propsSet', [this.getSymbol()]),
-            });
-
-            // In case if there are dynamic props, check if there are props that
-            // are fully conditional and reset them
-            const dynamicAttrs = stats.attributeNames().filter(attr => {
-                return attr === 'class'
-                    ? (stats.hasDynamicClass() || stats.hasConditionalClassNames())
-                    : stats.isConditionalAttribute(attr);
-            });
-
-            if (dynamicAttrs.length) {
-                this.dynAttrs.setUpdate(ent => {
-                    const props = sn();
-                    dynamicAttrs.forEach(attr => props.add([ent.getSymbol(), '.c', propGetter(attr), ' = ']));
-                    props.add('null');
-                    return props;
-                });
-            }
-        } else {
-            this.dynAttrs = this.state.entity('_a', {
-                mount: () => this.state.runtime('attributeSet', []),
-            });
-        }
-
-        this.add(this.dynAttrs);
-    }
-
-    private mountPendingEvents() {
-        const { state } = this;
-        this.dynEvents = state.entity('_e', {
-            mount: () => state.runtime('pendingEvents', [this.state.host, this.getSymbol()]),
-            unmount: ent => ent.unmount('detachPendingEvents')
-        });
-
-        this.add(this.dynEvents);
-    }
 }
 
 export function getNodeName(localName: string): { ns?: string, name: string } {
@@ -493,8 +385,4 @@ export function getNodeName(localName: string): { ns?: string, name: string } {
     }
 
     return { ns, name };
-}
-
-function objectKey(node: Identifier | Program, state: CompileState) {
-    return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
 }

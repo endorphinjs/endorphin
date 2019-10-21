@@ -1,29 +1,28 @@
 import {
-    ENDTemplate, ENDElement, ENDAttributeStatement, ENDAttribute, ENDDirective,
-    ENDAddClassStatement, Literal, Program, ENDIfStatement, ENDChooseStatement,
+    ENDTemplate, ENDElement, ENDAttributeStatement, ENDAttribute,
+    Literal, Program, ENDIfStatement, ENDChooseStatement,
     ENDForEachStatement, ENDInnerHTML, ENDVariableStatement, ENDPartial, ENDPartialStatement,
-    ENDStatement, Identifier
+    ENDStatement, Identifier, ENDAddClassStatement
 } from '@endorphinjs/template-parser';
 import { SourceNode } from 'source-map';
-import { ChunkList, Chunk, AstVisitorMap, TemplateOutput, AstVisitorContinue } from '../types';
+import { Chunk, AstVisitorMap, TemplateOutput, AstVisitorContinue } from '../types';
 import generateExpression from '../expression';
 import Entity, { entity } from '../entities/Entity';
-import AttributeEntity, { compileAttributeValue } from '../entities/AttributeEntity';
 import TextEntity from '../entities/TextEntity';
 import ConditionEntity from '../entities/ConditionEntity';
 import IteratorEntity from '../entities/IteratorEntity';
 import InnerHTMLEntity from '../entities/InnerHTMLEntity';
 import VariableEntity from '../entities/VariableEntity';
-import EventEntity from '../entities/EventEntity';
 import ElementEntity from '../entities/ElementEntity';
-import ClassEntity from '../entities/ClassEntity';
 import CompileState from '../lib/CompileState';
+import { compileAttributeValue, pendingAttributes, mountAddClass, mountPartialOverride } from '../lib/attributes';
+import mountEvent from '../lib/events';
 import refStats from '../lib/RefStats';
 import { hasAnimationOut, animateOut, animateIn } from '../lib/animations';
-import {
-    sn, qStr, isLiteral, toObjectLiteral, nameToJS,
-    propSetter, isExpression, isIdentifier, pendingAttributes, propGetter, pendingEvents, pendingAttributesCur
-} from '../lib/utils';
+import { qStr, isLiteral, toObjectLiteral, nameToJS, isExpression, sn, propGetter, isEvent } from '../lib/utils';
+
+const partialAttrsReceiver = ':a';
+const partialEventReceiver = ':e';
 
 export default {
     ENDTemplate(node: ENDTemplate, state, next) {
@@ -95,41 +94,56 @@ export default {
         });
     },
 
-    ENDAttributeStatement(node: ENDAttributeStatement, state, next) {
-        return entity('block', state)
-            .setContent(node.attributes, next)
-            .setContent(node.directives, next);
-    },
+    ENDAttributeStatement(node: ENDAttributeStatement, state) {
+        // No receiver means we are running inside partial
+        const { receiver } = state;
+        const result = state.entity();
 
-    ENDAttribute(attr: ENDAttribute, state) {
-        return new AttributeEntity(attr, state);
-    },
+        let _attrReceiver: Entity | null = null;
+        let _eventReceiver: Entity | null = null;
 
-    ENDDirective(dir: ENDDirective, state) {
-        if (dir.prefix === 'on') {
-            return new EventEntity(dir, state);
+        const attributeReceiver = () => {
+            if (!_attrReceiver) {
+                _attrReceiver = receiver
+                    ? receiver.pendingAttributes
+                    : new PartialReceiver(partialAttrsReceiver, state);
+            }
+
+            return _attrReceiver;
+        };
+
+        const eventReceiver = () => {
+            if (!_eventReceiver) {
+                _eventReceiver = receiver
+                    ? receiver.pendingEvents
+                    : new PartialReceiver(partialEventReceiver, state);
+            }
+
+            return _eventReceiver;
+        };
+
+        if (node.attributes.length) {
+            result.add(pendingAttributes(node, attributeReceiver(), state));
         }
 
-        if (dir.prefix === 'class') {
-            return new ClassEntity(dir, state);
-        }
+        node.directives.forEach(dir => {
+            if (isEvent(dir)) {
+                result.add(mountEvent(dir, eventReceiver(), state));
+            } else if (dir.prefix === 'partial' && receiver && receiver.isComponent) {
+                result.add(mountPartialOverride(dir, attributeReceiver(), state));
+            }
+        });
 
-        if (dir.prefix === 'partial' && state.receiver && state.receiver.isComponent) {
-            // For components and partials (empty receiver), we should always
-            // use pending attributes
-            return state.entity({
-                mount() {
-                    const value = compileAttributeValue(dir.value, state, 'component');
-                    return sn([pendingAttributesCur(state), propGetter(`${dir.prefix}:${dir.name}`), ' = ',
-                        state.runtime('assign', [`{ ${state.host} }`, sn([`${state.partials}[`, value, ']'])])]);
-                }
-            });
-        }
+        return result;
     },
 
     ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
-        return entity('block', state)
-            .setShared(() => mountAddClass(node, state));
+        const { receiver }  = state;
+        // No receiver means we are running inside partial
+        const attrReceiver = receiver
+            ? receiver.pendingAttributes
+            : new PartialReceiver(partialAttrsReceiver, state);
+        return mountAddClass(node, attrReceiver, state);
     },
 
     Literal(node: Literal, state) {
@@ -159,8 +173,12 @@ export default {
     },
 
     ENDForEachStatement(node: ENDForEachStatement, state, next) {
-        return new IteratorEntity(node, state)
-            .setContent(node.body, next);
+        // Mark iterator vars as scope-bound
+        const vars = [node.indexName, node.keyName, node.valueName];
+        state.markScoped(...vars);
+        const ent = new IteratorEntity(node, state).setContent(node.body, next);
+        state.unmarkScoped(...vars);
+        return ent;
     },
 
     ENDInnerHTML(node: ENDInnerHTML, state) {
@@ -168,10 +186,14 @@ export default {
     },
 
     ENDVariableStatement(node: ENDVariableStatement, state) {
-        return new VariableEntity(node, state);
+        if (node.variables.length) {
+            return new VariableEntity(node, state);
+        }
     },
 
     ENDPartial(node: ENDPartial, state, next) {
+        const localVars = node.params.map(p => (p.name as Identifier).name);
+        state.markScoped(...localVars);
         const block = state.runChildBlock(`partial${nameToJS(node.id, true)}`, (b, elem) => {
             elem.setContent(node.body, next);
         });
@@ -180,16 +202,26 @@ export default {
             name: block.name,
             defaults: generateObject(node.params, state, 2)
         });
+        state.unmarkScoped(...localVars);
     },
 
     ENDPartialStatement(node: ENDPartialStatement, state) {
         const getter = state.runtime('getPartial', [state.host, qStr(node.id), state.partials]);
+        const { receiver } = state;
 
-        return entity('partial', state, {
+        const attrReceiver = receiver
+            ? receiver.pendingAttributes
+            : new PartialReceiver(partialAttrsReceiver, state);
+
+        const eventReceiver = receiver
+            ? receiver.pendingEvents
+            : new PartialReceiver(partialEventReceiver, state);
+
+        return state.entity('partial', {
             mount: () => {
                 const params = attributeMap(node.params, state);
-                params.set('$$_attrs', pendingAttributes(state));
-                params.set('$$_events', pendingEvents(state));
+                params.set(partialAttrsReceiver, attrReceiver.getSymbol());
+                params.set(partialEventReceiver, eventReceiver.getSymbol());
 
                 return state.runtime('mountPartial', [
                     state.host,
@@ -198,7 +230,12 @@ export default {
                     toObjectLiteral(params, state.indent, 1)
                 ]);
             },
-            update: ent => state.runtime('updatePartial', [ent.getSymbol(), getter, generateObject(node.params, state, 1)]),
+            update: ent => {
+                const params = attributeMap(node.params, state);
+                params.set(partialAttrsReceiver, attrReceiver.getSymbol());
+                params.set(partialEventReceiver, eventReceiver.getSymbol());
+                return state.runtime('updatePartial', [ent.getSymbol(), getter, toObjectLiteral(params, state.indent, 1)]);
+            },
             unmount: ent => ent.unmount('unmountPartial')
         });
     }
@@ -242,18 +279,6 @@ function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorCon
     });
 }
 
-function mountAddClass(node: ENDAddClassStatement, state: CompileState): SourceNode {
-    const chunks: ChunkList = node.tokens.map(token => {
-        return isLiteral(token)
-            ? qStr(token.value as string)
-            : generateExpression(token, state);
-    });
-    return state.runtime('addPendingClass', [
-        pendingAttributes(state),
-        sn(chunks).join(' + ')
-    ]);
-}
-
 /**
  * Generates object literal from given attributes
  */
@@ -270,20 +295,7 @@ function attributeMap(params: ENDAttribute[], state: CompileState): Map<Chunk, C
 }
 
 function objectKey(node: Identifier | Program, state: CompileState) {
-    return propSetter(isExpression(node) ? generateExpression(node, state) : node.name);
-}
-
-/**
- * Returns list of attributes to be added as a content of given element entity
- */
-function getContentAttributes(element: ElementEntity): ENDAttribute[] {
-    const node = element.node as ENDElement;
-    if (node.name.name === 'slot') {
-        // Do not return `name` attribute of slot: it will be added by runtime
-        return node.attributes.filter(attr => !isIdentifier(attr.name) || attr.name.name !== 'name');
-    }
-
-    return node.attributes;
+    return isExpression(node) ? generateExpression(node, state) : node.name;
 }
 
 function handleElement(element: ElementEntity, state: CompileState, next: AstVisitorContinue<TemplateOutput>): ElementEntity {
@@ -296,14 +308,16 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
         : null;
 
     // Create element instance
+    // TODO refactor, no need to pass argument, should detect single text content
+    // right in `create()` method
     element.create(singleTextContent);
 
     if (node.ref) {
         element.setRef(node.ref);
     }
 
-    element.setContent(getContentAttributes(element), next);
-    element.setContent(node.directives, next);
+    element.mountAttributes();
+    element.mountDirectives();
 
     if (isSlot) {
         element.add(mountSlot(element, state, next));
@@ -321,4 +335,10 @@ function handleElement(element: ElementEntity, state: CompileState, next: AstVis
     }
 
     return element;
+}
+
+class PartialReceiver extends Entity {
+    getSymbol() {
+        return sn([this.state.scope, propGetter(this.rawName)]);
+    }
 }

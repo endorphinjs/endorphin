@@ -1,0 +1,12 @@
+[vars: ifExpr v1_1 v1 v2]
+<template>
+    <e:var v1=1 v2=10/>
+    <div a={c1 ? 2 : 1}>
+        <e:for-each select={items}>
+            <e:var ifExpr={@value.enabled} v1_1={@ifExpr ? 2 : @v1}/>
+            <e:add-class>{@ifExpr ? "enabled" : ""}</e:add-class>
+            <e:if test={@ifExpr}>{@v1_1}{@v2}</e:if>
+            <section b={@ifExpr ? 11 : 10}/>
+        </e:for-each>
+    </div>
+</template>

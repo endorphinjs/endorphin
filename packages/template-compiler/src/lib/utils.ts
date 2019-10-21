@@ -1,12 +1,11 @@
 import { SourceNode } from 'source-map';
 import {
     Node, Identifier, Program, ENDElement, ENDAttributeStatement, LiteralValue,
-    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix, ENDAttributeValueExpression
+    ENDAttribute, Literal, CallExpression, ArrowFunctionExpression, ENDGetterPrefix, ENDAttributeValueExpression, ENDDirective
 } from '@endorphinjs/template-parser';
 import * as entities from 'entities';
 import { Chunk, ChunkList, HelpersMap, PlainObject } from '../types';
 import CompileState from './CompileState';
-import ElementEntity from '../entities/ElementEntity';
 
 /**
  * A prefix for Endorphin element and attribute names
@@ -177,23 +176,6 @@ export function propSetter(key: Chunk): Chunk {
 }
 
 /**
- * Returns symbol for referencing pending attributes
- */
-export function pendingAttributes(state: CompileState, receiver: ElementEntity | void = state.receiver): SourceNode {
-    if (receiver) {
-        return sn(receiver.pendingAttributes.getSymbol());
-    }
-
-    return sn(`${state.scope}.$$_attrs`);
-}
-
-export function pendingAttributesCur(state: CompileState, receiver?: ElementEntity) {
-    const ptr = pendingAttributes(state, receiver);
-    ptr.add('.c');
-    return ptr;
-}
-
-/**
  * Returns symbol fo referencing pending events
  */
 export function pendingEvents(state: CompileState): Chunk {
@@ -215,7 +197,7 @@ export function toObjectLiteral(map: Map<Chunk, Chunk>, indent: string = '\t', l
             result.add(',');
         }
 
-        result.add(['\n', _innerIndent, key, ': ', value]);
+        result.add(['\n', _innerIndent, propSetter(key), ': ', value]);
     });
 
     if (map.size) {
@@ -319,4 +301,8 @@ export function isValidChunk(chunk: Chunk | null): boolean {
     return chunk instanceof SourceNode
         ? chunk.children.length !== 0
         : chunk && chunk.length !== 0;
+}
+
+export function isEvent(dir: ENDDirective): boolean {
+    return dir.prefix === 'on';
 }

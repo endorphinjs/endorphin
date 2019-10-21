@@ -1,0 +1,7 @@
+[vars: ifExpr]
+<template>
+    <e:for-each select={#items}>
+        <e:var ifExpr={@value.animation.type}/>
+        <my-component class="{@ifExpr ? "animate-" + @value.animation.type : ""}{@value.reordered ? " reordered" : ""}"/>
+    </e:for-each>
+</template>

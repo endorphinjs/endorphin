@@ -1,0 +1,160 @@
+<link rel="import" href="../msg-message-container/msg-message-container.html" />
+<link rel="import" href="../msg-user-card/msg-user-card.html" />
+<link rel="import" href="../msg-message-controls/msg-message-controls.html" />
+<link rel="import" href="../msg-message-stats/msg-message-stats.html"/>
+<link rel="import" href="../msg-name/msg-name.html"/>
+<link rel="import" href="../msg-icon/msg-icon.html"/>
+<link rel="import" href="../msg-time/msg-time.html"/>
+<link rel="import" href="../msg-l10n/msg-l10n.html"/>
+<link rel="import" href="../msg-checkbox/msg-checkbox.html"/>
+<link rel="import" href="../msg-message-keyboard/msg-message-keyboard.html"/>
+<link rel="import" href="./msg-message-content.html"/>
+
+<link rel="stylesheet" href="./msg-message.scss" />
+<script src="./msg-message.js"></script>
+
+<template>
+    <e:variable seq={message.sequence}
+        sender={message.sender}
+        isForward={message.link.type == 'FORWARD'}
+        firstAttach={message.attaches[0]}
+        firstAttachType={@firstAttach._type || (@isForward && message.link.message.attaches[0]._type)}
+        firstLinkAttach={message.link.message.link.message.attaches[0] || message.link.message.attaches[0]}
+        show-avatar={!pinned && !isMine && (message.type == 'USER' || message.type == 'GROUP') && inChat}
+        firstOrSingleSeq={@seq.item == 'first' || @seq.item == 'single'}
+        show-name={pinned || (message.type == 'USER' && inChat && !isMine && @firstOrSingleSeq)}
+        hasMedia={@firstAttachType === 'PHOTO' || @firstAttachType === 'VIDEO'}
+        hasLocation={@firstAttachType === 'LOCATION'}
+        has-video-attach={message.attaches[attach => attach_type === 'VIDEO'] || (@isForward && message.link.message.attaches[attach => attach._type === 'VIDEO'])}
+        has-share-attach={@firstLinkAttach._type === 'SHARE' || @firstAttachType === 'SHARE'}
+        has-not-media-attach={(@firstLinkAttach && @firstLinkAttach._type !== 'PHOTO' && @firstLinkAttach._type !== 'VIDEO' && @firstLinkAttach._type !== 'STICKER') || (@firstAttachType && @firstAttachType !== 'PHOTO' && @firstAttachType !== 'VIDEO' && @firstAttachType !== 'STICKER')}
+        has-actions={count(message.actions) && !pinned}
+        has-bg={@firstAttachType != 'STICKER' || message.link.type == 'REPLY' || message.status == 'REMOVED' || message.link.type == 'FORWARD'}
+        keyboard={message.attaches[attach => attach._type === 'INLINE_KEYBOARD'] || (@isForward && message.link.message.attaches[attach => attach._type === 'INLINE_KEYBOARD'])}
+        error={message.error}
+        errorCode={@error && @error.code}
+        errorMessage={@error && @error.localizedMessage}
+        hasBlockedByServerError={ @errorCode == 'error.money.not.enough' || @errorCode == 'payment.required.vip' || @errorCode == 'payment.required.sticker' } />
+
+    <e:if test={ !@hasBlockedByServerError }>
+        <msg-checkbox class="selectable_check"
+            checked={message.selected}
+            on:click={onToggleSelect}
+            class:__shift={@firstOrSingleSeq || @seq.view === 'single' || (@firstAttachType == 'STICKER' && message.link.type != 'FORWARD')}
+            data-l="t,selectMultiple"
+            e:if={@has-actions && (selectMode || #active)}/>
+
+        <msg-message-container ref="container"
+            class:__bg={@has-bg && !#largeEmoji}
+            class:__shift={@show-avatar && !@firstOrSingleSeq}
+            class:__unsent={isMine && !message.id}
+            class:__has-error={message.error}
+            class:__mine={isMine}
+            class:__preview={message.preview}
+            class:__video-attach={@has-video-attach}
+            class:__not-media-attach={@has-not-media-attach && !@keyboard}
+            class:__pinned={pinned}
+            class:__keyboard={@keyboard}>
+
+            <e:attribute minContentWidth={#minContentWidth} e:if={!@pinned} />
+            <e:attribute position="right" e:if={isMine} />
+            <e:add-class e:if={@seq}>__seq-item-{ @seq.item } __seq-view-{ @seq.view }</e:add-class>
+
+            <e:choose>
+                <e:when test={message.error}>
+                    <msg-icon icon="error" size="small" class="message-icon"/>
+                </e:when>
+                <e:when test={!message.id && !message.preview}>
+                    <msg-icon icon="wait" size="small" class="message-icon"/>
+                </e:when>
+            </e:choose>
+
+            <e:if test={@show-avatar && @firstOrSingleSeq}>
+                <msg-user-card size="small" user={ @sender } showStatus={ inChat } masked slot="user-pic">
+                    <e:if test={inChat && !@sender.deleted}>
+                        <e:attribute on:click={onOpenDialog}/>
+                        <e:add-class>clickable</e:add-class>
+                    </e:if>
+                </msg-user-card>
+            </e:if>
+
+            <e:if test={@show-name}>
+                <e:variable clickable={inChat && !isMine && !@sender.deleted && !@sender.current && message.type == 'USER'}/>
+                <div slot="author" class="author" data-tsid="author_of_message_not_me"
+                    class:clickable={@clickable}
+                    class:__sticker={@firstAttachType == 'STICKER'}>
+                    <e:attribute on:click={onOpenDialog} e:if={@clickable}/>
+                    <e:add-class e:if={inChat}>__color-{#colorIndex}</e:add-class>
+
+                    <msg-name official={ pinned && @sender.official } size="small" class:__deleted={@sender.deleted}>
+                        <e:choose>
+                            <e:when test={isMine}><msg-l10n key="you"/></e:when>
+                            <e:when test={@sender.deleted}><msg-l10n key="deleted-user"/></e:when>
+                            <e:otherwise>{ @sender.name }</e:otherwise>
+                        </e:choose>
+                    </msg-name>
+                </div>
+            </e:if>
+
+            <msg-message-content
+                message={message}
+                isMine={isMine}
+                inChat={inChat}
+                isVisible={isVisible}
+                pinned={pinned}
+                allowCommands={allowCommands}
+                class:__mine={isMine}
+                class:__edited={message.status === 'EDITED'}
+                class:__sticker={message.attaches[item => item._type === 'STICKER']}
+                class:__after-name={@show-name}
+                class:__indent={@show-name && @hasMedia && !message.text && !@isForward}
+                class:__keyboard={@keyboard}>
+                    <e:add-class e:if={@seq}>__seq-item-{ @seq.item } __seq-view-{ @seq.view }</e:add-class>
+            </msg-message-content>
+
+            <div slot="meta"
+                class:__secondary={@hasLocation || @hasMedia}>
+
+                <msg-icon icon="edit"
+                          size="small"
+                          data-tsid="edited_msg_marker"
+                          e:if={message.status === 'EDITED' && !message.options.hideEdit} />
+                <msg-message-stats stats={message.stats} e:if={message.stats}/>
+                <msg-time timestamp={message.time} viewType={@hasMedia ? 'secondary' : 'primary'}/>
+            </div>
+
+            <e:if test={@has-actions && !selectMode && (#active || #activeMenu)}>
+                <msg-message-controls
+                    slot="controls"
+                    ref="controls"
+                    message={message}
+                    container={container}
+                    on:activate-menu={#activeMenu = true}
+                    on:deactivate-menu={#activeMenu = false}
+                    class:__shift={(@firstAttachType == 'STICKER' || #largeEmoji) && message.link.type !== 'REPLY'}
+                    class:__more={inChat && !isMine && @firstOrSingleSeq && !@has-bg}/>
+            </e:if>
+
+            <e:if test={count(message.attaches) && @keyboard}>
+                <msg-message-keyboard slot="out-bubble" messageId={message.uid} sender={@sender} keyboard={@keyboard} data-l="newbieCContainer,bot.link_button"/>
+            </e:if>
+        </msg-message-container>
+
+        { '\n' }
+
+        <e:if test={@error}>
+            <!--Ошибка локализована на сервере-->
+            <e:if test={@errorMessage}>
+                <div class="error-text" data-tsid="error_in_message">
+                    {{ @errorMessage }}
+                </div>
+            </e:if>
+
+            <!--Ошибка не локализована на сервере-->
+            <e:if test={!@errorMessage}>
+                <msg-l10n class="error-text" key="error-{@errorCode}" data-tsid="error_in_message"></msg-l10n>
+            </e:if>
+            { '\n' }
+        </e:if>
+    </e:if>
+</template>

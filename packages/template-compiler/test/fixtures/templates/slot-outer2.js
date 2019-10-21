@@ -20,9 +20,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.enabled) {
-		return ifBody$0;
-	}
+	return host.props.enabled ? ifBody$0 : null;
 }
 
 function ifBody$1(host, injector, scope) {
@@ -37,9 +35,7 @@ function ifBody$1Unmount(scope) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.active) {
-		return ifBody$1;
-	}
+	return host.props.active ? ifBody$1 : null;
 }
 
 export default function template$0(host, scope) {
@@ -79,5 +75,4 @@ function template$0Unmount(scope) {
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.slotInner$0 = unmountComponent(scope.slotInner$0);
-	scope.text$0 = scope.text$1 = scope.text$3 = null;
 }

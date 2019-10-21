@@ -1,0 +1,6 @@
+[vars: ifExpr]
+<template>
+    <e:var ifExpr={cond2 && (cond3 && !cond4)}/>
+    <div class="c1 c2 c3{cond1 ? " c4" : ""}{foo ? " c5" : ""}{foo && bar || foo2 && bar3 ? " c6" : ""}"/>
+    <main class={@ifExpr ? "bg-" + #bg : ""}/>
+</template>

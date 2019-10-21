@@ -1,0 +1,10 @@
+<link rel="import" href="./my-component.html" />
+
+<template>
+    <e:for-each select={#items}>
+        <!-- `class` must be pending and nulled before update -->
+        <my-component class:reordered={@value.reordered}>
+            <e:add-class e:if={@value.animation.type}>animate-{@value.animation.type}</e:add-class>
+        </my-component>
+    </e:for-each>
+</template>

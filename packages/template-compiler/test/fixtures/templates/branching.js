@@ -5,9 +5,7 @@ function ifBody$1(host, injector) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.expr2) {
-		return ifBody$1;
-	}
+	return host.props.expr2 ? ifBody$1 : null;
 }
 
 function ifBody$2(host, injector) {
@@ -16,9 +14,7 @@ function ifBody$2(host, injector) {
 }
 
 function ifEntry$2(host) {
-	if (host.props.expr3) {
-		return ifBody$2;
-	}
+	return host.props.expr3 ? ifBody$2 : null;
 }
 
 function ifBody$0(host, injector, scope) {
@@ -42,9 +38,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.expr1) {
-		return ifBody$0;
-	}
+	return host.props.expr1 ? ifBody$0 : null;
 }
 
 function chooseBody$0(host, injector) {
@@ -60,13 +54,7 @@ function chooseBody$2(host, injector) {
 }
 
 function chooseEntry$0(host) {
-	if ((host.props.expr1 === 1)) {
-		return chooseBody$0;
-	} else if ((host.props.expr1 === 2)) {
-		return chooseBody$1;
-	} else {
-		return chooseBody$2;
-	}
+	return (host.props.expr1 === 1) ? chooseBody$0 : (host.props.expr1 === 2) ? chooseBody$1 : chooseBody$2;
 }
 
 export default function template$0(host, scope) {

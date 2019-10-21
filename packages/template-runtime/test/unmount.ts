@@ -20,7 +20,9 @@ describe('Unmount', () => {
 	function calcRefs(vars: { [key: string]: any }) {
 		let refs = 0;
 		for (const p in vars) {
-			if (/\$\w+$/.test(p) && vars[p] != null && typeof vars[p] === 'object') {
+			// XXX allow attribute sets in outer scope, we expect they will be
+			// garbage collected by VM
+			if (/\$\w+$/.test(p) && !/^(attrSet|propSet)/.test(p) && vars[p] != null && typeof vars[p] === 'object') {
 				refs++;
 			}
 		}

@@ -15,12 +15,17 @@ export default function forEachStatement(scanner: Scanner, openTag: ParsedTag, n
         assertExpression(scanner, key);
     }
 
-    // TODO parse attributes for internal variables
     return {
         type: 'ENDForEachStatement',
         select: select.value as Program,
         key: key ? key.value as Program : null,
         body: tagBody(scanner, openTag, next),
+
+        // TODO parse from element name
+        indexName: 'index',
+        keyName: 'key',
+        valueName: 'value',
+
         ...scanner.loc(openTag.start)
     };
 }

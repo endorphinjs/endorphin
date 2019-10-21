@@ -1,0 +1,7 @@
+<template>
+    <div on:click={click1} on:mouseenter={me1}>
+        <e:attr on:mouseenter={me2} on:mouseleave={ml2}/>
+        <span></span>
+        <e:attr on:click={click2} e:if={cond}/>
+    </div>
+</template>

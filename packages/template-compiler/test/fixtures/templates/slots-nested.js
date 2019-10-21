@@ -15,9 +15,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.enabled) {
-		return ifBody$0;
-	}
+	return host.props.enabled ? ifBody$0 : null;
 }
 
 function ifBody$1(host, injector, scope) {
@@ -32,9 +30,7 @@ function ifBody$1Unmount(scope) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.enabled) {
-		return ifBody$1;
-	}
+	return host.props.enabled ? ifBody$1 : null;
 }
 
 export default function template$0(host, scope) {
@@ -44,11 +40,9 @@ export default function template$0(host, scope) {
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	const myComponent2$0 = scope.myComponent2$0 = insert(inj$0, createComponent("my-component2", MyComponent2, host), "header");
 	const inj$1 = myComponent2$0.componentModel.input;
-	const _p$0 = propsSet(myComponent2$0);
-	_p$0.c.slot = "header";
 	const innerComponent$0 = scope.innerComponent$0 = insert(inj$1, createComponent("inner-component", InnerComponent, host), "");
 	mountComponent(innerComponent$0);
-	mountComponent(myComponent2$0, _p$0.c);
+	mountComponent(myComponent2$0, propsSet(myComponent2$0, {slot: "header"}));
 	const div$0 = insert(inj$0, elem("div"), "footer");
 	const inj$2 = createInjector(div$0);
 	setAttribute(div$0, "slot", "footer");

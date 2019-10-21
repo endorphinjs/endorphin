@@ -1,0 +1,12 @@
+<!-- Template with attributes inside <e:for-each> loop -->
+<template>
+    <main a1={id} a2="0" class="foo">
+        <e:attr a2="1" e:if={c1} />
+        <e:for-each select={items}>
+            <e:attr class:has-item />
+            <e:attr title={@value.title} class:enabled e:if={@value.enabled} />
+            <e:add-class e:if={@value.color}>cl-{@value.color}</e:add-class>
+            <div>{ @value.title }</div>
+        </e:for-each>
+    </main>
+</template>

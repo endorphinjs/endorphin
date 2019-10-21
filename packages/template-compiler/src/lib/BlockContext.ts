@@ -33,6 +33,11 @@ export default class BlockContext {
     updateSymbol?: string;
     unmountSymbol?: string;
 
+    // Additional arguments to prepend to generated function
+    mountArgs: string[] = [];
+    updateArgs: string[] = [];
+    unmountArgs: string[] = [];
+
     /** Indicates that generated functions should be unlinked */
     unlinked?: boolean;
 
@@ -77,7 +82,7 @@ export default class BlockContext {
      */
     generate(entities: Entity[]): ChunkList {
         const { state, name, scopeUsage, hostUsage } = this;
-        const scope = this.state.options.scope;
+        const { host, scope } = this.state.options;
 
         const mountChunks: ChunkList = [];
         const updateChunks: ChunkList = [];
@@ -134,7 +139,10 @@ export default class BlockContext {
         this.setRefs();
         entities.forEach(add);
 
-        if (toNull.length) {
+        // Edge case: do not null variables for main component template: since
+        // component will be destroyed, all scope contents will be automatically
+        // garbage collected
+        if (toNull.length && this.exports !== 'default') {
             scopeUsage.use('unmount');
             unmountChunks.push(toNull.map(entity => `${entity.scopeName} = `).join('') + 'null');
         }
@@ -160,11 +168,12 @@ export default class BlockContext {
 
         const { indent } = state;
         const injectorArg = this.injector ? this.injector.name : '';
-        const scopeArg = (count: number): string => count ? scope : '';
-        const mountFn = createFunction(mountSymbol, [state.host, injectorArg, scopeArg(scopeUsage.mount)], mountChunks, indent);
-        const updateFn = createFunction(updateSymbol, [state.host, scopeArg(scopeUsage.update)], updateChunks, indent);
+        const hostArg = (ctx: keyof UsageStats) => hostUsage[ctx] || (ctx === 'mount' && injectorArg) || scopeUsage[ctx] ? host : '';
+        const scopeArg = (ctx: keyof UsageStats): string => scopeUsage[ctx] ? scope : '';
+        const mountFn = createFunction(mountSymbol, [...this.mountArgs, hostArg('mount'), injectorArg, scopeArg('mount')], mountChunks, indent);
+        const updateFn = createFunction(updateSymbol, [...this.updateArgs, hostArg('update'), scopeArg('update')], updateChunks, indent);
         const unmountFn = createFunction(unmountSymbol,
-            [scopeArg(scopeUsage.unmount), hostUsage.unmount ? state.host : null], unmountChunks, indent);
+            [...this.unmountArgs, scopeArg('unmount'), hostUsage.unmount ? host : null], unmountChunks, indent);
 
         if (this.exports) {
             mountFn.prepend([`export `, this.exports === 'default' ? 'default ' : '']);

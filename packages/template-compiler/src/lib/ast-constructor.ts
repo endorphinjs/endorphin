@@ -1,6 +1,8 @@
 import {
     IdentifierContext, Identifier, Property, ObjectExpression, CallExpression,
-    Expression, ArgumentListElement, ThisExpression, MemberExpression, Node, SourceLocation
+    Expression, ArgumentListElement, ThisExpression, MemberExpression, Node, SourceLocation,
+    LiteralValue, Literal, ENDAttributeValue, ENDVariable, Program, LogicalExpression,
+    ConditionalExpression, ENDAttributeValueExpression, ENDBaseAttributeValue
 } from '@endorphinjs/template-parser';
 
 /**
@@ -19,8 +21,39 @@ export function identifier(name: string, context?: IdentifierContext, source?: S
     return addSource({ type: 'Identifier', name, context }, source);
 }
 
+export function literal(value: LiteralValue, source?: SourceDataAlike): Literal {
+    return addSource({ type: 'Literal', value, raw: JSON.stringify(value) }, source);
+}
+
 export function objectExpr(properties: Property[] = [], source?: SourceDataAlike): ObjectExpression {
     return addSource({ type: 'ObjectExpression', properties }, source);
+}
+
+export function variable(name: string, value: ENDAttributeValue): ENDVariable {
+    return { type: 'ENDVariable', name, value };
+}
+
+export function binaryExpr(left: Expression, right: Expression, operator = '&&'): LogicalExpression {
+    return { type: 'LogicalExpression', operator, left, right };
+}
+
+export function conditionalExpr(test: Expression, consequent: Expression, alternate: Expression): ConditionalExpression {
+    return { type: 'ConditionalExpression', test, consequent, alternate };
+}
+
+export function attributeExpression(elements: ENDBaseAttributeValue[]): ENDAttributeValueExpression {
+    return { type: 'ENDAttributeValueExpression', elements };
+}
+
+export function program(expression: Expression): Program {
+    return {
+        type: 'Program',
+        body: [{
+            type: 'ExpressionStatement',
+            expression
+        }],
+        raw: ''
+    };
 }
 
 export function callExpr(callee: string | Expression, args: ArgumentListElement[] = [], source?: SourceDataAlike): CallExpression {

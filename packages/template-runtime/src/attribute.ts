@@ -10,6 +10,17 @@ export interface AttributeChangeSet extends ChangeSet {
 	n?: { [namespace: string]: ChangeSet };
 }
 
+interface ValueMap {
+	[name: string]: any;
+}
+
+interface ValueMapNS {
+	[ns: string]: ValueMap;
+}
+
+/** Base object to create pending namespaced attribute set */
+const nsProto = obj();
+
 /**
  * Creates new attribute change set
  */
@@ -20,12 +31,9 @@ export function attributeSet(): AttributeChangeSet {
 /**
  * Create pending props change set
  */
-export function propsSet(elem: Component): AttributeChangeSet {
-	const props = assign(obj(), elem.componentModel.defaultProps);
-	// NB in components, pending `c` props are tested against actual `.props`,
-	// the `p` property is not used. To keep up with the same hidden JS class,
-	// create `p` property as well and point it to `c` to reduce object allocations
-	return { c: props, p: props };
+export function propsSet(elem: Component, initial?: {}): {} {
+	const base = obj(elem.componentModel.defaultProps);
+	return initial ? assign(base, initial) : base;
 }
 
 /**
@@ -37,11 +45,37 @@ export function setAttribute(elem: Element, name: string, value: any) {
 }
 
 /**
+ * Updates element’s `name` attribute value only if it differs from previous value,
+ * defined in `prev`
+ */
+export function updateAttribute(elem: Element, prev: ValueMap, name: string, value: any): number {
+	if (value !== prev[name]) {
+		const primitive = representedValue(value);
+		if (primitive === null) {
+			elem.removeAttribute(name);
+		} else {
+			setAttribute(elem, name, primitive);
+		}
+		prev[name] = value;
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
  * Alias for `elem.className`
  */
 export function setClass(elem: Element, value: any) {
 	elem.className = value;
 	return value;
+}
+
+/**
+ * Shorthand to update class name, specific to Endorphin compiled code
+ */
+export function updateClass(elem: Element, prev: ValueMap, value: any) {
+	return updateAttribute(elem, prev, 'class', value === '' ? undefined : value);
 }
 
 /**
@@ -73,6 +107,26 @@ export function updateAttributeExpression<T = any>(elem: Element, name: string, 
 export function setAttributeNS(elem: Element, ns: string, name: string, value: any) {
 	elem.setAttributeNS(ns, name, value);
 	return value;
+}
+
+/**
+ * Updates element’s `name` attribute value only if it differs from previous value,
+ * defined in `prev`
+ */
+export function updateAttributeNS(elem: Element, prevNS: ValueMapNS, ns: string, name: string, value: any): number {
+	const prev = ns in prevNS ? prevNS[ns] : (prevNS[ns] = obj());
+	if (value !== prev[name]) {
+		const primitive = representedValue(value);
+		if (primitive === null) {
+			elem.removeAttributeNS(ns, name);
+		} else {
+			setAttributeNS(elem, ns, name, primitive);
+		}
+		prev[name] = value;
+		return 1;
+	}
+
+	return 0;
 }
 
 /**
@@ -129,57 +183,81 @@ export function setPendingAttribute(data: AttributeChangeSet, name: string, valu
 }
 
 /**
- * Sets pending namespaced attribute value which will be added to attribute later
+ * Sets pending namespaced attribute value which will be added to element later
  */
-export function setPendingAttributeNS(data: AttributeChangeSet, ns: string, name: string, value: any) {
-	if (!data.n) {
-		data.n = obj();
-	}
+export function setPendingAttributeNS(attrs: ValueMapNS, ns: string, name: string, value: any) {
+	const map = pendingNS(attrs, ns);
+	map[name] = value;
+}
 
-	if (!data.n[ns]) {
-		data.n[ns] = attributeSet();
+/**
+ * Updates pending `name` value only if given `value` is not null
+ */
+export function updatePendingAttribute(attrs: ValueMap, name: string, value: any) {
+	if (value != null) {
+		attrs[name] = value;
 	}
+}
 
-	data.n[ns].c[name] = value;
+/**
+ * Updates pending namespaced `name` value only if given `value` is not null
+ */
+export function updatePendingAttributeNS(attrs: ValueMap, ns: string, name: string, value: any) {
+	if (value != null) {
+		pendingNS(attrs, ns)[name] = value;
+	}
 }
 
 /**
  * Adds given class name to pending attribute set
  */
-export function addPendingClass(data: AttributeChangeSet, className: string) {
+export function addPendingClass(data: ValueMap, className: string) {
 	if (className != null) {
-		const prev = data.c.class;
-		data.c.class = prev ? prev + ' ' + className : String(className);
+		const prev = data.class;
+		data.class = prev ? prev + ' ' + className : String(className);
 	}
 }
 
 /**
  * Adds given class name to pending attribute set if condition is truthy
  */
-export function addPendingClassIf(data: AttributeChangeSet, className: string, condition: any) {
+export function addPendingClassIf(data: ValueMap, className: string, condition: any) {
 	condition && addPendingClass(data, className);
 }
 
 /**
  * Finalizes pending attributes
  */
-export function finalizeAttributes(elem: Element, data: AttributeChangeSet): number {
+export function finalizeAttributes(elem: Element, cur: ValueMap, prev: ValueMap): number {
 	let updated = 0;
-	const { c, p } = data;
 
-	for (const name in c) {
-		const curValue = c[name];
+	for (const key in cur) {
+		const curValue = cur[key];
+		if (isPendingNS(curValue)) {
+			// It’s a pending attribute set
+			const prevNS = pendingNS(prev, key);
+			for (const name in curValue) {
+				const curNS = curValue[name];
 
-		if (curValue !== p[name]) {
-			updated = 1;
-			if (name === 'class') {
-				elem.className = classNames(curValue).join(' ');
-			} else {
-				setAttributeExpression(elem, name, curValue);
+				if (curNS !== prevNS[name]) {
+					updated = 1;
+					setAttributeExpressionNS(elem, key, name, curNS);
+					prevNS[name] = curNS;
+				}
+				curValue[name] = null;
 			}
-			p[name] = curValue;
+		} else {
+			if (curValue !== prev[key]) {
+				updated = 1;
+				if (key === 'class') {
+					elem.className = classNames(curValue).join(' ');
+				} else {
+					setAttributeExpression(elem, key, curValue);
+				}
+				prev[key] = curValue;
+			}
+			cur[key] = null;
 		}
-		c[name] = null;
 	}
 
 	return updated;
@@ -187,6 +265,7 @@ export function finalizeAttributes(elem: Element, data: AttributeChangeSet): num
 
 /**
  * Finalizes pending namespaced attributes
+ * TODO remove
  */
 export function finalizeAttributesNS(elem: Element, data: AttributeChangeSet): number {
 	// NB use it as a separate function to use explicitly inside generated content.
@@ -259,4 +338,19 @@ function representedValue(value: any): string | number | null {
 	}
 
 	return value;
+}
+
+/**
+ * Check if given object is a pending namespaced attribute set
+ */
+function isPendingNS(data: any): data is ValueMap {
+	return data != null && typeof data === 'object' && Object.getPrototypeOf(data) === nsProto;
+}
+
+/**
+ * Ensures given attribute value map contains namespace map for given `ns` and
+ * returns it
+ */
+function pendingNS(attrs: ValueMap, ns: string): ValueMap {
+	return ns in attrs ? attrs[ns] : (attrs[ns] = Object.create(nsProto));
 }

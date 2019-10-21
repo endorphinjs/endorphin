@@ -1,0 +1,13 @@
+[vars: chooseExpr caseExpr caseExpr_1 caseExpr_2 caseExpr_3]
+<template>
+    <e:var chooseExpr={c1 ? c2_1 ? 0 : c2_2 ? 1 : c2_3 ? 2 : 3 : -1} caseExpr={@chooseExpr === 0} caseExpr_1={@chooseExpr === 1} caseExpr_2={@chooseExpr === 2} caseExpr_3={@chooseExpr === 3}/>
+    <div a={@caseExpr_1 ? 2 : @caseExpr ? 1 : undefined} b={@caseExpr_2 ? 3 : @caseExpr_1 ? 2 : undefined}>
+        <e:if test={c1}>
+            <e:choose>
+                <e:when test={@caseExpr_3}>
+                    <div>otherwise</div>
+                </e:when>
+            </e:choose>
+        </e:if>
+    </div>
+</template>

@@ -54,6 +54,7 @@ export default function parse(code: string, url?: string, options?: ParserOption
         filename: url,
         stylesheets: [],
         scripts: [],
+        variables: [],
         start: 0,
         end: code.length
     };

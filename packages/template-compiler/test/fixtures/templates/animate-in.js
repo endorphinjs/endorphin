@@ -13,9 +13,7 @@ function ifBody$0Unmount(scope) {
 }
 
 function ifEntry$0(host) {
-	if (host.state.cond) {
-		return ifBody$0;
-	}
+	return host.state.cond ? ifBody$0 : null;
 }
 
 function ifBody$1(host, injector, scope) {
@@ -33,9 +31,7 @@ function ifBody$1Unmount(scope) {
 }
 
 function ifEntry$1(host) {
-	if (host.state.cond) {
-		return ifBody$1;
-	}
+	return host.state.cond ? ifBody$1 : null;
 }
 
 function ifBody$2(host, injector, scope) {
@@ -51,9 +47,7 @@ function ifBody$2Unmount(scope) {
 }
 
 function ifEntry$2(host) {
-	if (host.state.cond) {
-		return ifBody$2;
-	}
+	return host.state.cond ? ifBody$2 : null;
 }
 
 function ifBody$3(host, injector, scope) {
@@ -73,9 +67,7 @@ function ifBody$3Unmount(scope) {
 }
 
 function ifEntry$3(host) {
-	if (host.state.cond) {
-		return ifBody$3;
-	}
+	return host.state.cond ? ifBody$3 : null;
 }
 
 export default function template$0(host, scope) {

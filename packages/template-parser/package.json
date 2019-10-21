@@ -23,19 +23,19 @@
   "author": "Sergey Chikuyonok <serge.che@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/mocha": "^5.2.6",
-    "@types/node": "^11.13.6",
-    "astring": "^1.4.0",
-    "mocha": "^6.1.4",
-    "rollup": "^1.15.6",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.11.1",
+    "astring": "^1.4.3",
+    "mocha": "^6.2.2",
+    "rollup": "^1.25.1",
     "rollup-plugin-typescript": "^1.0.1",
-    "ts-node": "^8.3.0",
-    "tslint": "^5.17.0",
-    "typescript": "^3.5.2"
+    "ts-node": "^8.4.1",
+    "tslint": "^5.20.0",
+    "typescript": "^3.6.4"
   },
   "dependencies": {
-    "acorn": "^6.1.1",
-    "acorn-walk": "^6.1.1"
+    "acorn": "^7.1.0",
+    "acorn-walk": "^7.0.0"
   },
   "repository": {
     "type": "git",

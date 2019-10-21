@@ -23,5 +23,4 @@ function template$0Update(host, scope) {
 
 function template$0Unmount(scope) {
 	scope.click$0 = removeEvent("click", scope.click$0);
-	scope.text$1 = null;
 }

@@ -5,9 +5,7 @@ function ifBody$0(host, injector) {
 }
 
 function ifEntry$0(host) {
-	if (host.props.c1) {
-		return ifBody$0;
-	}
+	return host.props.c1 ? ifBody$0 : null;
 }
 
 function html$0(host) {
@@ -19,9 +17,7 @@ function ifBody$1(host, injector) {
 }
 
 function ifEntry$1(host) {
-	if (host.props.c2) {
-		return ifBody$1;
-	}
+	return host.props.c2 ? ifBody$1 : null;
 }
 
 export default function template$0(host, scope) {

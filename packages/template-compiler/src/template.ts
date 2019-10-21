@@ -46,6 +46,11 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
         body.push(`export const cssScope = ${qStr(state.options.cssScope)};`);
     }
 
+    // Runtime variables
+    if (ast.variables.length) {
+        body.push(`let ${ast.variables.map(v => state.localVar(v)).join(', ')};`);
+    }
+
     // Partials declarations
     if (state.partialsMap.size) {
         const { indent } = state;

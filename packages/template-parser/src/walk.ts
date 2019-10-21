@@ -25,7 +25,7 @@ const ignore: AstWalker<object> = () => {};
  * simple use would be
  *
  * ```js
- * walk.simple(myTree, {
+ * walk(myTree, {
  *     Expression(node) { ... }
  * });
  * ```
@@ -127,11 +127,6 @@ export function findNodeBefore<T>(node: Ast.Node,
 }
 
 export const base: AstVisitors<object> = acornWalk.make({
-    ENDIdentifier: ignore,
-    ENDPropertyIdentifier: ignore,
-    ENDStateIdentifier: ignore,
-    ENDStoreIdentifier: ignore,
-    ENDVariableIdentifier: ignore,
     ENDProgram(node: Ast.ENDProgram, state, c) {
         walkArray(node.body, state, c);
         walkArray(node.stylesheets, state, c);
@@ -205,7 +200,6 @@ export const base: AstVisitors<object> = acornWalk.make({
         c(node.object, state);
         c(node.expression, state);
     },
-    ENDText: ignore,
     ENDImport: ignore,
     ENDStylesheet: ignore,
     ENDScript: ignore,

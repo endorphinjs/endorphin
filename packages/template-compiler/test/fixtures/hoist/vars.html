@@ -1,0 +1,8 @@
+[vars: foo fooBar bar bam foo_1]
+<template>
+    <e:var foo=1 fooBar=2 bar={#baz2} bam={baz + @fooBar} foo_1=3/>
+    <h1>Test hoist</h1>
+    <p>Text</p>
+    <p title={@foo}>foo var 1</p>
+    <p title={@foo_1}>foo var {@bar} {@bam}</p>
+</template>

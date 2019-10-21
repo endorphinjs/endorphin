@@ -1,5 +1,6 @@
 {
   "type": "ENDProgram",
+  "variables": [],
   "body": [
     {
       "type": "ENDTemplate",
