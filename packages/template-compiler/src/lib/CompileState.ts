@@ -27,7 +27,8 @@ export const defaultOptions: CompileOptions = {
     suffix: '$',
     module: 'endorphin',
     component: '',
-    definition: '%definition'
+    definition: '%definition',
+    moduleVars: false,
 };
 
 export default class CompileState {
@@ -461,7 +462,9 @@ export default class CompileState {
      * Returns reverence to local variable
      */
     localVar(name: string) {
-        return this.isScoped(name) ? `${this.scope}${propGetter(name)}` : `__${name}`;
+        return !this.options.moduleVars || this.isScoped(name)
+            ? `${this.scope}${propGetter(name)}`
+            : `__${name}`;
     }
 
     /**

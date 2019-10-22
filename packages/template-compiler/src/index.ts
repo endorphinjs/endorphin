@@ -40,10 +40,13 @@ export interface CompileOptions {
     mangleNames?: boolean;
 
     /**
-     * Run expression hoisting to optimize templates layout. Required for
-     * server-side rendering
+     * Store template’s runtime variables (defined in `<e:var>` or intermediate
+     * optimizer variables) as JS variables in module scope. With this option enabled,
+     * the generated code will be slightly smaller and can be minified better,
+     * but will lead to unexpected behavior if component runs inside itself (either
+     * via `<e:self>` or nested in child element).
      */
-    optimize?: boolean;
+    moduleVars?: boolean;
 
     /**
      * List of supported helpers. Key is an URL of module and value is a list of

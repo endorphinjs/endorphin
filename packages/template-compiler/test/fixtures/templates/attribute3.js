@@ -1,5 +1,4 @@
 import { addPendingClass, appendChild, createInjector, elem, finalizeAttributes, get, insert, mountIterator, obj, text, unmountIterator, updateAttribute, updateIterator, updateText } from "endorphin";
-let __ifExpr, __ifExpr_1;
 
 function mainAttrs$0(elem, prev, host) {
 	updateAttribute(elem, prev, "a1", host.props.id);
@@ -16,24 +15,24 @@ function forSelect$0(host) {
 }
 
 function setVars$0(host, scope) {
-	__ifExpr = get(scope.value, "enabled");
-	__ifExpr_1 = get(scope.value, "color");
+	scope.ifExpr = get(scope.value, "enabled");
+	scope.ifExpr_1 = get(scope.value, "color");
 }
 
 function mainPendingAttrs$0(pending, host, scope) {
-	pending.title = (__ifExpr ? get(scope.value, "title") : undefined);
-	pending.class = (__ifExpr_1 ? ("cl-" + get(scope.value, "color")) : "");
+	pending.title = (scope.ifExpr ? get(scope.value, "title") : undefined);
+	pending.class = (scope.ifExpr_1 ? ("cl-" + get(scope.value, "color")) : "");
 }
 
-function addPendingClass$0(pending) {
-	addPendingClass(pending, "has-item" + ((__ifExpr ? " enabled" : "")));
+function addPendingClass$0(pending, host, scope) {
+	addPendingClass(pending, "has-item" + ((scope.ifExpr ? " enabled" : "")));
 }
 
 function forContent$0(host, injector, scope) {
 	const { attrSet$0 } = scope;
 	setVars$0(host, scope);
 	mainPendingAttrs$0(attrSet$0, host, scope);
-	addPendingClass$0(attrSet$0);
+	addPendingClass$0(attrSet$0, host, scope);
 	const div$0 = insert(injector, elem("div"));
 	scope.text$0 = appendChild(div$0, text(get(scope.value, "title")));
 	return forContent$0Update;
@@ -45,7 +44,7 @@ function forContent$0Update(host, scope) {
 	const { attrSet$0 } = scope;
 	setVars$0(host, scope);
 	mainPendingAttrs$0(attrSet$0, host, scope);
-	addPendingClass$0(attrSet$0);
+	addPendingClass$0(attrSet$0, host, scope);
 	updateText(scope.text$0, get(scope.value, "title"));
 }
 

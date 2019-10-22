@@ -40,8 +40,9 @@ export default function mountEvent(node: ENDDirective, eventReceiver: Entity, st
     const { receiver } = state;
     const entity = state.entity();
     const localVars = getLocalVariables(node).filter(name => !state.isScoped(name));
+    const shouldBindVars = state.options.moduleVars && localVars.length;
 
-    if (localVars.length) {
+    if (shouldBindVars) {
         const fn = bindLocalVars(localVars, state);
         entity.add(state.entity({
             shared() {
@@ -53,7 +54,7 @@ export default function mountEvent(node: ENDDirective, eventReceiver: Entity, st
 
     const handler = createEventHandler(node, state);
 
-    if (localVars.length) {
+    if (shouldBindVars) {
         state.unmarkScoped(...localVars);
     }
 

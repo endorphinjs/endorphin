@@ -36,8 +36,8 @@ describe('New Expression', () => {
     it('should generate state & variable accessors', () => {
         assert.equal(compile('#foo'), 'host.state.foo');
         assert.equal(compile('#foo-bar'), 'host.state["foo-bar"]');
-        assert.equal(compile('@foo'), '__foo');
         // NB variable name will be normalized by template hoister
+        // assert.equal(compile('@foo'), '__foo');
         // assert.equal(compile('@foo-bar'), 'scope["foo-bar"]');
     });
 

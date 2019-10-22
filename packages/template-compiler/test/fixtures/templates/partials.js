@@ -1,5 +1,4 @@
 import { appendChild, createInjector, detachPendingEvents, elem, finalizeAttributes, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountIterator, mountPartial, obj, pendingEvents, text, unmountIterator, unmountPartial, updateClass, updateIterator, updatePartial, updateText } from "endorphin";
-let __item;
 
 export const partials = {
 	button: {
@@ -17,14 +16,14 @@ function forSelect$0(host) {
 	return host.props.items;
 }
 
-function setVars$0() {
-	__item = undefined;
+function setVars$0(host, scope) {
+	scope.item = undefined;
 }
 
 function forContent$0(host, injector, scope) {
-	setVars$0(host);
+	setVars$0(host, scope);
 	scope.partial$0 = mountPartial(host, injector, getPartial(host, "button", partials), {
-		item: __item,
+		item: scope.item,
 		enabled: (scope.index !== 1),
 		"dashed-name": "bar",
 		":a": scope.attrSet$0,
@@ -36,9 +35,9 @@ function forContent$0(host, injector, scope) {
 forContent$0.dispose = forContent$0Unmount;
 
 function forContent$0Update(host, scope) {
-	setVars$0(host);
+	setVars$0(host, scope);
 	updatePartial(scope.partial$0, getPartial(host, "button", partials), {
-		item: __item,
+		item: scope.item,
 		enabled: (scope.index !== 1),
 		"dashed-name": "bar",
 		":a": scope.attrSet$0,

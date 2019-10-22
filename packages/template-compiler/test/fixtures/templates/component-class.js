@@ -1,17 +1,16 @@
 import { createComponent, createInjector, get, insert, mountComponent, mountIterator, propsSet, unmountComponent, unmountIterator, updateClass, updateComponent, updateIterator } from "endorphin";
 import * as MyComponent from "./my-component.html";
-let __ifExpr;
 
 function forSelect$0(host) {
 	return host.state.items;
 }
 
 function setVars$0(host, scope) {
-	__ifExpr = get(scope.value, "animation", "type");
+	scope.ifExpr = get(scope.value, "animation", "type");
 }
 
 function myComponentAttrs$0(elem, prev, host, scope) {
-	updateClass(elem, prev, ((__ifExpr ? ("animate-" + get(scope.value, "animation", "type")) : "")) + ((get(scope.value, "reordered") ? " reordered" : "")));
+	updateClass(elem, prev, ((scope.ifExpr ? ("animate-" + get(scope.value, "animation", "type")) : "")) + ((get(scope.value, "reordered") ? " reordered" : "")));
 }
 
 function forContent$0(host, injector, scope) {

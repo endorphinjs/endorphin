@@ -47,8 +47,10 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
     }
 
     // Runtime variables
-    if (ast.variables.length) {
-        body.push(`let ${ast.variables.map(v => state.localVar(v)).join(', ')};`);
+    if (state.options.moduleVars) {
+        if (ast.variables.length) {
+            body.push(`let ${ast.variables.map(v => state.localVar(v)).join(', ')};`);
+        }
     }
 
     // Partials declarations

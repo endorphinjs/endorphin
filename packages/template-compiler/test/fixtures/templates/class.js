@@ -1,8 +1,7 @@
 import { appendChild, createInjector, elem, insert, mountBlock, obj, unmountBlock, updateBlock, updateClass } from "endorphin";
-let __ifExpr;
 
-function setVars$0(host) {
-	__ifExpr = (host.props.cond2 && host.props.cond2);
+function setVars$0(host, scope) {
+	scope.ifExpr = (host.props.cond2 && host.props.cond2);
 }
 
 function e1Attrs$0(elem, prev, host) {
@@ -17,8 +16,8 @@ function e3Attrs$0(elem, prev, host) {
 	updateClass(elem, prev, ((host.props.cond2 ? "override" : "test")) + " foo");
 }
 
-function e4Attrs$0(elem, prev, host) {
-	updateClass(elem, prev, ((__ifExpr ? "override" : "test")) + (((host.props.cond1 && host.props.foo) ? " foo" : "")) + ((host.props.cond1 ? " bar" : "")));
+function e4Attrs$0(elem, prev, host, scope) {
+	updateClass(elem, prev, ((scope.ifExpr ? "override" : "test")) + (((host.props.cond1 && host.props.foo) ? " foo" : "")) + ((host.props.cond1 ? " bar" : "")));
 }
 
 function ifBody$0(host, injector) {
@@ -43,7 +42,7 @@ function e5Attrs$0(elem, prev, host) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
-	setVars$0(host);
+	setVars$0(host, scope);
 	const e1$0 = scope.e1$0 = appendChild(target$0, elem("e1"));
 	const attrSet$0 = scope.attrSet$0 = obj();
 	e1Attrs$0(e1$0, attrSet$0, host);
@@ -56,7 +55,7 @@ export default function template$0(host, scope) {
 	const e4$0 = scope.e4$0 = appendChild(target$0, elem("e4"));
 	const inj$0 = createInjector(e4$0);
 	const attrSet$3 = scope.attrSet$3 = obj();
-	e4Attrs$0(e4$0, attrSet$3, host);
+	e4Attrs$0(e4$0, attrSet$3, host, scope);
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	scope.if$1 = mountBlock(host, inj$0, ifEntry$1);
 	const e5$0 = scope.e5$0 = appendChild(target$0, elem("e5"));
@@ -68,11 +67,11 @@ export default function template$0(host, scope) {
 template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
-	setVars$0(host);
+	setVars$0(host, scope);
 	e1Attrs$0(scope.e1$0, scope.attrSet$0, host);
 	e2Attrs$0(scope.e2$0, scope.attrSet$1, host);
 	e3Attrs$0(scope.e3$0, scope.attrSet$2, host);
-	e4Attrs$0(scope.e4$0, scope.attrSet$3, host);
+	e4Attrs$0(scope.e4$0, scope.attrSet$3, host, scope);
 	updateBlock(scope.if$0);
 	updateBlock(scope.if$1);
 	e5Attrs$0(scope.e5$0, scope.attrSet$4, host);
