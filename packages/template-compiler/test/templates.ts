@@ -69,6 +69,6 @@ describe('Template compiler', () => {
     });
 
     it.skip('debug', () => {
-        compare('templates/partials.html', { optimize: true }, true);
+        compare('templates/partials.html', null, true);
     });
 });
