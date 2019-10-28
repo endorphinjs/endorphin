@@ -24,7 +24,8 @@ interface SlotBlock extends Block {
  * Creates slot element
  */
 export function createSlot(host: Component, name: string, cssScope?: string): HTMLElement {
-	return isolateElement(getSlotContext(host.componentModel.input, name).element, cssScope);
+	const el = getSlotContext(host.componentModel.input, name).element;
+	return cssScope ? isolateElement(el, cssScope) : el;
 }
 
 /**

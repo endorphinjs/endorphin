@@ -250,7 +250,7 @@ export function finalizeAttributes(elem: Element, cur: ValueMap, prev: ValueMap)
 			if (curValue !== prev[key]) {
 				updated = 1;
 				if (key === 'class') {
-					elem.className = classNames(curValue).join(' ');
+					elem.className = classNames(curValue);
 				} else {
 					setAttributeExpression(elem, key, curValue);
 				}
@@ -296,21 +296,12 @@ export function finalizeAttributesNS(elem: Element, data: AttributeChangeSet): n
 /**
  * Returns normalized list of class names from given string
  */
-export function classNames(str: string): string[] {
-	const out: string[] = [];
-
+export function classNames(str: string): string {
 	if (isDefined(str)) {
-		const parts = String(str).split(/\s+/);
-
-		for (let i = 0, cl: string; i < parts.length; i++) {
-			cl = parts[i];
-			if (cl && out.indexOf(cl) === -1) {
-				out.push(cl);
-			}
-		}
+		return String(str).split(/\s+/).filter(uniqueClassFilter).join(' ');
 	}
 
-	return out;
+	return '';
 }
 
 /**
@@ -353,4 +344,8 @@ function isPendingNS(data: any): data is ValueMap {
  */
 function pendingNS(attrs: ValueMap, ns: string): ValueMap {
 	return ns in attrs ? attrs[ns] : (attrs[ns] = Object.create(nsProto));
+}
+
+function uniqueClassFilter(cl: string, index: number, arr: string[]): boolean {
+	return cl ? arr.indexOf(cl) === index : false;
 }

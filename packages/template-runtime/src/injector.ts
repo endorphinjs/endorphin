@@ -160,7 +160,7 @@ export function disposeBlock(block: Block) {
 	listDetachFragment(block.injector, block.start, block.end);
 
 	// @ts-ignore: Nulling disposed object
-	block.start = block.end = null;
+	block.start = block.end = block.scope = null;
 }
 
 function isElement(obj: any): obj is Element {

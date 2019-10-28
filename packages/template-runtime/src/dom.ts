@@ -12,7 +12,8 @@ export function appendChild(element: Element, node: Node): Node {
  * @param cssScope Scope for CSS isolation
  */
 export function elem(tagName: string, cssScope?: string): Element {
-	return isolateElement(document.createElement(tagName), cssScope);
+	const el = document.createElement(tagName);
+	return cssScope ? isolateElement(el, cssScope) : el;
 }
 
 /**
@@ -20,7 +21,8 @@ export function elem(tagName: string, cssScope?: string): Element {
  * @param cssScope Scope for CSS isolation
  */
 export function elemNS(tagName: string, ns: string, cssScope?: string): Element {
-	return isolateElement(document.createElementNS(ns, tagName), cssScope);
+	const el = document.createElementNS(ns, tagName);
+	return cssScope ? isolateElement(el, cssScope) : el;
 }
 
 /**
@@ -77,8 +79,8 @@ export function updateText(node: TextNode, value: any): number {
 /**
  * Isolates given element with CSS scope
  */
-export function isolateElement<T extends Element>(el: T, cssScope?: string): T {
-	cssScope && el.setAttribute(cssScope, '');
+export function isolateElement<T extends Element>(el: T, cssScope: string): T {
+	el.setAttribute(cssScope, '');
 	return el;
 }
 

@@ -189,6 +189,9 @@ export interface ComponentDefinition {
 
 let renderQueue: Array<Component | Changes | undefined> | null = null;
 
+/** A lookup of normalized attributes */
+const attributeLookup: {[name: string]: string} = {};
+
 /**
  * Creates Endorphin DOM component with given definition
  */
@@ -407,17 +410,19 @@ function setPropsInternal(component: Component, nextProps: object): Changes | un
 	let changes: Changes | undefined;
 	const { props } = component;
 	const { defaultProps } = component.componentModel;
+	let prev: any;
+	let current: any;
 
 	for (const p in nextProps) {
-		const prev = props[p];
-		let current = nextProps[p];
+		prev = props[p];
+		current = nextProps[p];
 
-		if (current == null) {
-			nextProps[p] = current = defaultProps[p];
+		if (current == null && p in defaultProps) {
+			current = defaultProps[p];
 		}
 
 		if (p === 'class' && current != null) {
-			current = classNames(current).join(' ');
+			current = classNames(current);
 		}
 
 		if (current !== prev) {
@@ -428,7 +433,7 @@ function setPropsInternal(component: Component, nextProps: object): Changes | un
 			changes[p] = { current, prev };
 
 			if (!/^partial:/.test(p)) {
-				setAttributeExpression(component, p.replace(/[A-Z]/g, kebabCase), current);
+				setAttributeExpression(component, normalizeAttribute(p), current);
 			}
 		}
 	}
@@ -568,4 +573,15 @@ function drainQueue() {
 			renderComponent(component, pending[i + 1] as Changes);
 		}
 	}
+}
+
+/**
+ * Normalizes given attribute name: converts `camelCase` to `kebab-case`
+ */
+function normalizeAttribute(attr: string): string {
+	if (!(attr in attributeLookup)) {
+		attributeLookup[attr] = attr.replace(/[A-Z]/g, kebabCase);
+	}
+
+	return attributeLookup[attr];
 }
