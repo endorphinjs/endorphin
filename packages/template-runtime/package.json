@@ -1,6 +1,6 @@
 {
   "name": "@endorphinjs/template-runtime",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "EndorphinJS template runtime, embedded with template bundles",
   "main": "./dist/runtime.cjs.js",
   "module": "./dist/runtime.es.js",
