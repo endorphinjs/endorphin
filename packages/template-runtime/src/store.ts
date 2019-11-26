@@ -96,9 +96,7 @@ export class Store<T = Data> {
 		for (let i = 0; i < this.listeners.length; i++) {
 			if (this.listeners[i].component === component) {
 				this.listeners.splice(i, 1);
-				return;
 			}
-
 		}
 	}
 }
