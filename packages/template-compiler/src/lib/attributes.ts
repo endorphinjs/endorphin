@@ -317,7 +317,14 @@ function mountExpressionAttributes(elem: ElementEntity, receiver: Entity, attrs:
         return attrs.map(attr => {
             const name = (attr.name as Identifier).name;
             const value = compileAttributeValue(attr.value, state);
-            const ns = !elem.isComponent ? getAttributeNS(name, state) : null;
+
+            if (elem.isComponent) {
+                // For components, we should only update pending attributes and
+                // let `mountComponent()`/`updateComponent()` do the rest
+                return entity(state, sn([`prev${propGetter(name)} = `, value]));
+            }
+
+            const ns = getAttributeNS(name, state);
             if (name === 'class') {
                 return entity(state, state.runtime('updateClass', ['elem', 'prev', value]));
             }

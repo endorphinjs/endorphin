@@ -1,16 +1,16 @@
-import { appendChild, createComponent, mountComponent, propsSet, unmountComponent, updateClass, updateComponent } from "endorphin";
+import { appendChild, createComponent, mountComponent, propsSet, unmountComponent, updateComponent } from "endorphin";
 import * as MyComp from "./my-comp.html";
 
 function myCompAttrs$0(elem, prev, host) {
-	updateClass(elem, prev, "c4_1" + ((host.props.cond ? " c4_2" : "")) + " c4_3");
+	prev.class = "c4_1" + ((host.props.cond ? " c4_2" : "")) + " c4_3";
 }
 
 function myCompAttrs$1(elem, prev, host) {
-	updateClass(elem, prev, ((host.props.cond ? "c5_1" : "")) + " c5_2");
+	prev.class = ((host.props.cond ? "c5_1" : "")) + " c5_2";
 }
 
 function myCompAttrs$2(elem, prev, host) {
-	updateClass(elem, prev, ((host.props.cond1 ? "c6_1" : "")) + ((host.props.cond2 ? " c6_2" : "")));
+	prev.class = ((host.props.cond1 ? "c6_1" : "")) + ((host.props.cond2 ? " c6_2" : ""));
 }
 
 export default function template$0(host, scope) {

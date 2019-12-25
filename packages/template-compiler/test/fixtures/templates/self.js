@@ -1,7 +1,7 @@
-import { appendChild, createComponent, createInjector, elem, elemWithText, get, insert, mountBlock, mountComponent, propsSet, unmountBlock, unmountComponent, updateAttribute, updateBlock, updateComponent } from "endorphin";
+import { appendChild, createComponent, createInjector, elem, elemWithText, get, insert, mountBlock, mountComponent, propsSet, unmountBlock, unmountComponent, updateBlock, updateComponent } from "endorphin";
 
 function e_selfAttrs$0(elem, prev, host) {
-	updateAttribute(elem, prev, "item", host.props.link);
+	prev.item = host.props.link;
 }
 
 function chooseBody$0(host, injector, scope) {

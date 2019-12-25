@@ -1,8 +1,8 @@
-import { appendChild, createComponent, elemWithText, insert, mountBlock, mountComponent, mountIterator, propsSet, setAttribute, unmountBlock, unmountComponent, unmountIterator, updateAttribute, updateBlock, updateComponent, updateIncomingSlot, updateIterator } from "endorphin";
+import { appendChild, createComponent, elemWithText, insert, mountBlock, mountComponent, mountIterator, propsSet, setAttribute, unmountBlock, unmountComponent, unmountIterator, updateBlock, updateComponent, updateIncomingSlot, updateIterator } from "endorphin";
 import * as SubComponent from "./slot-inner.html";
 
 function subComponentAttrs$0(elem, prev, host) {
-	updateAttribute(elem, prev, "id", host.props.id);
+	prev.id = host.props.id;
 }
 
 function ifBody$0(host, injector, scope) {

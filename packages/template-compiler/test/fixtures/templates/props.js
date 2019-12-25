@@ -1,4 +1,4 @@
-import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, propsSet, text, unmountBlock, unmountComponent, updateAttribute, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
+import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, propsSet, text, unmountBlock, unmountComponent, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
 import * as E1 from "./attrs.html";
 
 function ifBody$0(host, injector, scope) {
@@ -17,11 +17,11 @@ function ifEntry$0(host) {
 }
 
 function e1Attrs$0(elem, prev, host) {
-	updateAttribute(elem, prev, "foo", host.props.bar3);
+	prev.foo = host.props.bar3;
 }
 
 function e1Attrs$1(elem, prev, host) {
-	updateAttribute(elem, prev, "foo", host.props.bar4);
+	prev.foo = host.props.bar4;
 }
 
 function ifBody$1(host, injector, scope) {
@@ -40,11 +40,11 @@ function ifEntry$1(host) {
 }
 
 function e1Attrs$2(elem, prev, host) {
-	updateAttribute(elem, prev, "foo", (host.props.cond ? host.props.baz : host.props.bar4));
+	prev.foo = (host.props.cond ? host.props.baz : host.props.bar4);
 }
 
 function e1Attrs$3(elem, prev, host) {
-	updateAttribute(elem, prev, "foo", (host.props.cond ? host.props.baz : host.props.bar4));
+	prev.foo = (host.props.cond ? host.props.baz : host.props.bar4);
 }
 
 function ifBody$2(host, injector, scope) {
@@ -63,7 +63,7 @@ function ifEntry$2(host) {
 }
 
 function e1Attrs$4(elem, prev, host) {
-	updateAttribute(elem, prev, "foo", (host.props.cond ? host.props.baz : (("a " + host.props.bar4) + " b")));
+	prev.foo = (host.props.cond ? host.props.baz : (("a " + host.props.bar4) + " b"));
 }
 
 export default function template$0(host, scope) {

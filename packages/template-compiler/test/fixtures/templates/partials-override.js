@@ -12,11 +12,11 @@ export const partials = {
 };
 
 function innerComponentAttrs$0(elem, prev, host) {
-	updateAttribute(elem, prev, "items", host.store.data.items1);
+	prev.items = host.store.data.items1;
 }
 
 function innerComponentAttrs$1(elem, prev, host) {
-	updateAttribute(elem, prev, "items", host.store.data.items2);
+	prev.items = host.store.data.items2;
 }
 
 export default function template$0(host, scope) {

@@ -1,4 +1,4 @@
-import { createComponent, createInjector, get, insert, mountComponent, mountIterator, propsSet, unmountComponent, unmountIterator, updateClass, updateComponent, updateIterator } from "endorphin";
+import { createComponent, createInjector, get, insert, mountComponent, mountIterator, propsSet, unmountComponent, unmountIterator, updateComponent, updateIterator } from "endorphin";
 import * as MyComponent from "./my-component.html";
 
 function forSelect$0(host) {
@@ -10,7 +10,7 @@ function setVars$0(host, scope) {
 }
 
 function myComponentAttrs$0(elem, prev, host, scope) {
-	updateClass(elem, prev, ((scope.ifExpr ? ("animate-" + get(scope.value, "animation", "type")) : "")) + ((get(scope.value, "reordered") ? " reordered" : "")));
+	prev.class = ((scope.ifExpr ? ("animate-" + get(scope.value, "animation", "type")) : "")) + ((get(scope.value, "reordered") ? " reordered" : ""));
 }
 
 function forContent$0(host, injector, scope) {

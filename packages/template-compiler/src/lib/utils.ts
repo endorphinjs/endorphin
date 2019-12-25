@@ -17,6 +17,12 @@ const defaultHelpers = {
     'endorphin/helpers': ['emit', 'notify', 'count', 'contains', 'indexOf', 'replace', 'lowercase', 'uppercase', 'slice', 'log']
 } as HelpersMap;
 
+const reservedKeywords = new Set([
+    'for', 'while', 'of', 'async', 'await', 'const', 'let', 'var', 'continue',
+    'break', 'debugger', 'do', 'export', 'import', 'in', 'instanceof', 'new', 'return',
+    'switch', 'this', 'throw', 'try', 'catch', 'typeof', 'void', 'with', 'yield'
+]);
+
 /**
  * Converts given HTML tag name to JS variable name
  */
@@ -64,7 +70,7 @@ export function sn(chunks?: Chunk | ChunkList, node?: Node, name?: string): Sour
  * Check if given name can be used as property identifier literal
  */
 export function isPropKey(name: string): boolean {
-    return /^[a-zA-Z_$][\w_$]*$/.test(name);
+    return !reservedKeywords.has(name) && /^[a-zA-Z_$][\w_$]*$/.test(name);
 }
 
 /**
