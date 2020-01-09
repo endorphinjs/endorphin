@@ -1,4 +1,4 @@
-import { animate, createInjector, domRemove, elem, elemWithText, insert, mountBlock, obj, setClass, unmountBlock, updateAttribute, updateBlock } from "endorphin";
+import { animate, clearBlock, createInjector, domRemove, elem, elemWithText, insert, mountBlock, obj, setClass, unmountBlock, updateAttribute, updateBlock } from "endorphin";
 
 function divAttrs$0(elem, prev, host) {
 	updateAttribute(elem, prev, "title", host.state.title);
@@ -80,5 +80,5 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.if$0 = unmountBlock(scope.if$0);
+	scope.if$0 = clearBlock(scope.if$0);
 }

@@ -26,12 +26,12 @@ export type TemplateContinue = AstVisitorContinue<TemplateOutput>;
 export type TemplateVisitorMap = AstVisitorMap<TemplateOutput>;
 
 /** Endorphin runtime functions */
-export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock'
-    | 'mountIterator' | 'updateIterator' | 'unmountIterator'
-    | 'mountKeyIterator' | 'updateKeyIterator' | 'unmountKeyIterator'
+export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock' | 'clearBlock'
+    | 'mountIterator' | 'updateIterator' | 'unmountIterator' | 'clearIterator'
+    | 'mountKeyIterator' | 'updateKeyIterator' | 'unmountKeyIterator' | 'clearKeyIterator'
     | 'mountComponent' | 'updateComponent' | 'unmountComponent'
-    | 'mountInnerHTML' | 'updateInnerHTML' | 'unmountInnerHTML'
-    | 'mountPartial' | 'updatePartial' | 'unmountPartial' | 'getPartial'
+    | 'mountInnerHTML' | 'updateInnerHTML' | 'unmountInnerHTML' | 'clearInnerHTML'
+    | 'mountPartial' | 'updatePartial' | 'unmountPartial' | 'clearPartial' | 'getPartial'
     | 'createSlot' | 'mountSlot' | 'updateIncomingSlot' | 'updateDefaultSlot' | 'unmountSlot'
     | 'createInjector' | 'unmountInjector' | 'block'
 

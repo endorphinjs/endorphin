@@ -1,4 +1,4 @@
-import { appendChild, createInjector, elem, elemWithText, insert, mountBlock, text, unmountBlock, updateBlock } from "endorphin";
+import { appendChild, clearBlock, createInjector, elem, elemWithText, insert, mountBlock, text, unmountBlock, updateBlock } from "endorphin";
 
 function ifBody$1(host, injector) {
 	insert(injector, elemWithText("div", "top 2"));
@@ -78,6 +78,6 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.if$0 = unmountBlock(scope.if$0);
+	scope.if$0 = clearBlock(scope.if$0);
 	scope.choose$0 = unmountBlock(scope.choose$0);
 }

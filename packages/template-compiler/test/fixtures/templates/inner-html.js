@@ -1,4 +1,4 @@
-import { createInjector, elemWithText, insert, mountBlock, mountInnerHTML, unmountBlock, unmountInnerHTML, updateBlock, updateInnerHTML } from "endorphin";
+import { clearBlock, clearInnerHTML, createInjector, elemWithText, insert, mountBlock, mountInnerHTML, updateBlock, updateInnerHTML } from "endorphin";
 
 function ifBody$0(host, injector) {
 	insert(injector, elemWithText("div", "foo"));
@@ -39,7 +39,7 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.if$0 = unmountBlock(scope.if$0);
-	scope.html$0 = unmountInnerHTML(scope.html$0);
-	scope.if$1 = unmountBlock(scope.if$1);
+	scope.if$0 = clearBlock(scope.if$0);
+	scope.html$0 = clearInnerHTML(scope.html$0);
+	scope.if$1 = clearBlock(scope.if$1);
 }

@@ -52,6 +52,10 @@ export function unmountInnerHTML(block: InnerHtmlBlock) {
 	disposeBlock(block);
 }
 
+export function clearInnerHTML(block: InnerHtmlBlock) {
+	disposeBlock(block, true);
+}
+
 function renderHTML(host: Component, injector: Injector, code: string | Node, slotName: string) {
 	const { cssScope } = host.componentModel.definition;
 

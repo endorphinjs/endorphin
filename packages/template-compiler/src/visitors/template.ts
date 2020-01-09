@@ -236,7 +236,7 @@ export default {
                 params.set(partialEventReceiver, eventReceiver.getSymbol());
                 return state.runtime('updatePartial', [ent.getSymbol(), getter, toObjectLiteral(params, state.indent, 1)]);
             },
-            unmount: ent => ent.unmount('unmountPartial')
+            unmount: ent => ent.unmount(state.isTopLevel() ? 'clearPartial' : 'unmountPartial')
         });
     }
 } as AstVisitorMap<TemplateOutput>;

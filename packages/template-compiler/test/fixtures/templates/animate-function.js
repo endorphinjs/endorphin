@@ -1,4 +1,4 @@
-import { animate, createComponent, createInjector, domRemove, elemWithText, insert, mountBlock, mountComponent, unmountBlock, unmountComponent, updateBlock } from "endorphin";
+import { animate, clearBlock, createComponent, createInjector, domRemove, elemWithText, insert, mountBlock, mountComponent, unmountComponent, updateBlock } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -52,5 +52,5 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.if$0 = unmountBlock(scope.if$0);
+	scope.if$0 = clearBlock(scope.if$0);
 }

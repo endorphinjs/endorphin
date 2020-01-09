@@ -1,4 +1,4 @@
-import { animate, appendChild, createComponent, createInjector, domRemove, elem, elemWithText, insert, mountBlock, mountComponent, stopAnimation, unmountBlock, unmountComponent, updateBlock } from "endorphin";
+import { animate, appendChild, clearBlock, createComponent, createInjector, domRemove, elem, elemWithText, insert, mountBlock, mountComponent, stopAnimation, unmountComponent, updateBlock } from "endorphin";
 import * as MyComponent from "my-component.html";
 
 function animatedSection$0(host, injector, scope) {
@@ -129,9 +129,9 @@ function template$0Update(host, scope) {
 
 function template$0Unmount(scope) {
 	scope.div$0 = stopAnimation(scope.div$0);
-	scope.if$0 = unmountBlock(scope.if$0);
-	scope.if$1 = unmountBlock(scope.if$1);
+	scope.if$0 = clearBlock(scope.if$0);
+	scope.if$1 = clearBlock(scope.if$1);
 	scope.div$1 = stopAnimation(scope.div$1);
-	scope.if$2 = unmountBlock(scope.if$2);
-	scope.if$3 = unmountBlock(scope.if$3);
+	scope.if$2 = clearBlock(scope.if$2);
+	scope.if$3 = clearBlock(scope.if$3);
 }

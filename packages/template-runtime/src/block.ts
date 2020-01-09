@@ -50,3 +50,7 @@ export function updateBlock(block: FunctionBlock): number {
 export function unmountBlock(block: FunctionBlock) {
 	disposeBlock(block);
 }
+
+export function clearBlock(block: FunctionBlock) {
+	disposeBlock(block, true);
+}

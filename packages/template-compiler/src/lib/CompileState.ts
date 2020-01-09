@@ -411,6 +411,10 @@ export default class CompileState {
         }
     }
 
+    isTopLevel(): boolean {
+        return this.element && this.element.node ? this.element.node.type === 'ENDTemplate' : false;
+    }
+
     /**
      * Returns component definition symbol for given element
      */

@@ -82,3 +82,7 @@ export function updatePartial(block: PartialBlock, partial: PartialDefinition, a
 export function unmountPartial(block: PartialBlock) {
 	disposeBlock(block);
 }
+
+export function clearPartial(block: PartialBlock) {
+	disposeBlock(block, true);
+}

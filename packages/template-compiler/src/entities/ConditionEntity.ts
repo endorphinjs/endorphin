@@ -22,7 +22,7 @@ export default class ConditionEntity extends Entity {
             return state.runtime('mountBlock', [state.host, state.injector, fn]);
         });
         this.setUpdate(() => state.runtime('updateBlock', [this.getSymbol()]));
-        this.setUnmount(() => this.unmount('unmountBlock'));
+        this.setUnmount(() => this.unmount(state.isTopLevel() ? 'clearBlock' : 'unmountBlock'));
         return this;
     }
 

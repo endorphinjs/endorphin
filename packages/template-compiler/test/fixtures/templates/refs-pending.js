@@ -1,4 +1,4 @@
-import { animate, createInjector, detachPendingEvents, domRemove, elem, finalizeAttributes, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountBlock, mountPartial, obj, pendingEvents, setPendingRef, stopAnimation, unmountBlock, unmountPartial, updateBlock, updateClass, updatePartial } from "endorphin";
+import { animate, clearBlock, createInjector, detachPendingEvents, domRemove, elem, finalizeAttributes, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountBlock, mountPartial, obj, pendingEvents, setPendingRef, stopAnimation, unmountBlock, unmountPartial, updateBlock, updateClass, updatePartial } from "endorphin";
 import { count } from "main";
 
 export const partials = {
@@ -118,7 +118,7 @@ function template$0Update(host, scope) {
 function template$0Unmount(scope) {
 	scope.eventSet$0 = detachPendingEvents(scope.eventSet$0);
 	scope.if$0 = unmountBlock(scope.if$0);
-	scope.if$1 = unmountBlock(scope.if$1);
+	scope.if$1 = clearBlock(scope.if$1);
 }
 
 function msgButtonAttrs$0(elem, prev, host, scope) {

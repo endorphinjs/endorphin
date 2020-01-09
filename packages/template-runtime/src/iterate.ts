@@ -58,6 +58,10 @@ export function unmountIterator(block: IteratorBlock) {
 	disposeBlock(block);
 }
 
+export function clearIterator(block: IteratorBlock) {
+	disposeBlock(block, true);
+}
+
 export function prepareScope(scope: Scope, index: number, key: any, value: any): Scope {
 	scope.index = index;
 	scope.key = key;

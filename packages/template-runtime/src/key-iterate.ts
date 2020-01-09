@@ -84,6 +84,10 @@ export function unmountKeyIterator(block: KeyIteratorBlock) {
 	disposeBlock(block);
 }
 
+export function clearKeyIterator(block: KeyIteratorBlock) {
+	disposeBlock(block, true);
+}
+
 function getItem(listItem: LinkedListItem, bound: LinkedListItem): KeyIteratorItemBlock | null {
 	return listItem !== bound ? listItem.value : null;
 }

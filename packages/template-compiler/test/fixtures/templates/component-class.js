@@ -1,4 +1,4 @@
-import { createComponent, createInjector, get, insert, mountComponent, mountIterator, propsSet, unmountComponent, unmountIterator, updateComponent, updateIterator } from "endorphin";
+import { clearIterator, createComponent, createInjector, get, insert, mountComponent, mountIterator, propsSet, unmountComponent, updateComponent, updateIterator } from "endorphin";
 import * as MyComponent from "./my-component.html";
 
 function forSelect$0(host) {
@@ -50,5 +50,5 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.for$0 = unmountIterator(scope.for$0);
+	scope.for$0 = clearIterator(scope.for$0);
 }

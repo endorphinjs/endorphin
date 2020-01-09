@@ -1,4 +1,4 @@
-import { createInjector, elem, elemWithText, get, insert, mountBlock, mountKeyIterator, obj, text, unmountBlock, unmountKeyIterator, updateAttribute, updateBlock, updateKeyIterator } from "endorphin";
+import { clearBlock, createInjector, elem, elemWithText, get, insert, mountBlock, mountKeyIterator, obj, text, unmountBlock, unmountKeyIterator, updateAttribute, updateBlock, updateKeyIterator } from "endorphin";
 
 function forSelect$0(host) {
 	return host.props.items;
@@ -79,5 +79,5 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.if$0 = unmountBlock(scope.if$0);
+	scope.if$0 = clearBlock(scope.if$0);
 }

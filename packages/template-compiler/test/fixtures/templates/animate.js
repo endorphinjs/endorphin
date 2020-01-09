@@ -1,4 +1,4 @@
-import { animate, createComponent, createInjector, detachPendingEvents, domRemove, elem, elemWithText, finalizeAttributes, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountBlock, mountComponent, mountInnerHTML, mountIterator, mountPartial, obj, pendingEvents, stopAnimation, text, unmountBlock, unmountComponent, unmountInnerHTML, unmountIterator, unmountPartial, updateBlock, updateInnerHTML, updateIterator, updatePartial } from "endorphin";
+import { animate, clearBlock, createComponent, createInjector, detachPendingEvents, domRemove, elem, elemWithText, finalizeAttributes, finalizePendingEvents, finalizePendingRefs, getPartial, insert, mountBlock, mountComponent, mountInnerHTML, mountIterator, mountPartial, obj, pendingEvents, stopAnimation, text, unmountBlock, unmountComponent, unmountInnerHTML, unmountIterator, unmountPartial, updateBlock, updateInnerHTML, updateIterator, updatePartial } from "endorphin";
 import * as InnerComponent from "./inner-component.html";
 import * as OuterComponent from "./outer-component.html";
 
@@ -157,8 +157,8 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.if$0 = unmountBlock(scope.if$0);
-	scope.if$2 = unmountBlock(scope.if$2);
+	scope.if$0 = clearBlock(scope.if$0);
+	scope.if$2 = clearBlock(scope.if$2);
 }
 
 function partialTest$0(host, injector) {

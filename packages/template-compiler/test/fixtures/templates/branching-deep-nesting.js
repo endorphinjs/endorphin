@@ -1,4 +1,4 @@
-import { createInjector, insert, mountBlock, text, unmountBlock, updateBlock } from "endorphin";
+import { clearBlock, createInjector, insert, mountBlock, text, unmountBlock, updateBlock } from "endorphin";
 
 function ifBody$2(host, injector) {
 	insert(injector, text("\n                test\n            "));
@@ -60,5 +60,5 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.if$0 = unmountBlock(scope.if$0);
+	scope.if$0 = clearBlock(scope.if$0);
 }

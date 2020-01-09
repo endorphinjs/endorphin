@@ -93,8 +93,11 @@ export function getSlotContext(injector: Injector, name: string): SlotContext {
 
 /**
  * Empties content of given block
+ * @param detached Empty block in detached state. Detached state means one of the
+ * parent DOM element will be removed from document so there’s no need to detach
+ * inner DOM elements
  */
-export function emptyBlockContent<T extends Block>(block: T): void {
+export function emptyBlockContent<T extends Block>(block: T, detached?: boolean): void {
 	const unmount = block.mount && block.mount.dispose;
 	if (unmount) {
 		unmount(block.scope, block.host);
@@ -108,7 +111,7 @@ export function emptyBlockContent<T extends Block>(block: T): void {
 		if (!isElement(value)) {
 			next = value.end.next;
 			disposeBlock(value);
-		} else if (!value[animatingKey]) {
+		} else if (!detached && !value[animatingKey]) {
 			domRemove(value);
 		}
 
@@ -155,8 +158,8 @@ export function move<T extends Node, B extends Block>(injector: Injector, block:
 /**
  * Disposes given block
  */
-export function disposeBlock(block: Block) {
-	emptyBlockContent(block);
+export function disposeBlock(block: Block, detached?: boolean) {
+	emptyBlockContent(block, detached);
 	listDetachFragment(block.injector, block.start, block.end);
 
 	// @ts-ignore: Nulling disposed object

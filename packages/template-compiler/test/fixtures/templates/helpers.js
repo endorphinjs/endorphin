@@ -1,4 +1,4 @@
-import { appendChild, createInjector, elem, mountInnerHTML, obj, unmountInnerHTML, updateAttribute, updateInnerHTML } from "endorphin";
+import { appendChild, clearInnerHTML, createInjector, elem, mountInnerHTML, obj, updateAttribute, updateInnerHTML } from "endorphin";
 import { count } from "main";
 
 function divAttrs$0(elem, prev, host) {
@@ -28,5 +28,5 @@ function template$0Update(host, scope) {
 }
 
 function template$0Unmount(scope) {
-	scope.html$0 = unmountInnerHTML(scope.html$0);
+	scope.html$0 = clearInnerHTML(scope.html$0);
 }
