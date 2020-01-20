@@ -6,7 +6,7 @@ const prefix = '$';
 
 type StoreUpdateHandler = (state: any, changes: object) => void;
 
-interface StoreUpdateEntry {
+export interface StoreUpdateEntry {
 	keys?: string[];
 	component?: Component;
 	handler?: StoreUpdateHandler;
