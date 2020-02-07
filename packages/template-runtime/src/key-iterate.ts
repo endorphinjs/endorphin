@@ -62,7 +62,9 @@ export function updateKeyIterator(block: KeyIteratorBlock): number {
 
 	const collection = block.get(host, block.parentScope);
 	if (collection && typeof collection.forEach === 'function') {
+		const prevScope = getScope(host);
 		collection.forEach(keyIterator, block);
+		setScope(host, prevScope);
 	}
 
 	if (rendered) {
