@@ -357,6 +357,11 @@ function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): st
         fallback = ref;
     }
 
+    if (condition && info && info.value) {
+        // Under condition, we should fallback to previous value
+        fallback = castValue(info.value);
+    }
+
     const newValue = condition
         ? program(conditionalExpr(condition, castValue(value), fallback))
         : value;
@@ -364,7 +369,15 @@ function hoistVar(state: HoistState, name: string, value: ENDAttributeValue): st
     if (info && !info.used) {
         // Variable is already defined in *current scope*.
         // If it’s not used, simply update value, otherwise we should map it to a new variable
-        info.value = newValue;
+        if (condition) {
+            // If a variable value is set under condition and it was already
+            // defined, we should re-set it in map so it appears after variable
+            // with condition
+            state.vars.delete(jsName);
+            state.vars.set(jsName, varInfo(newValue));
+        } else {
+            info.value = newValue;
+        }
         return jsName;
     }
 

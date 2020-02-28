@@ -1,0 +1,5 @@
+[vars: ifExpr ifExpr_1 link]
+<template>
+    <e:var ifExpr={a === 1} ifExpr_1={a === 2} link={@ifExpr_1 ? "bar" : @ifExpr ? "foo" : undefined}/>
+    {@link}
+</template>
