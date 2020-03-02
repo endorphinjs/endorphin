@@ -74,10 +74,16 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 	stopAnimation(elem, true);
 
 	const prevAnimation = elem.style.animation;
+	const evtPayload = {
+		animation,
+		direction: callback ? 'out' : 'in'
+	};
+
 	elem[animatingKey] = (cancel?: boolean) => {
 		elem.removeEventListener('animationend', handler);
 		elem.removeEventListener('animationcancel', handler);
 		elem.style.animation = prevAnimation;
+		notifyAnimation(elem, 'end', evtPayload);
 		!cancel && finalizeAnimation(callback);
 	};
 
@@ -98,6 +104,8 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 			}
 		});
 	}
+
+	notifyAnimation(elem, 'start', evtPayload);
 }
 
 /**
@@ -129,17 +137,25 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 			end: start + options.duration!,
 			started: false
 		};
+		const evtPayload = {
+			animation,
+			tween: options,
+			direction: callback ? 'out' : 'in'
+		};
 		pool.push(anim);
 
 		elem[animatingKey] = (cancel?: boolean) => {
 			pool.splice(pool.indexOf(anim), 1);
 			options.complete && options.complete(elem, options);
+			notifyAnimation(elem, 'end', evtPayload);
 			!cancel && finalizeAnimation(callback);
 		};
 
 		if (pool.length === 1) {
 			tweenLoop(now);
 		}
+
+		notifyAnimation(elem, 'start', evtPayload);
 	} else if (callback) {
 		callback();
 	}
@@ -262,5 +278,17 @@ function nextTick(fn: (...args: any[]) => any) {
 		Promise.resolve().then(fn);
 	} else {
 		requestAnimationFrame(fn);
+	}
+}
+
+function notifyAnimation(elem: Element, stage: string, detail?: {}) {
+	try {
+		elem.dispatchEvent(new CustomEvent(`animate-${stage}`, {
+			bubbles: false,
+			cancelable: false,
+			detail
+		}));
+	} catch (err) {
+		// pass
 	}
 }
