@@ -37,11 +37,11 @@ export function reverseWalkDefinitions(component: Component, definition: Compone
 export function runHook<T, U>(component: Component, name: string, arg1?: T, arg2?: U) {
 	const { plugins } = component.componentModel;
 
-	for (let i = 0, hook: (...args: any[]) => any; i < plugins.length; i++) {
+	for (let i = plugins.length - 1, hook: (...args: any[]) => any; i >= 0; i--) {
 		hook = plugins[i][name];
 		if (typeof hook === 'function') {
 			try {
-				return hook(component, arg1, arg2);
+				hook(component, arg1, arg2);
 			} catch (error) {
 				runtimeError(component, error);
 				// tslint:disable-next-line:no-console

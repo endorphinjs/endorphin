@@ -506,7 +506,7 @@ function collectPlugins(component: Component, definition: ComponentDefinition, d
 	if (Array.isArray(plugins)) {
 		for (let i = 0; i < plugins.length; i++) {
 			dest.push(plugins[i]);
-			collectPlugins(component, dest);
+			collectPlugins(component, plugins[i], dest);
 		}
 	}
 
