@@ -147,7 +147,9 @@ export const base: AstVisitors<object> = acornWalk.make({
     },
     ENDAttribute(node: Ast.ENDAttribute, state, c) {
         c(node.name, state);
-        c(node.value, state);
+        if (node.value) {
+            c(node.value, state);
+        }
     },
     ENDDirective(node: Ast.ENDDirective, state, c) {
         c(node.value, state);

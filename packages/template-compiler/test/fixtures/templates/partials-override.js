@@ -32,7 +32,7 @@ export default function template$0(host, scope) {
 	innerComponentAttrs$1(innerComponent$1, propSet$1, host);
 	propSet$1["partial:item"] = assign({ host }, partials["my-item"]);
 	mountComponent(innerComponent$1, propSet$1);
-	subscribeStore(host, ["items1", "items2"]);
+	subscribeStore(host, ["items1", "items2", "comment", "pos", "item"]);
 	return template$0Update;
 }
 
@@ -43,7 +43,7 @@ function template$0Update(host, scope) {
 	innerComponentAttrs$0(innerComponent$0, propSet$0, host);
 	updateComponent(innerComponent$0, propSet$0);
 	innerComponentAttrs$1(innerComponent$1, propSet$1, host);
-	updateComponent(innerComponent$1, propSet$1);
+	updateComponent(innerComponent$1, propSet$1, { "my-item": [host.props.title, host.state.tooltip, host.store.data.comment, host.store.data.pos, host.store.data.item] });
 }
 
 function template$0Unmount(scope) {
@@ -51,15 +51,23 @@ function template$0Unmount(scope) {
 	scope.innerComponent$1 = unmountComponent(scope.innerComponent$1);
 }
 
+function divAttrs$0(elem, prev, host) {
+	updateAttribute(elem, prev, "title", host.props.title);
+	updateAttribute(elem, prev, "tooltip", host.state.tooltip);
+	updateAttribute(elem, prev, "comment", host.store.data.comment);
+}
+
 function spanAttrs$0(elem, prev, host) {
 	updateAttribute(elem, prev, "value", host.store.data.pos);
 }
 
 function partialMyItem$0(host, injector, scope) {
-	const div$0 = insert(injector, elem("div"));
-	const span$0 = scope.span$0 = appendChild(div$0, elem("span"));
+	const div$0 = scope.div$0 = insert(injector, elem("div"));
 	const attrSet$0 = scope.attrSet$0 = obj();
-	spanAttrs$0(span$0, attrSet$0, host);
+	divAttrs$0(div$0, attrSet$0, host);
+	const span$0 = scope.span$0 = appendChild(div$0, elem("span"));
+	const attrSet$1 = scope.attrSet$1 = obj();
+	spanAttrs$0(span$0, attrSet$1, host);
 	scope.text$0 = appendChild(span$0, text(host.store.data.item));
 	return partialMyItem$0Update;
 }
@@ -67,10 +75,11 @@ function partialMyItem$0(host, injector, scope) {
 partialMyItem$0.dispose = partialMyItem$0Unmount;
 
 function partialMyItem$0Update(host, scope) {
-	spanAttrs$0(scope.span$0, scope.attrSet$0, host);
+	divAttrs$0(scope.div$0, scope.attrSet$0, host);
+	spanAttrs$0(scope.span$0, scope.attrSet$1, host);
 	updateText(scope.text$0, host.store.data.item);
 }
 
 function partialMyItem$0Unmount(scope) {
-	scope.attrSet$0 = scope.text$0 = scope.span$0 = null;
+	scope.attrSet$0 = scope.attrSet$1 = scope.text$0 = scope.span$0 = scope.div$0 = null;
 }
