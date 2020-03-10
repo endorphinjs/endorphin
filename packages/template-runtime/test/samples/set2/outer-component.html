@@ -11,5 +11,6 @@
 <template partial:my-item item pos={0}>
 	<div>
 		<span value={@pos}>{ @item }</span>
+		<div e:if={enabled}>Flag enabled</div>
 	</div>
 </template>
