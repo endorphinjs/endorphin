@@ -1,7 +1,7 @@
 {
   "name": "@endorphinjs/template-compiler",
   "description": "EndorphinJS Template compiler",
-  "version": "0.6.7-alpha.0",
+  "version": "0.6.7-alpha.1",
   "main": "./dist/template-compiler.cjs.js",
   "module": "./dist/template-compiler.es.js",
   "types": "./dist/index.d.ts",
@@ -35,7 +35,7 @@
     "typescript": "^3.6.4"
   },
   "dependencies": {
-    "@endorphinjs/template-parser": "^0.6.7-alpha.0",
+    "@endorphinjs/template-parser": "^0.6.7-alpha.1",
     "entities": "^1.1.2",
     "source-map": "^0.7.3"
   },
