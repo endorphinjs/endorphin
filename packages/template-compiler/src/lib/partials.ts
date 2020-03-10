@@ -1,8 +1,8 @@
 import { SourceNode } from 'source-map';
-import { ENDProgram, ENDPartial, walk, Identifier, ENDElement } from '@endorphinjs/template-parser';
+import { ENDProgram, ENDPartial, walk, Identifier, ENDElement, ArrayExpression } from '@endorphinjs/template-parser';
 import CompileState from './CompileState';
-import { objectExpr, property } from './ast-constructor';
 import generateExpression from '../expression';
+import { isLiteral } from './utils';
 
 export type PartialDeps = Map<string, Identifier[]>;
 
@@ -29,29 +29,35 @@ export function collectPartialDeps(ast: ENDProgram): PartialDeps {
  * Constructs AST node with partial dependencies for given element, if applicable
  */
 export function constructPartialDeps(elem: ENDElement, state: CompileState): SourceNode | undefined {
-    const partials = elem.directives
-        .filter(dir => dir.prefix === 'partial')
+    const used = new Set<string>();
+    const elements: Identifier[] = [];
+    elem.directives
         .map(dir => {
-            if (dir.value && dir.value.type === 'Literal') {
+            if (dir.prefix === 'partial' && dir.value && isLiteral(dir.value)) {
                 return dir.value.value as string;
             }
 
             return null;
         })
-        .filter(name => name != null && state.partialDeps.has(name));
+        .forEach(name => {
+            const deps = state.partialDeps.get(name);
+            if (deps) {
+                deps.forEach(id => {
+                    const key = `${id.context}:${id.name}`;
+                    if (!used.has(key)) {
+                        elements.push(id);
+                    }
+                });
+            }
+        });
 
     // Collect dependencies which should invoke component re-render
     // when changed
-    if (partials.length) {
-        const deps = objectExpr();
-        partials.forEach(name => {
-            deps.properties.push(property(name, {
-                type: 'ArrayExpression',
-                elements: state.partialDeps.get(name)
-            }));
-        });
-
-        return generateExpression(deps, state);
+    if (elements.length) {
+        return generateExpression({
+            type: 'ArrayExpression',
+            elements
+        } as ArrayExpression, state);
     }
 }
 

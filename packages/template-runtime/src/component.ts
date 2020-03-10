@@ -15,6 +15,7 @@ export interface RefMap { [key: string]: Element | null; }
 export type ComponentEventHandler = (component: Component, event: Event, target: HTMLElement) => void;
 export type StaticEventHandler = (evt: Event) => void;
 export type PluginFactory = <C extends Component>(component: C) => ComponentDefinition[] | undefined;
+export type PartialDeps = any[];
 
 export interface AttachedStaticEvents {
 	handler: StaticEventHandler;
@@ -97,6 +98,8 @@ interface ComponentModel {
 
 	/** Default props values */
 	defaultProps: object;
+
+	partialDeps: PartialDeps | null;
 }
 
 /**
@@ -259,6 +262,7 @@ export function createComponentFromElement(el: HTMLElement | Component, definiti
 		queued: false,
 		events,
 		plugins,
+		partialDeps: null,
 		defaultProps: props
 	};
 
@@ -299,10 +303,18 @@ export function mountComponent(component: Component, props?: object) {
 /**
  * Updates given mounted component
  */
-export function updateComponent(component: Component, props?: object): number {
-	const changes = props && setPropsInternal(component, props);
+export function updateComponent(component: Component, props?: object, partialDeps?: PartialDeps): number {
+	const { componentModel } = component;
+	let changes = props && setPropsInternal(component, props);
 
-	if (changes || component.componentModel.queued) {
+	if (partialDeps) {
+		if (!changes && partialDepsUpdated(componentModel.partialDeps, partialDeps)) {
+			changes = obj();
+		}
+		componentModel.partialDeps = partialDeps;
+	}
+
+	if (changes || componentModel.queued) {
 		renderNext(component, changes);
 	}
 
@@ -610,4 +622,22 @@ function normalizeAttribute(attr: string): string {
 	}
 
 	return attributeLookup[attr];
+}
+
+/**
+ * Check if partial dependencies of component were updated
+ */
+function partialDepsUpdated(prev: PartialDeps | null, next: PartialDeps) {
+	if (!prev) {
+		return true;
+	}
+
+	// In compiler, deps will always have the same length
+	for (let i = 0; i < prev.length; i++) {
+		if (prev[i] !== next[i]) {
+			return true;
+		}
+	}
+
+	return false;
 }

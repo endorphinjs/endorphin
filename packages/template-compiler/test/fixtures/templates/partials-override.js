@@ -43,7 +43,7 @@ function template$0Update(host, scope) {
 	innerComponentAttrs$0(innerComponent$0, propSet$0, host);
 	updateComponent(innerComponent$0, propSet$0);
 	innerComponentAttrs$1(innerComponent$1, propSet$1, host);
-	updateComponent(innerComponent$1, propSet$1, { "my-item": [host.props.title, host.state.tooltip, host.store.data.comment, host.store.data.pos, host.store.data.item] });
+	updateComponent(innerComponent$1, propSet$1, [host.props.title, host.state.tooltip, host.store.data.comment, host.store.data.pos, host.store.data.item]);
 }
 
 function template$0Unmount(scope) {
