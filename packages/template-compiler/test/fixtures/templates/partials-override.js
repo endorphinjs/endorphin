@@ -1,4 +1,4 @@
-import { appendChild, assign, createComponent, elem, elemWithText, insert, mountComponent, obj, propsSet, subscribeStore, text, unmountComponent, updateAttribute, updateComponent, updateText } from "endorphin";
+import { appendChild, assign, createComponent, elem, elemWithText, insert, mountBlock, mountComponent, obj, propsSet, subscribeStore, text, unmountBlock, unmountComponent, updateAttribute, updateBlock, updateComponent, updateText } from "endorphin";
 import * as InnerComponent from "./inner-component.js";
 
 export const partials = {
@@ -61,6 +61,31 @@ function spanAttrs$0(elem, prev, host) {
 	updateAttribute(elem, prev, "value", host.store.data.pos);
 }
 
+function chooseBody$0(host, injector, scope) {
+	const p$0 = insert(injector, elem("p"));
+	appendChild(p$0, text("Has title "));
+	scope.text$2 = appendChild(p$0, text(host.props.title));
+	return chooseBody$0Update;
+}
+
+chooseBody$0.dispose = chooseBody$0Unmount;
+
+function chooseBody$0Update(host, scope) {
+	updateText(scope.text$2, host.props.title);
+}
+
+function chooseBody$0Unmount(scope) {
+	scope.text$2 = null;
+}
+
+function chooseBody$1(host, injector) {
+	insert(injector, elemWithText("p", "No title"));
+}
+
+function chooseEntry$0(host) {
+	return host.props.title ? chooseBody$0 : chooseBody$1;
+}
+
 function partialMyItem$0(host, injector, scope) {
 	const div$0 = scope.div$0 = insert(injector, elem("div"));
 	const attrSet$0 = scope.attrSet$0 = obj();
@@ -69,6 +94,7 @@ function partialMyItem$0(host, injector, scope) {
 	const attrSet$1 = scope.attrSet$1 = obj();
 	spanAttrs$0(span$0, attrSet$1, host);
 	scope.text$0 = appendChild(span$0, text(host.store.data.item));
+	scope.choose$0 = mountBlock(host, injector, chooseEntry$0);
 	return partialMyItem$0Update;
 }
 
@@ -78,8 +104,10 @@ function partialMyItem$0Update(host, scope) {
 	divAttrs$0(scope.div$0, scope.attrSet$0, host);
 	spanAttrs$0(scope.span$0, scope.attrSet$1, host);
 	updateText(scope.text$0, host.store.data.item);
+	updateBlock(scope.choose$0);
 }
 
 function partialMyItem$0Unmount(scope) {
+	scope.choose$0 = unmountBlock(scope.choose$0);
 	scope.attrSet$0 = scope.attrSet$1 = scope.text$0 = scope.span$0 = scope.div$0 = null;
 }
