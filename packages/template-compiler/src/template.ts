@@ -6,6 +6,7 @@ import { sn, qStr, format, isPropKey } from './lib/utils';
 import { ENDCompileError, ENDSyntaxError } from './lib/error';
 import templateVisitors from './visitors/template';
 import { CompileOptions } from '.';
+import { collectPartialDeps } from './lib/partials';
 
 export default function generateTemplate(ast: ENDProgram, options?: CompileOptions): SourceNode {
     const state = new CompileState(options);
@@ -18,6 +19,9 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
     // Collect child components. We should do it in separate pass to hoist component
     // definitions before templates are rendered
     registerComponents(ast, state);
+
+    // Collect dependencies defined in partials
+    state.partialDeps = collectPartialDeps(ast);
 
     // Compile template to collect usage stats as well
     const template = compileTemplate(ast, state, templateVisitors);

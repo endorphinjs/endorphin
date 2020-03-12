@@ -12,6 +12,7 @@ import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
 import { ownAttributes, AttributesState, mountPartialOverride } from '../lib/attributes';
 import mountEvent from '../lib/events';
+import { constructPartialDeps } from '../lib/partials';
 
 export default class ElementEntity extends Entity {
     injectorEntity: InjectorEntity;
@@ -204,7 +205,16 @@ export default class ElementEntity extends Entity {
             // There are pending props for current component
             this.add(state.entity({
                 mount: () => state.runtime('mountComponent', [this.getSymbol(), props.getSymbol()]),
-                update: () => state.runtime('updateComponent', [this.getSymbol(), props.getSymbol()]),
+                update: () => {
+                    const args: ChunkList = [this.getSymbol(), props.getSymbol()];
+                    if (isElement(this.node)) {
+                        const partialDeps = constructPartialDeps(this.node, state);
+                        if (partialDeps) {
+                            args.push(partialDeps);
+                        }
+                    }
+                    return state.runtime('updateComponent', args);
+                },
                 unmount: () => this.unmount('unmountComponent')
             }));
         } else {

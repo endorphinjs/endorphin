@@ -4,6 +4,7 @@ import {
     LiteralValue, Literal, ENDAttributeValue, ENDVariable, Program, LogicalExpression,
     ConditionalExpression, ENDAttributeValueExpression, ENDBaseAttributeValue
 } from '@endorphinjs/template-parser';
+import { isPropKey } from './utils';
 
 /**
  * @description
@@ -64,9 +65,10 @@ export function callExpr(callee: string | Expression, args: ArgumentListElement[
     return addSource({ type: 'CallExpression', callee, arguments: args }, source);
 }
 
-export function property(key: string | Identifier, value: Expression, kind: 'init' | 'get' | 'set' = 'init', source?: SourceDataAlike): Property {
+type PropertyKind = 'init' | 'get' | 'set';
+export function property(key: string | Identifier | Literal, value: Expression, kind: PropertyKind = 'init', source?: SourceDataAlike): Property {
     if (typeof key === 'string') {
-        key = identifier(key);
+        key = isPropKey(key) ? identifier(key) : literal(key);
     }
 
     return addSource({ type: 'Property', kind,  key, value }, source);

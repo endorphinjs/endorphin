@@ -8,6 +8,7 @@ import { nameToJS, isIdentifier, isLiteral, isElement, sn, prepareHelpers, getAt
 import { Chunk, ComponentImport, RuntimeSymbols, ChunkList, UsageContext } from '../types';
 import { CompileOptions } from '..';
 import { RefStats } from './RefStats';
+import { PartialDeps } from './partials';
 
 interface NamespaceMap {
     [prefix: string]: string;
@@ -96,6 +97,8 @@ export default class CompileState {
 
     /** Current receiving component */
     component?: ElementEntity;
+
+    partialDeps: PartialDeps;
 
     /** Name of receiving slot, e.g. target for immediate component children */
     slot?: string;
