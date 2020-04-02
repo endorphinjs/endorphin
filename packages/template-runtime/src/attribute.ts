@@ -22,13 +22,6 @@ interface ValueMapNS {
 const nsProto = obj();
 
 /**
- * Creates new attribute change set
- */
-export function attributeSet(): AttributeChangeSet {
-	return { c: obj(), p: obj() };
-}
-
-/**
  * Create pending props change set
  */
 export function propsSet(elem: Component, initial?: {}): {} {
@@ -93,15 +86,6 @@ export function setAttributeExpression(elem: Element, name: string, value: any) 
 }
 
 /**
- * Updates attribute value only if it’s not equal to previous value
- */
-export function updateAttributeExpression<T = any>(elem: Element, name: string, value: T, prevValue?: any): T {
-	return prevValue !== value
-		? setAttributeExpression(elem, name, value)
-		: value;
-}
-
-/**
  * Alias for `elem.setAttributeNS`
  */
 export function setAttributeNS(elem: Element, ns: string, name: string, value: any) {
@@ -138,48 +122,6 @@ export function setAttributeExpressionNS(elem: Element, ns: string, name: string
 		? elem.removeAttributeNS(ns, name)
 		: setAttributeNS(elem, ns, name, primitive);
 	return value;
-}
-
-/**
- * Adds or removes (if value is `void`) attribute to given element
- */
-export function updateAttributeExpressionNS<T = any>(elem: Element, ns: string, name: string, value: T, prevValue?: any): T {
-	return prevValue !== value
-		? setAttributeExpressionNS(elem, ns, name, value)
-		: value;
-}
-
-/**
- * Alias for `elem.classList.add()`
- */
-export function addClass(elem: HTMLElement, className: string) {
-	elem.classList.add(className);
-}
-
-/**
- * Adds class to given element if given condition is truthy
- */
-export function addClassIf(elem: HTMLElement, className: string, condition: any): boolean {
-	condition && addClass(elem, className);
-	return condition;
-}
-
-/**
- * Toggles class on given element if condition is changed
- */
-export function toggleClassIf(elem: HTMLElement, className: string, condition: any, prevResult: boolean): boolean {
-	if (prevResult !== condition) {
-		condition ? addClass(elem, className) : elem.classList.remove(className);
-	}
-
-	return condition;
-}
-
-/**
- * Sets pending attribute value which will be added to attribute later
- */
-export function setPendingAttribute(data: AttributeChangeSet, name: string, value: any) {
-	data.c[name] = value;
 }
 
 /**
@@ -257,36 +199,6 @@ export function finalizeAttributes(elem: Element, cur: ValueMap, prev: ValueMap)
 				prev[key] = curValue;
 			}
 			cur[key] = null;
-		}
-	}
-
-	return updated;
-}
-
-/**
- * Finalizes pending namespaced attributes
- * TODO remove
- */
-export function finalizeAttributesNS(elem: Element, data: AttributeChangeSet): number {
-	// NB use it as a separate function to use explicitly inside generated content.
-	// It there’s no pending namespace attributes, this method will not be included
-	// into final bundle
-	if (!data.n) {
-		return 0;
-	}
-
-	let updated = 0;
-	for (const ns in data.n!) {
-		const { c, p } = data.n[ns];
-		for (const name in c) {
-			const curValue = c[name];
-
-			if (curValue !== p[name]) {
-				updated = 1;
-				setAttributeExpressionNS(elem, ns, name, curValue);
-				p[name] = curValue;
-			}
-			c[name] = null;
 		}
 	}
 
