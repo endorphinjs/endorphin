@@ -96,6 +96,13 @@ export default class ElementEntity extends Entity {
     }
 
     /**
+     * Returns name of context element node or empty string if context node is a template
+     */
+    get elementName(): string {
+        return isElement(this.node) ? this.node.name.name : '';
+    }
+
+    /**
      * Returns slot update symbol for given name
      */
     slotMark(slot: string): string {

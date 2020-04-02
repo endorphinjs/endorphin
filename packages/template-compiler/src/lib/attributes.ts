@@ -10,6 +10,7 @@ import { ElementStats } from './attributeStats';
 import Entity from '../entities/Entity';
 import BlockContext from './BlockContext';
 import compileExpression from '../expression';
+import getProperty from './property-map';
 
 interface AttributeLookup {
     [name: string]: ENDAttributeValue;
@@ -35,7 +36,7 @@ export interface AttributesState {
     hasPendingAttrs: boolean;
 }
 
-type AttributeType = 'component' | 'params' | void;
+type AttributeType = 'component' | 'params' | 'property' | void;
 
 /**
  * Generates code for mounting own element’s attributes
@@ -134,7 +135,7 @@ export function pendingAttributes(node: ENDAttributeStatement, attrsReceiver: En
             const value = compileAttributeValue(attr.value, state);
             const ns = !isComponent ? getAttributeNS(name, state) : null;
             let chunk: Chunk;
-            if (!state.receiver) {
+            if (!receiver) {
                 // We are inside partial, we should update pending attributes
                 // instead of overwriting
                 chunk = ns
@@ -210,7 +211,7 @@ export function mountPartialOverride(node: ENDDirective, receiver: Entity, state
 export function compileAttributeValue(value: ENDAttributeValue, state: CompileState, context?: AttributeType): Chunk {
     if (value === null) {
         // Attribute without value, decide how to output
-        if (context === 'component') {
+        if (context === 'component' || context === 'property') {
             return 'true';
         }
 
@@ -263,20 +264,23 @@ function mountStaticAttributes(elem: ElementEntity, attrs: ENDAttribute[], state
         const { receiver } = state;
         attrs.forEach(attr => {
             const name = (attr.name as Identifier).name;
-            const value = compileAttributeValue(attr.value, state);
             const ns = getAttributeNS(name, state);
-            if (name === 'class' && !receiver.namespace()) {
-                elem.add(
-                    entity(state, state.runtime('setClass', [elem.getSymbol(), value]))
-                );
+            const prop = getProperty(elem.elementName, name);
+            const value = compileAttributeValue(attr.value, state, prop ? 'property' : null);
+            let ent: Entity | undefined;
+
+            if (prop) {
+                ent = entity(state, sn([elem.getSymbol(), `.${prop} = `, value, ';']));
+            } else if (name === 'class' && !receiver.namespace()) {
+                ent = entity(state, state.runtime('setClass', [elem.getSymbol(), value]));
             } else if (ns) {
-                elem.add(
-                    entity(state, state.runtime('setAttributeNS', [elem.getSymbol(), ns.ns, qStr(ns.name), value]))
-                );
+                ent = entity(state, state.runtime('setAttributeNS', [elem.getSymbol(), ns.ns, qStr(ns.name), value]));
             } else {
-                elem.add(
-                    entity(state, state.runtime('setAttribute', [elem.getSymbol(), qStr(name), value]))
-                );
+                ent = entity(state, state.runtime('setAttribute', [elem.getSymbol(), qStr(name), value]));
+            }
+
+            if (ent) {
+                elem.add(ent);
             }
         });
     });
@@ -316,7 +320,8 @@ function mountExpressionAttributes(elem: ElementEntity, receiver: Entity, attrs:
         block.mountArgs.push('elem', 'prev');
         return attrs.map(attr => {
             const name = (attr.name as Identifier).name;
-            const value = compileAttributeValue(attr.value, state);
+            const prop = getProperty(elem.elementName, name);
+            const value = compileAttributeValue(attr.value, state, prop ? 'property' : null);
 
             if (elem.isComponent) {
                 // For components, we should only update pending attributes and
@@ -325,6 +330,11 @@ function mountExpressionAttributes(elem: ElementEntity, receiver: Entity, attrs:
             }
 
             const ns = getAttributeNS(name, state);
+
+            if (prop) {
+                return entity(state, sn([`elem.${prop} = `, value, ';']));
+            }
+
             if (name === 'class') {
                 return entity(state, state.runtime('updateClass', ['elem', 'prev', value]));
             }
