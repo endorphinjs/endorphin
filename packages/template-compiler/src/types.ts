@@ -37,7 +37,7 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock' | 'cl
     | 'setAttribute' | 'updateAttribute' | 'setAttributeNS' | 'updateAttributeNS'
     | 'setClass' | 'updateClass' | 'addPendingClass' | 'addPendingClassIf'
     | 'setPendingAttributeNS' | 'updatePendingAttribute' | 'updatePendingAttributeNS'
-    | 'propsSet' | 'finalizeAttributes'
+    | 'propsSet' | 'finalizeAttributes' | 'inputValue' | 'updateProperty'
     | 'addEvent' | 'removeEvent' | 'pendingEvents' | 'setPendingEvent' | 'finalizePendingEvents' | 'detachPendingEvents'
     | 'setRef' | 'removeRef' | 'setPendingRef' | 'finalizePendingRefs' | 'createComponent' | 'updateText'
     | 'appendChild' | 'insert' | 'get' | 'call' | 'assign' | 'elem' | 'elemWithText' | 'elemNS'

@@ -217,6 +217,27 @@ export function classNames(str: string): string {
 }
 
 /**
+ * Returns value for <input> element
+ */
+export function inputValue(value: any) {
+	return value != null ? value : '';
+}
+
+/**
+ * Updates element’s `name` property value only if it differs from previous value,
+ * defined in `prev`
+ */
+export function updateProperty(elem: Element, prev: ValueMap, name: string, value: any): number {
+	if (value !== prev[name]) {
+		elem[name] = name === 'value' ? inputValue(value) : value;
+		prev[name] = value;
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
  * Returns represented attribute value for given data
  */
 function representedValue(value: any): string | number | null {

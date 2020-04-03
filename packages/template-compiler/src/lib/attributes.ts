@@ -270,7 +270,11 @@ function mountStaticAttributes(elem: ElementEntity, attrs: ENDAttribute[], state
             let ent: Entity | undefined;
 
             if (prop) {
-                ent = entity(state, sn([elem.getSymbol(), `.${prop} = `, value, ';']));
+                // For `value` property, we should replace nullish values with empty string
+                const propValue: Chunk = prop === 'value'
+                    ? state.runtime('inputValue', [value])
+                    : value;
+                ent = entity(state, sn([elem.getSymbol(), `.${prop} = `, propValue, ';']));
             } else if (name === 'class' && !receiver.namespace()) {
                 ent = entity(state, state.runtime('setClass', [elem.getSymbol(), value]));
             } else if (ns) {
@@ -332,7 +336,11 @@ function mountExpressionAttributes(elem: ElementEntity, receiver: Entity, attrs:
             const ns = getAttributeNS(name, state);
 
             if (prop) {
-                return entity(state, sn([`elem.${prop} = `, value, ';']));
+                // In some cases, setting the same value for element has side-effects.
+                // For example, updating `srcObject` of <video> with the same value
+                // causes flickering. We’ll use the same logic as with attributes
+                // to update property only when value actually changes
+                return entity(state, state.runtime('updateProperty', ['elem', 'prev', qStr(name), value]));
             }
 
             if (name === 'class') {

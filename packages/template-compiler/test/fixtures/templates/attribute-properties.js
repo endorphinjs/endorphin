@@ -1,16 +1,16 @@
-import { appendChild, elem, obj, setAttribute, text, updateAttribute } from "endorphin";
+import { appendChild, elem, obj, setAttribute, text, updateAttribute, updateProperty } from "endorphin";
 
 function pAttrs$0(elem, prev, host) {
 	updateAttribute(elem, prev, "title", host.props.title);
 }
 
 function audioAttrs$0(elem, prev, host) {
-	elem.srcObject = host.props.stream;
+	updateProperty(elem, prev, "srcObject", host.props.stream);
 }
 
 function inputAttrs$0(elem, prev, host) {
-	elem.checked = host.props.enabled;
-	elem.value = host.props.title;
+	updateProperty(elem, prev, "checked", host.props.enabled);
+	updateProperty(elem, prev, "value", host.props.title);
 }
 
 export default function template$0(host, scope) {
