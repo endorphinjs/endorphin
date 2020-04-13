@@ -71,4 +71,8 @@ describe('Template compiler', () => {
     it.skip('debug', () => {
         compare('templates/partials.html', null, true);
     });
+
+    it('should add empty value attribute e.g. disabled', () => {
+        compare('templates/bug-empty-dynamic-attr.html');
+    });
 });

@@ -392,7 +392,7 @@ function hoistAttribute(attr: ENDAttribute, state: HoistState) {
         // TODO merge conditions if they result the same value, e.g.
         // <e:attr a=2 e:if={foo1}/> <e:attr a=2 e:if={foo2}/>
         // should produce `a={foo1 || foo2 ? 2 : null}` instead of `a={foo2 ? 2 : foo1 ? 2 : null}`
-        value = program(conditionalExpr(condition, castValue(value), castValue(prev)));
+        value = value && program(conditionalExpr(condition, castValue(value), castValue(prev)));
     }
 
     state.attrs.set(name, value);
