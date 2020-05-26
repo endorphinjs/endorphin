@@ -73,6 +73,7 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 	// Stop previous animation, if any
 	stopAnimation(elem, true);
 
+	let timer: number | undefined;
 	const prevAnimation = elem.style.animation;
 	const evtPayload = {
 		animation,
@@ -80,6 +81,7 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 	};
 
 	elem[animatingKey] = (cancel?: boolean) => {
+		clearTimeout(timer);
 		elem.removeEventListener('animationend', handler);
 		elem.removeEventListener('animationcancel', handler);
 		elem.style.animation = prevAnimation;
@@ -101,6 +103,16 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 			const style = window.getComputedStyle(elem, null);
 			if (!style.animationName || style.animationName === 'none') {
 				stopAnimation(elem);
+			} else {
+				// Handle edge case: animation runs but during animation parent
+				// element is unmounted. In this case `animationend` callback won’t
+				// fire, causing memory leak.
+				// Create timer which will forcibly dispose animation after animation
+				// duration
+				const duration = parseDuration(style.animationDelay) + parseDuration(style.animationDuration);
+				if (duration) {
+					timer = window.setTimeout(() => stopAnimation(elem), duration);
+				}
 			}
 		});
 	}
@@ -291,4 +303,13 @@ function notifyAnimation(elem: Element, stage: string, detail?: {}) {
 	} catch (err) {
 		// pass
 	}
+}
+
+function parseDuration(value?: string): number {
+	if (!value) {
+		return 0;
+	}
+
+	const ms = value.indexOf('ms') !== -1 ? 1 : 1000;
+	return parseFloat(value) * ms;
 }
