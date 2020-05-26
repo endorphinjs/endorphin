@@ -24,7 +24,7 @@ export interface AttachedStaticEvents {
 	};
 }
 
-export interface Component<P = Data, S = Data, T = Store> extends HTMLElement {
+export interface Component<P = Data, S = Data, T = Store | undefined> extends HTMLElement {
 	/**
 	 * Pointer to component view container. By default, it’s the same as component
 	 * element, but for native Web Components it points to shadow root
@@ -44,7 +44,7 @@ export interface Component<P = Data, S = Data, T = Store> extends HTMLElement {
 	refs: RefMap;
 
 	/** A store, bound to current component */
-	store?: T;
+	store: T;
 
 	/** Reference to the root component of the current app */
 	root?: Component;
