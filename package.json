@@ -1,6 +1,6 @@
 {
   "name": "endorphin",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Component-based UI rendering library",
   "main": "./runtime/runtime.cjs.js",
   "module": "./runtime/runtime.es.js",
@@ -15,12 +15,12 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@endorphinjs/css-module": "^0.7.0",
-    "@endorphinjs/template-compiler": "^0.7.1",
+    "@endorphinjs/css-module": "^0.7.3",
+    "@endorphinjs/template-compiler": "^0.7.3",
     "source-map": "^0.7.3"
   },
   "devDependencies": {
-    "@endorphinjs/template-runtime": "^0.7.2",
+    "@endorphinjs/template-runtime": "^0.7.3",
     "@types/mocha": "^7.0.2",
     "@types/node": "^12.11.1",
     "lerna": "^3.18.1",
