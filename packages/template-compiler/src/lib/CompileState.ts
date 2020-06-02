@@ -166,9 +166,10 @@ export default class CompileState {
         this.options = Object.assign({}, defaultOptions, options);
         this.helpers = prepareHelpers(options && options.helpers || {});
 
-        const { prefix = '', suffix = '' } = this.options;
-        const globalSuffix = nameToJS(this.options.component || '', true) + suffix;
-        this.globalSymbol = createSymbolGenerator(prefix, num => globalSuffix + num.toString(36));
+        const { prefix = '', suffix = '', component } = this.options;
+        const globalPrefix = component ? nameToJS(component + '_') : nameToJS(prefix || '');
+        // this.globalSymbol = createSymbolGenerator(prefix, num => globalSuffix + num.toString(36));
+        this.globalSymbol = createSymbolGenerator(globalPrefix, num => suffix + num.toString(36));
         this.scopeSymbol = createSymbolGenerator(prefix, num => suffix + num.toString(36), this.options.mangleNames);
     }
 

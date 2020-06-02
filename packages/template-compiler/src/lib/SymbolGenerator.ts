@@ -7,13 +7,13 @@ const numGenerator: SymbolPartGenerator = num => num.toString(36);
  * name
  */
 export default function createSymbolGenerator(
-        prefix: string | SymbolPartGenerator = '',
+        prefix = '',
         suffix: string | SymbolPartGenerator = numGenerator,
         mangle?: boolean): SymbolGenerator {
     const symbols: { [prefix: string]: number } = {};
 
     return name => {
-        const base = mangle ? '' : name;
+        const base = mangle ? '' : prefix + name;
         if (base in symbols) {
             symbols[base]++;
         } else {
@@ -25,7 +25,7 @@ export default function createSymbolGenerator(
             return `_${num.toString(36)}`;
         }
 
-        return getPart(num, prefix) + base + getPart(num, suffix);
+        return base + getPart(num, suffix);
     };
 }
 
