@@ -12,6 +12,7 @@ import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
 import { ownAttributes, AttributesState, mountPartialOverride } from '../lib/attributes';
 import mountEvent from '../lib/events';
+import mountUse from '../lib/use';
 import { constructPartialDeps } from '../lib/partials';
 
 export default class ElementEntity extends Entity {
@@ -193,6 +194,8 @@ export default class ElementEntity extends Entity {
                     // For components and partials (empty receiver), we should always
                     // use pending attributes
                     this.add(mountPartialOverride(dir, this.pendingAttributes, state));
+                } else if (dir.prefix === 'use') {
+                    this.add(mountUse(dir, this, state));
                 }
             });
         }

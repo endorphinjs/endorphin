@@ -12,6 +12,7 @@ EndorphinJS — это библиотека для построения поль
       * [ref:](#ref)
       * [on:](#on)
       * [animate:](#animate)
+      * [use:](#use)
    * [Текст](#текст)
    * [&lt;e:variable&gt;](#evariable)
    * [&lt;e:if&gt;](#eif)
@@ -313,6 +314,51 @@ export function moveTo(x, y) {
 ```
 
 > В текущей реализации нет проверки, определена ли CSS-анимация с указанным названием. Это означает, что если на `animate:out` вы укажете название анимации, которая не была объявлена, элемент и его содержимое никогда не удалится, так как рантайм будет ожидать событие `animationend` для выполнения очистки и это событие никогда не произойдёт. В будущих версиях эта проблема будет исправлена.
+
+#### `use:`
+
+Директива `use:action` выполняет функцию `action` в момент создания элемента. В качестве первого аргумента `action` передаётся элемент, у которого указана директива. Функция может вернуть объект с методом `destroy()`, который вызовется в момент удаления элемента:
+
+```html
+<template>
+    <img src="image.png" use:checkLoad e:if={visible} />
+</template>
+<script>
+    export function checkLoad(elem) {
+        const onLoad = () => console.log('image loaded);
+        elem.addEventListener('load', onLoad);
+
+        return {
+            destroy() {
+                elem.removeEventListener('load', onLoad);
+            }
+        }
+    }
+</script>
+```
+
+Дополнительно в качестве значения директивы можно передать произвольное значение и вернуть из `action` объект с методом `update`: этот метод будет вызываться каждый раз, когда указанное значение поменяется:
+
+```html
+<template>
+    <img src="image.png" use:checkLoad={#visible} e:if={visible} />
+</template>
+<script>
+    export function checkLoad(elem, param) {
+        const onLoad = () => console.log('image loaded);
+        elem.addEventListener('load', onLoad);
+
+        return {
+            update(param) {
+                console.log('param updated', param);
+            },
+            destroy() {
+                elem.removeEventListener('load', onLoad);
+            }
+        }
+    }
+</script>
+```
 
 ### Текст
 

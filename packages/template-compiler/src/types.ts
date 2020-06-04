@@ -42,7 +42,8 @@ export type RuntimeSymbols = 'mountBlock' | 'updateBlock' | 'unmountBlock' | 'cl
     | 'setRef' | 'removeRef' | 'setPendingRef' | 'finalizePendingRefs' | 'createComponent' | 'updateText'
     | 'appendChild' | 'insert' | 'get' | 'call' | 'assign' | 'elem' | 'elemWithText' | 'elemNS'
     | 'elemNSWithText' | 'text' | 'filter' | 'find' | 'subscribeStore'
-    | 'animate' | 'createAnimation' | 'stopAnimation' | 'domRemove' | 'obj' | 'changeSet';
+    | 'animate' | 'createAnimation' | 'stopAnimation' | 'domRemove' | 'obj' | 'changeSet'
+    | 'mountUse' | 'updateUse' | 'unmountUse';
 
 export interface ComponentImport {
     /** JS symbol for referencing imported module */

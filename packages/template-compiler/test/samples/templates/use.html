@@ -1,0 +1,16 @@
+<link rel="import" href="./slot-inner.html" />
+<script>
+export function dir1() {}
+export function dir2() {}
+export function dir3() {}
+export function dir4() {}
+</script>
+<template>
+    <div>
+        <main use:dir1={prop1} e:if={cond1}>
+            <img src="my-image.png" alt="" use:dir2 />
+        </main>
+    </div>
+    <slot-inner use:dir3={#state2}></slot-inner>
+    <slot-inner use:dir4 e:if={cond2} animate:out="anim-out 2s"></slot-inner>
+</template>

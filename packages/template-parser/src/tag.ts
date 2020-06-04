@@ -14,7 +14,7 @@ import innerHTML from './elements/inner-html';
 import text from './text';
 
 const exprStart = String.fromCharCode(EXPRESSION_START);
-const directives = [prefix, 'on', 'ref', 'class', 'partial', 'animate'];
+const directives = [prefix, 'on', 'ref', 'class', 'partial', 'animate', 'use'];
 const attributeCast = {
     'true': true,
     'false': false,

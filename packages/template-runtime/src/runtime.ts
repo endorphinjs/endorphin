@@ -16,6 +16,7 @@ export * from './dom';
 export * from './partial';
 export * from './store';
 export * from './animation';
+export * from './use';
 export { assign, obj } from './utils';
 
 type FilterCallback<T> = (value: T, key: string | number) => boolean;
