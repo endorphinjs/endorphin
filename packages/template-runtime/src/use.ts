@@ -1,4 +1,6 @@
-type UseDirectiveFactory = (elem: HTMLElement, param: any) => UseDirectiveResult | undefined;
+import { Component } from './component';
+
+type UseDirectiveFactory = (elem: HTMLElement, param: any, host: Component) => UseDirectiveResult | undefined;
 
 interface UseDirectiveResult {
 	update?: (param: any) => void;
@@ -10,10 +12,10 @@ interface UseDirectiveInternal {
 	directive?: UseDirectiveResult;
 }
 
-export function mountUse(elem: HTMLElement, factory: UseDirectiveFactory, param?: any): UseDirectiveInternal {
+export function mountUse(host: Component, elem: HTMLElement, factory: UseDirectiveFactory, param?: any): UseDirectiveInternal {
 	return {
 		param,
-		directive: factory(elem, param)
+		directive: factory.call(host, elem, param)
 	};
 }
 

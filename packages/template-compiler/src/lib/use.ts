@@ -12,7 +12,7 @@ export default function mountUse(directive: ENDDirective, receiver: ElementEntit
     state.usedDefinition.add(directive.name);
     const ent = state.entity('use', {
         mount() {
-            const args: ChunkList = [receiver.getSymbol(), directive.name];
+            const args: ChunkList = [state.host, receiver.getSymbol(), directive.name];
             if (directive.value) {
                 args.push(compileAttributeValue(directive.value, state));
             }

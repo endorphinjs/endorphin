@@ -9,11 +9,11 @@ export function dir4() {}
 
 function ifBody$0(host, injector, scope) {
 	const main$0 = insert(injector, elem("main"));
-	scope.use$0 = mountUse(main$0, dir1, host.props.prop1);
+	scope.use$0 = mountUse(host, main$0, dir1, host.props.prop1);
 	const img$0 = appendChild(main$0, elem("img"));
 	setAttribute(img$0, "src", "my-image.png");
 	setAttribute(img$0, "alt", "");
-	scope.use$1 = mountUse(img$0, dir2);
+	scope.use$1 = mountUse(host, img$0, dir2);
 	return ifBody$0Update;
 }
 
@@ -34,7 +34,7 @@ function ifEntry$0(host) {
 
 function animatedSlotInner$0(host, injector, scope) {
 	const slotInner$1 = scope.slotInner$1 = insert(injector, createComponent("slot-inner", SlotInner, host));
-	scope.use$3 = mountUse(slotInner$1, dir4);
+	scope.use$3 = mountUse(host, slotInner$1, dir4);
 	mountComponent(slotInner$1);
 }
 
@@ -67,7 +67,7 @@ export default function template$0(host, scope) {
 	const inj$0 = createInjector(div$0);
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
 	const slotInner$0 = scope.slotInner$0 = insert(inj$1, createComponent("slot-inner", SlotInner, host));
-	scope.use$2 = mountUse(slotInner$0, dir3, host.state.state2);
+	scope.use$2 = mountUse(host, slotInner$0, dir3, host.state.state2);
 	mountComponent(slotInner$0);
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 	return template$0Update;
