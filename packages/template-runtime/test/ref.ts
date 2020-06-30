@@ -49,8 +49,9 @@ describe('Refs', () => {
 		ok(refs.bar.hasAttribute('ref-bar'));
 
 		// Make sure ref attributes are removed
-		ok(!prevHeader.hasAttribute('ref-header'));
-		ok(!prevFoo.hasAttribute('ref-foo'));
+		// NB: see comment for `removeRef()` in refs.ts
+		// ok(!prevHeader.hasAttribute('ref-header'));
+		// ok(!prevFoo.hasAttribute('ref-foo'));
 
 		component.setProps({ c1: false, dynRef: 'bar' });
 		deepStrictEqual(Object.keys(refs), ['main', 'header', 'foo', 'bar']);

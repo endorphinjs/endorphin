@@ -89,8 +89,8 @@ export default class BlockContext {
         const unmountChunks: ChunkList = [];
 
         const mountSymbol = name;
-        const updateSymbol = `${name}Update`;
-        const unmountSymbol = `${name}Unmount`;
+        const updateSymbol = `${mountSymbol}Update`;
+        const unmountSymbol = `${mountSymbol}Unmount`;
 
         /** List of all entities rendered by block */
         const allEntities: Entity[] = [];
@@ -183,7 +183,7 @@ export default class BlockContext {
             mountFn.add(`\n${name}.dispose = ${unmountSymbol};\n`);
         }
 
-        this.mountSymbol = name;
+        this.mountSymbol = mountSymbol;
         this.updateSymbol = updateFn ? updateSymbol : null;
         this.unmountSymbol = unmountFn ? unmountSymbol : null;
 

@@ -12,6 +12,8 @@ import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
 import { ownAttributes, AttributesState, mountPartialOverride } from '../lib/attributes';
 import mountEvent from '../lib/events';
+import mountUse from '../lib/use';
+import { constructPartialDeps } from '../lib/partials';
 
 export default class ElementEntity extends Entity {
     injectorEntity: InjectorEntity;
@@ -92,6 +94,13 @@ export default class ElementEntity extends Entity {
     /** Entity for receiving pending events */
     get pendingEvents(): Entity | null {
         return this.attrState && this.attrState.eventsReceiver;
+    }
+
+    /**
+     * Returns name of context element node or empty string if context node is a template
+     */
+    get elementName(): string {
+        return isElement(this.node) ? this.node.name.name : '';
     }
 
     /**
@@ -185,6 +194,8 @@ export default class ElementEntity extends Entity {
                     // For components and partials (empty receiver), we should always
                     // use pending attributes
                     this.add(mountPartialOverride(dir, this.pendingAttributes, state));
+                } else if (dir.prefix === 'use') {
+                    this.add(mountUse(dir, this, state));
                 }
             });
         }
@@ -204,7 +215,16 @@ export default class ElementEntity extends Entity {
             // There are pending props for current component
             this.add(state.entity({
                 mount: () => state.runtime('mountComponent', [this.getSymbol(), props.getSymbol()]),
-                update: () => state.runtime('updateComponent', [this.getSymbol(), props.getSymbol()]),
+                update: () => {
+                    const args: ChunkList = [this.getSymbol(), props.getSymbol()];
+                    if (isElement(this.node)) {
+                        const partialDeps = constructPartialDeps(this.node, state);
+                        if (partialDeps) {
+                            args.push(partialDeps);
+                        }
+                    }
+                    return state.runtime('updateComponent', args);
+                },
                 unmount: () => this.unmount('unmountComponent')
             }));
         } else {

@@ -1,4 +1,4 @@
-import { captureError } from './utils';
+import { captureError, runtimeError } from './utils';
 import { Component, ComponentDefinition } from './component';
 
 type HookCallback = (dfn: ComponentDefinition) => void;
@@ -35,10 +35,18 @@ export function reverseWalkDefinitions(component: Component, definition: Compone
  * Invokes `name` hook for given component definition
  */
 export function runHook<T, U>(component: Component, name: string, arg1?: T, arg2?: U) {
-	walkDefinitions(component, component.componentModel.definition, dfn => {
-		const hook = dfn[name];
+	const { plugins } = component.componentModel;
+
+	for (let i = plugins.length - 1, hook: (...args: any[]) => any; i >= 0; i--) {
+		hook = plugins[i][name];
 		if (typeof hook === 'function') {
-			hook(component, arg1, arg2);
+			try {
+				hook(component, arg1, arg2);
+			} catch (error) {
+				runtimeError(component, error);
+				// tslint:disable-next-line:no-console
+				console.error(error);
+			}
 		}
-	});
+	}
 }

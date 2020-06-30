@@ -25,6 +25,7 @@ function testHoist(fileName: string, message?: string) {
 describe('Hoist variables', () => {
     it('basic', () => {
         testHoist('vars.html', 'Hoist variable definitions');
+        testHoist('vars3.html', 'Hoist conditional variable definitions');
         testHoist('condition.html', 'Hoist conditional expressions');
         testHoist('attributes.html', 'Hoist attributes');
         testHoist('class.html', 'Hoist class names');

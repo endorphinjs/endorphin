@@ -147,7 +147,9 @@ export const base: AstVisitors<object> = acornWalk.make({
     },
     ENDAttribute(node: Ast.ENDAttribute, state, c) {
         c(node.name, state);
-        c(node.value, state);
+        if (node.value) {
+            c(node.value, state);
+        }
     },
     ENDDirective(node: Ast.ENDDirective, state, c) {
         c(node.value, state);
@@ -164,6 +166,12 @@ export const base: AstVisitors<object> = acornWalk.make({
     },
     ENDChooseStatement(node: Ast.ENDChooseStatement, state, c) {
         walkArray(node.cases, state, c);
+    },
+    ENDChooseCase(node: Ast.ENDChooseCase, state, c) {
+        if (node.test) {
+            c(node.test, state);
+        }
+        walkArray(node.consequent, state, c);
     },
     ENDForEachStatement(node: Ast.ENDForEachStatement, state, c) {
         c(node.select, state);

@@ -1,6 +1,6 @@
 {
   "name": "@endorphinjs/css-module",
-  "version": "0.6.0",
+  "version": "0.8.0",
   "description": "Scopes CSS selectors with token",
   "main": "index.js",
   "directories": {

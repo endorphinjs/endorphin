@@ -3,7 +3,7 @@ import { assign, obj, getObjectDescriptors, captureError } from './utils';
 import { safeEventListener } from './event';
 import { classNames, setAttributeExpression } from './attribute';
 import { createInjector, Injector } from './injector';
-import { runHook, reverseWalkDefinitions } from './hooks';
+import { runHook } from './hooks';
 import { getScope } from './scope';
 import { Changes, Data, UpdateTemplate, MountTemplate } from './types';
 import { Store } from './store';
@@ -14,6 +14,8 @@ export interface RefMap { [key: string]: Element | null; }
 
 export type ComponentEventHandler = (component: Component, event: Event, target: HTMLElement) => void;
 export type StaticEventHandler = (evt: Event) => void;
+export type PluginFactory = <C extends Component>(component: C) => ComponentDefinition[] | undefined;
+export type PartialDeps = any[];
 
 export interface AttachedStaticEvents {
 	handler: StaticEventHandler;
@@ -22,7 +24,7 @@ export interface AttachedStaticEvents {
 	};
 }
 
-export interface Component<P = Data, S = Data, T = Store> extends HTMLElement {
+export interface Component<P = Data, S = Data, T = Store | undefined> extends HTMLElement {
 	/**
 	 * Pointer to component view container. By default, it’s the same as component
 	 * element, but for native Web Components it points to shadow root
@@ -42,7 +44,7 @@ export interface Component<P = Data, S = Data, T = Store> extends HTMLElement {
 	refs: RefMap;
 
 	/** A store, bound to current component */
-	store?: T;
+	store: T;
 
 	/** Reference to the root component of the current app */
 	root?: Component;
@@ -66,6 +68,9 @@ export interface Component<P = Data, S = Data, T = Store> extends HTMLElement {
 interface ComponentModel {
 	/** Component’s definition */
 	definition: ComponentDefinition;
+
+	/** Plugins attached to current component, including current component definition */
+	plugins: ComponentDefinition[];
 
 	/** Injector for incoming component data */
 	input: Injector;
@@ -93,6 +98,8 @@ interface ComponentModel {
 
 	/** Default props values */
 	defaultProps: object;
+
+	partialDeps: PartialDeps | null;
 }
 
 /**
@@ -111,8 +118,8 @@ export interface ComponentDefinition {
 	/** Methods and properties to extend component with */
 	extend?: object;
 
-	/** List of plugins for current component */
-	plugins?: ComponentDefinition[];
+	/** List of plugins for current component of factory method for producing plugins */
+	plugins?: ComponentDefinition[] | PluginFactory;
 
 	/** A scope token to be added for every element, created inside current component bound */
 	cssScope?: string;
@@ -221,7 +228,7 @@ export function createComponentFromElement(el: HTMLElement | Component, definiti
 		element.setAttribute(definition.cssScope + '-host', '');
 	}
 
-	const { props, state, extend, events } = prepare(element, definition);
+	const { props, state, extend, events, plugins } = prepare(element, definition);
 
 	element.refs = obj();
 	element.props = obj();
@@ -254,6 +261,8 @@ export function createComponentFromElement(el: HTMLElement | Component, definiti
 		update: void 0,
 		queued: false,
 		events,
+		plugins,
+		partialDeps: null,
 		defaultProps: props
 	};
 
@@ -294,10 +303,18 @@ export function mountComponent(component: Component, props?: object) {
 /**
  * Updates given mounted component
  */
-export function updateComponent(component: Component, props?: object): number {
-	const changes = props && setPropsInternal(component, props);
+export function updateComponent(component: Component, props?: object, partialDeps?: PartialDeps): number {
+	const { componentModel } = component;
+	let changes = props && setPropsInternal(component, props);
 
-	if (changes || component.componentModel.queued) {
+	if (partialDeps) {
+		if (!changes && partialDepsUpdated(componentModel.partialDeps, partialDeps)) {
+			changes = obj();
+		}
+		componentModel.partialDeps = partialDeps;
+	}
+
+	if (changes || componentModel.queued) {
 		renderNext(component, changes);
 	}
 
@@ -460,10 +477,12 @@ function hasChanges(prev: {}, next: {}): boolean {
 function prepare(component: Component, definition: ComponentDefinition) {
 	const props = obj();
 	const state = obj();
+	const plugins = collectPlugins(component, definition, [definition]);
 	let events: AttachedStaticEvents | undefined;
 	let extend: DescriptorMap | undefined;
 
-	reverseWalkDefinitions(component, definition, dfn => {
+	for (let i = plugins.length - 1; i >= 0; i--) {
+		const dfn = plugins[i];
 		dfn.props && assign(props, dfn.props(component));
 		dfn.state && assign(state, dfn.state(component));
 
@@ -482,9 +501,28 @@ function prepare(component: Component, definition: ComponentDefinition) {
 			}
 			attachEventHandlers(component, dfn.events, events);
 		}
-	});
+	}
 
-	return { props, state, extend, events };
+	return { props, state, extend, events, plugins };
+}
+
+/**
+ * Collects all plugins (including nested) into a flat list
+ */
+function collectPlugins(component: Component, definition: ComponentDefinition, dest: ComponentDefinition[] = []): ComponentDefinition[] {
+	let { plugins } = definition;
+	if (typeof plugins === 'function') {
+		plugins = plugins(component);
+	}
+
+	if (Array.isArray(plugins)) {
+		for (let i = 0; i < plugins.length; i++) {
+			dest.push(plugins[i]);
+			collectPlugins(component, plugins[i], dest);
+		}
+	}
+
+	return dest;
 }
 
 /**
@@ -584,4 +622,22 @@ function normalizeAttribute(attr: string): string {
 	}
 
 	return attributeLookup[attr];
+}
+
+/**
+ * Check if partial dependencies of component were updated
+ */
+function partialDepsUpdated(prev: PartialDeps | null, next: PartialDeps) {
+	if (!prev) {
+		return true;
+	}
+
+	// In compiler, deps will always have the same length
+	for (let i = 0; i < prev.length; i++) {
+		if (prev[i] !== next[i]) {
+			return true;
+		}
+	}
+
+	return false;
 }

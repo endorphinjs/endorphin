@@ -1,5 +1,5 @@
 import { MountBlock } from './types';
-import { injectBlock, emptyBlockContent, disposeBlock, getSlotContext, Block } from './injector';
+import { injectBlock, emptyBlockContent, disposeBlock, getSlotContext, Block, createInjector } from './injector';
 import { Component } from './component';
 import { isolateElement } from './dom';
 import { getScope } from './scope';
@@ -32,8 +32,9 @@ export function createSlot(host: Component, name: string, cssScope?: string): HT
  * Mounts slot context
  */
 export function mountSlot(host: Component, name: string, defaultContent?: MountBlock): SlotContext {
-	const injector = host.componentModel.input;
-	const ctx = getSlotContext(injector, name);
+	const { input } = host.componentModel;
+	const ctx = getSlotContext(input, name);
+	const injector = createInjector(ctx.element);
 
 	if (defaultContent) {
 		// Add block with default slot content

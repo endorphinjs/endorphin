@@ -12,11 +12,15 @@ export function setRef(host: Component, key: string, elem: Element) {
  * Removes ref for given key
  */
 export function removeRef(host: Component, key: string) {
-	const elem = host.refs[key];
-	if (elem) {
-		elem.removeAttribute(getRefAttr(key, host));
-		host.refs[key] = null;
-	}
+	// NB: Do not remove ref attribute in order to keep CSS styles for animated
+	// ref’ed element (`animate:out`). In case if its introduces unexpected side
+	// effects, update compiler to properly unmount refs but keep HTML attribute
+	// for animated elements
+	// const elem = host.refs[key];
+	// if (elem) {
+	// 	elem.removeAttribute(getRefAttr(key, host));
+	// }
+	host.refs[key] = null;
 }
 
 export function setPendingRef(pending: RefMap, key: string | void, elem: Element | null) {
