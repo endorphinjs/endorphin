@@ -195,6 +195,7 @@ export interface ComponentDefinition {
 }
 
 let renderQueue: Array<Component | Changes | undefined> | null = null;
+let nextTaskScheduled: number | null = null;
 
 /** A lookup of normalized attributes */
 const attributeLookup: {[name: string]: string} = {};
@@ -382,7 +383,16 @@ export function scheduleRender(component: Component, changes?: Changes) {
 			renderQueue.push(component, changes);
 		} else {
 			renderQueue = [component, changes];
-			requestAnimationFrame(drainQueue);
+		}
+
+		if (!nextTaskScheduled) {
+			nextTaskScheduled = window.setTimeout(() => {
+				drainQueue();
+				window.clearTimeout(nextTaskScheduled!);
+				nextTaskScheduled = null;
+			}, 1); // Different browsers behaviour, 1 is a best way to force planing callback to the next task
+
+			return Promise.resolve(drainQueue);
 		}
 	}
 }
