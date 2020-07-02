@@ -388,8 +388,8 @@ export function scheduleRender(component: Component, changes?: Changes) {
 		if (!nextTaskScheduled) {
 			nextTaskScheduled = window.setTimeout(() => {
 				window.clearTimeout(nextTaskScheduled!);
-				drainQueue();
 				nextTaskScheduled = null;
+				drainQueue();
 			}, 1); // Different browsers behaviour, 1 is a best way to force planing callback to the next task
 
 			return Promise.resolve(drainQueue);
