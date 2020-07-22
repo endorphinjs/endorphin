@@ -17,10 +17,10 @@
   "dependencies": {
     "@endorphinjs/css-module": "^0.8.2-alpha.0",
     "@endorphinjs/template-compiler": "^0.8.2-alpha.0",
+    "@endorphinjs/template-runtime": "^0.8.2-alpha.0",
     "source-map": "^0.7.3"
   },
   "devDependencies": {
-    "@endorphinjs/template-runtime": "^0.8.2-alpha.0",
     "@types/mocha": "^7.0.2",
     "@types/node": "^12.11.1",
     "lerna": "^3.18.1",
