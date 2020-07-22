@@ -1,6 +1,6 @@
 {
   "name": "endorphin",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Component-based UI rendering library",
   "main": "./runtime/runtime.cjs.js",
   "module": "./runtime/runtime.es.js",
