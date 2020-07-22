@@ -1,0 +1,14 @@
+[vars: chooseExpr caseExpr v ifExpr caseExpr_1 v_1 ifExpr_1]
+<template>
+    <e:for-each select={items}>
+        <e:var chooseExpr={cond ? 0 : 1} caseExpr={@chooseExpr === 0} v={@caseExpr ? @value.inner : undefined} ifExpr={@v.bg} caseExpr_1={@chooseExpr === 1} v_1={@caseExpr_1 ? @value.outer : @caseExpr ? @value.inner : undefined} ifExpr_1={@v_1.bg}/>
+        <e:choose>
+            <e:when test={@caseExpr}>
+                <div class={@ifExpr ? "bg-" + @v.bg : ""}>{@v.bg}</div>
+            </e:when>
+            <e:when test={@caseExpr_1}>
+                <span class={@ifExpr_1 ? "bg-" + @v_1.bg : ""}>{@v_1.bg}</span>
+            </e:when>
+        </e:choose>
+    </e:for-each>
+</template>

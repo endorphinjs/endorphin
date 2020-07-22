@@ -31,6 +31,7 @@ describe('Hoist variables', () => {
         testHoist('class.html', 'Hoist class names');
         testHoist('component-class.html', 'Hoist component class names');
         testHoist('add-class.html', 'Hoist <add-class>');
+        testHoist('add-class2.html', 'Hoist <add-class> with same scoped variable');
         testHoist('choose.html', 'Hoist <e:choose>');
         testHoist('for-each.html', 'Hoist <for-each>');
         testHoist('partials.html', 'Hoist partials');

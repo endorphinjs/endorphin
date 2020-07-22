@@ -1,0 +1,20 @@
+<template>
+    <e:for-each select={items}>
+        <e:switch>
+            <e:case test={cond}>
+                <e:var v={@value.inner}/>
+                <div>
+                    <e:add-class e:if={@v.bg}>bg-{@v.bg}</e:add-class>
+                    {@v.bg}
+                </div>
+            </e:case>
+            <e:default>
+                <e:var v={@value.outer} />
+                <span>
+                    <e:add-class e:if={@v.bg}>bg-{@v.bg}</e:add-class>
+                    {@v.bg}
+                </span>
+            </e:default>
+        </e:switch>
+    </e:for-each>
+</template>

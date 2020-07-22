@@ -168,6 +168,12 @@ const visitors: WalkVisitorMap = {
         return node.directives.length ? node : null;
     },
     ENDAddClassStatement(node: ENDAddClassStatement, state) {
+        node.tokens.forEach(token => {
+            if (isProgram(token)) {
+                rewriteVarAccessors(token, state);
+            }
+        });
+
         if (state.element) {
             const classVal = addClass(node.tokens, getCondition(state), state.attrs.get('class'));
             state.attrs.set('class', classVal);
