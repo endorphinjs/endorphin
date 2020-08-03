@@ -9,6 +9,8 @@ import sample1 from './samples/slots/outer-component1.html';
 import sample2 from './samples/slots/outer-component2.html';
 // @ts-ignore
 import sample3 from './samples/slots/outer-component3.html';
+// @ts-ignore
+import sample5 from './samples/slots/outer-component5.html';
 
 describe('Slot Update Hook', () => {
 	const last = (arr: any[]) => arr[arr.length - 1];
@@ -105,5 +107,31 @@ describe('Slot Update Hook', () => {
 		strictEqual(slotCallbacks.length, 6);
 		deepStrictEqual(slotCallbacks[4], ['', 'Content 1SubContent 1']);
 		deepStrictEqual(slotCallbacks[5], ['footer', 'Footer 3']);
+	});
+
+	it('sample 5', () => {
+		const component = createComponent('my-component', {
+			default: sample5,
+			props() {
+				return { items: [] };
+			}
+		});
+
+		mountComponent(component);
+		strictEqual(slotCallbacks.length, 0);
+
+		component.setProps({ items: ['foo', 'bar'] });
+		strictEqual(slotCallbacks.length, 1);
+		deepStrictEqual(last(slotCallbacks), ['', 'foobar']);
+
+		component.setProps({ mark: true });
+		strictEqual(slotCallbacks.length, 2);
+
+		component.setProps({ something: true });
+		strictEqual(slotCallbacks.length, 2);
+
+		component.setProps({ items: [] });
+		strictEqual(slotCallbacks.length, 3);
+		deepStrictEqual(last(slotCallbacks), ['', '']);
 	});
 });

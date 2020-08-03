@@ -3,30 +3,42 @@ import * as MyComponent1 from "./my-component1.html";
 import * as MyComponent2 from "./my-component2.html";
 import * as InnerComponent from "./inner-component.html";
 
-function ifBody$0(host, injector, scope) {
+let slots = null;
+const slotsStack = [];
+
+function enterSlots() {
+	slotsStack.push(slots);
+	slots = [0, 0];
+}
+
+function exitSlots() {
+	slots = slotsStack.pop();
+}
+
+function ifBody$0(host, injector) {
 	insert(injector, elem("header"), "");
-	scope.su$0 = 1;
+	slots[0] = 1;
 }
 
 ifBody$0.dispose = ifBody$0Unmount;
 
-function ifBody$0Unmount(scope) {
-	scope.su$0 = 1;
+function ifBody$0Unmount() {
+	slots[0] = 1;
 }
 
 function ifEntry$0(host) {
 	return host.props.enabled ? ifBody$0 : null;
 }
 
-function ifBody$1(host, injector, scope) {
+function ifBody$1(host, injector) {
 	insert(injector, elem("blockquote"));
-	scope.su$1 = 1;
+	slots[1] = 1;
 }
 
 ifBody$1.dispose = ifBody$1Unmount;
 
-function ifBody$1Unmount(scope) {
-	scope.su$1 = 1;
+function ifBody$1Unmount() {
+	slots[1] = 1;
 }
 
 function ifEntry$1(host) {
@@ -35,6 +47,7 @@ function ifEntry$1(host) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
+	enterSlots();
 	const myComponent1$0 = scope.myComponent1$0 = appendChild(target$0, createComponent("my-component1", MyComponent1, host));
 	const inj$0 = myComponent1$0.componentModel.input;
 	scope.if$0 = mountBlock(host, inj$0, ifEntry$0);
@@ -48,6 +61,7 @@ export default function template$0(host, scope) {
 	setAttribute(div$0, "slot", "footer");
 	scope.if$1 = mountBlock(host, inj$2, ifEntry$1);
 	mountComponent(myComponent1$0);
+	exitSlots();
 	return template$0Update;
 }
 
@@ -55,17 +69,20 @@ template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { myComponent1$0 } = scope;
-	scope.su$0 = scope.su$1 = 0;
+	enterSlots();
 	updateBlock(scope.if$0);
 	updateBlock(scope.if$1);
-	updateIncomingSlot(myComponent1$0, "", scope.su$0);
-	updateIncomingSlot(myComponent1$0, "footer", scope.su$1);
+	updateIncomingSlot(myComponent1$0, "", slots[0]);
+	updateIncomingSlot(myComponent1$0, "footer", slots[1]);
+	exitSlots();
 }
 
 function template$0Unmount(scope) {
+	enterSlots();
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.innerComponent$0 = unmountComponent(scope.innerComponent$0);
 	scope.myComponent2$0 = unmountComponent(scope.myComponent2$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.myComponent1$0 = unmountComponent(scope.myComponent1$0);
+	exitSlots();
 }

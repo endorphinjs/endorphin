@@ -59,26 +59,12 @@ export default function generateTemplate(ast: ENDProgram, options?: CompileOptio
 
     // Partials declarations
     if (state.partialsMap.size) {
-        const { indent } = state;
-        const innerIndent = indent.repeat(2);
-        let count = 0;
+        body.push(generatePartialsRuntime(state));
+    }
 
-        const partials = sn(`\nexport const ${state.partials} = {`);
-        state.partialsMap.forEach((partial, name) => {
-            if (count++) {
-                partials.add(',\n');
-            }
-
-            partials.add([
-                `\n${indent}${isPropKey(name) ? name : qStr(name)}: {\n`,
-                `${innerIndent}body: ${partial.name},\n`,
-                `${innerIndent}defaults: `, partial.defaults, '\n',
-                `${indent}}`
-            ]);
-        });
-
-        partials.add('\n};');
-        body.push(partials);
+    // Slots runtime
+    if (state.slotSymbols.length) {
+        body.push(generateSlotsRuntime(state));
     }
 
     // Used namespaces
@@ -159,4 +145,51 @@ function getUsedHelpers(state: CompileState): Map <string, string[]> {
 
 function sortedList(items: string[] | Set<string>): string {
     return Array.from(items).sort().join(', ');
+}
+
+/**
+ * Generates runtime code required for partials
+ */
+function generatePartialsRuntime(state: CompileState): SourceNode {
+    const { indent } = state;
+    const innerIndent = indent.repeat(2);
+    let count = 0;
+
+    const partials = sn(`\nexport const ${state.partials} = {`);
+    state.partialsMap.forEach((partial, name) => {
+        if (count++) {
+            partials.add(',\n');
+        }
+
+        partials.add([
+            `\n${indent}${isPropKey(name) ? name : qStr(name)}: {\n`,
+            `${innerIndent}body: ${partial.name},\n`,
+            `${innerIndent}defaults: `, partial.defaults, '\n',
+            `${indent}}`
+        ]);
+    });
+
+    partials.add('\n};');
+    return partials;
+}
+
+/**
+ * Generates runtime code required for slots
+ */
+function generateSlotsRuntime(state: CompileState): SourceNode {
+    const { indent, slotSymbols } = state;
+    return sn([
+        `\nlet slots = null;\nconst slotsStack = [];\n`,
+
+        // NB: it’s possible that the same component can be invoked recursivly,
+        // so we have to maintain proper slots stacks for nested calls
+        `\nfunction enterSlots() {`,
+        `\n${indent}slotsStack.push(slots);`,
+        `\n${indent}slots = [${slotSymbols.map(() => '0').join(', ')}];`,
+        `\n}\n`,
+
+        `\nfunction exitSlots() {`,
+        `\n${indent}slots = slotsStack.pop();`,
+        `\n}`
+    ]);
 }

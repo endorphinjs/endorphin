@@ -157,9 +157,6 @@ export default class BlockContext {
             const updateSlots = `${Array.from(this.slotSymbols).join(' = ')} = 1`;
             mountChunks.push(updateSlots);
             unmountChunks.push(updateSlots);
-            // Mark scope as used in unmount context in case if slot marker is
-            // the only output of unmount function
-            scopeUsage.use('unmount');
         }
 
         if (updateChunks.length && !this.unlinked) {

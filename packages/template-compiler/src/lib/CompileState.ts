@@ -158,6 +158,7 @@ export default class CompileState {
     /** Current namespaces */
     private namespaceMap: NamespaceMap = {};
 
+    private _slotCounter = 0;
     private _scoped: Map<string, number> = new Map();
     private _renderContext?: UsageContext;
     private _warned: Set<string> = new Set();
@@ -239,7 +240,7 @@ export default class CompileState {
      * Issues new slot update symbol
      */
     slotSymbol(): string {
-        const symbol = this.globalSymbol('su');
+        const symbol = String(this._slotCounter++);
         this.slotSymbols.push(symbol);
         return symbol;
     }

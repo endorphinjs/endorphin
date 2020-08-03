@@ -9,5 +9,5 @@
     "module": "commonjs",
     "outDir": "./dist"
   },
-  "files": ["src/runtime.ts"]
+  "include": ["src/*.ts"]
 }

@@ -111,7 +111,7 @@ export default class ElementEntity extends Entity {
             this.slotMarks[slot] = this.state.slotSymbol();
         }
 
-        return `${this.state.scope}.${this.slotMarks[slot]}`;
+        return `slots[${this.slotMarks[slot]}]`;
     }
 
     /**

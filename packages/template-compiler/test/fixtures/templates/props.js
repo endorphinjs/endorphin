@@ -1,15 +1,27 @@
 import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, propsSet, text, unmountBlock, unmountComponent, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
 import * as E1 from "./attrs.html";
 
-function ifBody$0(host, injector, scope) {
+let slots = null;
+const slotsStack = [];
+
+function enterSlots() {
+	slotsStack.push(slots);
+	slots = [0, 0, 0];
+}
+
+function exitSlots() {
+	slots = slotsStack.pop();
+}
+
+function ifBody$0(host, injector) {
 	insert(injector, text("aaa"));
-	scope.su$0 = 1;
+	slots[0] = 1;
 }
 
 ifBody$0.dispose = ifBody$0Unmount;
 
-function ifBody$0Unmount(scope) {
-	scope.su$0 = 1;
+function ifBody$0Unmount() {
+	slots[0] = 1;
 }
 
 function ifEntry$0(host) {
@@ -24,15 +36,15 @@ function e1Attrs$1(elem, prev, host) {
 	prev.foo = host.props.bar4;
 }
 
-function ifBody$1(host, injector, scope) {
+function ifBody$1(host, injector) {
 	insert(injector, text("aaa"));
-	scope.su$1 = 1;
+	slots[1] = 1;
 }
 
 ifBody$1.dispose = ifBody$1Unmount;
 
-function ifBody$1Unmount(scope) {
-	scope.su$1 = 1;
+function ifBody$1Unmount() {
+	slots[1] = 1;
 }
 
 function ifEntry$1(host) {
@@ -47,15 +59,15 @@ function e1Attrs$3(elem, prev, host) {
 	prev.foo = (host.props.cond ? host.props.baz : host.props.bar4);
 }
 
-function ifBody$2(host, injector, scope) {
+function ifBody$2(host, injector) {
 	insert(injector, elem("br"), "");
-	scope.su$2 = 1;
+	slots[2] = 1;
 }
 
 ifBody$2.dispose = ifBody$2Unmount;
 
-function ifBody$2Unmount(scope) {
-	scope.su$2 = 1;
+function ifBody$2Unmount() {
+	slots[2] = 1;
 }
 
 function ifEntry$2(host) {
@@ -68,6 +80,7 @@ function e1Attrs$4(elem, prev, host) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
+	enterSlots();
 	const e1$0 = scope.e1$0 = appendChild(target$0, createComponent("e1", E1, host));
 	mountComponent(e1$0, propsSet(e1$0, {foo: "bar1"}));
 	const e1$1 = scope.e1$1 = appendChild(target$0, createComponent("e1", E1, host));
@@ -98,6 +111,7 @@ export default function template$0(host, scope) {
 	const propSet$6 = scope.propSet$6 = propsSet(e1$6);
 	e1Attrs$4(e1$6, propSet$6, host);
 	mountComponent(e1$6, propSet$6);
+	exitSlots();
 	return template$0Update;
 }
 
@@ -105,26 +119,28 @@ template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { e1$2, propSet$2, e1$3, propSet$3, e1$4, propSet$4, e1$5, propSet$5, e1$6, propSet$6 } = scope;
-	scope.su$0 = scope.su$1 = scope.su$2 = 0;
+	enterSlots();
 	updateBlock(scope.if$0);
-	updateIncomingSlot(scope.e1$1, "", scope.su$0);
+	updateIncomingSlot(scope.e1$1, "", slots[0]);
 	e1Attrs$0(e1$2, propSet$2, host);
 	updateComponent(e1$2, propSet$2);
 	e1Attrs$1(e1$3, propSet$3, host);
 	updateBlock(scope.if$1);
-	updateIncomingSlot(e1$3, "", scope.su$1);
+	updateIncomingSlot(e1$3, "", slots[1]);
 	updateComponent(e1$3, propSet$3);
 	e1Attrs$2(e1$4, propSet$4, host);
 	updateComponent(e1$4, propSet$4);
 	e1Attrs$3(e1$5, propSet$5, host);
 	updateBlock(scope.if$2);
-	updateIncomingSlot(e1$5, "", scope.su$2);
+	updateIncomingSlot(e1$5, "", slots[2]);
 	updateComponent(e1$5, propSet$5);
 	e1Attrs$4(e1$6, propSet$6, host);
 	updateComponent(e1$6, propSet$6);
+	exitSlots();
 }
 
 function template$0Unmount(scope) {
+	enterSlots();
 	scope.e1$0 = unmountComponent(scope.e1$0);
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.e1$1 = unmountComponent(scope.e1$1);
@@ -135,4 +151,5 @@ function template$0Unmount(scope) {
 	scope.if$2 = unmountBlock(scope.if$2);
 	scope.e1$5 = unmountComponent(scope.e1$5);
 	scope.e1$6 = unmountComponent(scope.e1$6);
+	exitSlots();
 }

@@ -1,0 +1,10 @@
+<link rel="import" href="./inner-component.html" />
+
+<template>
+	<inner-component>
+		<e:for-each select={items}>
+			<div>{@value}</div>
+			<e:if test={mark}>*</e:if>
+		</e:for-each>
+	</inner-component>
+</template>

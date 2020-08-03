@@ -1,37 +1,49 @@
 import { appendChild, createComponent, createInjector, elem, elemWithText, insert, mountBlock, mountComponent, setAttribute, text, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot, updateText } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
+let slots = null;
+const slotsStack = [];
+
+function enterSlots() {
+	slotsStack.push(slots);
+	slots = [0, 0];
+}
+
+function exitSlots() {
+	slots = slotsStack.pop();
+}
+
 function ifBody$0(host, injector, scope) {
 	const p$0 = insert(injector, elem("p"));
 	scope.text$2 = appendChild(p$0, text(host.props.content2));
-	scope.su$0 = 1;
+	slots[0] = 1;
 	return ifBody$0Update;
 }
 
 ifBody$0.dispose = ifBody$0Unmount;
 
 function ifBody$0Update(host, scope) {
-	scope.su$0 |= updateText(scope.text$2, host.props.content2);
+	slots[0] |= updateText(scope.text$2, host.props.content2);
 }
 
 function ifBody$0Unmount(scope) {
 	scope.text$2 = null;
-	scope.su$0 = 1;
+	slots[0] = 1;
 }
 
 function ifEntry$0(host) {
 	return host.props.enabled ? ifBody$0 : null;
 }
 
-function ifBody$1(host, injector, scope) {
+function ifBody$1(host, injector) {
 	insert(injector, elemWithText("div", "Branching footer"));
-	scope.su$1 = 1;
+	slots[1] = 1;
 }
 
 ifBody$1.dispose = ifBody$1Unmount;
 
-function ifBody$1Unmount(scope) {
-	scope.su$1 = 1;
+function ifBody$1Unmount() {
+	slots[1] = 1;
 }
 
 function ifEntry$1(host) {
@@ -40,6 +52,7 @@ function ifEntry$1(host) {
 
 export default function template$0(host, scope) {
 	const target$0 = host.componentView;
+	enterSlots();
 	const header$0 = appendChild(target$0, elem("header"));
 	scope.text$0 = appendChild(header$0, text(host.props.header));
 	const slotInner$0 = scope.slotInner$0 = appendChild(target$0, createComponent("slot-inner", SlotInner, host));
@@ -54,6 +67,7 @@ export default function template$0(host, scope) {
 	scope.text$3 = insert(inj$1, text(host.props.footer));
 	scope.if$1 = mountBlock(host, inj$1, ifEntry$1);
 	mountComponent(slotInner$0);
+	exitSlots();
 	return template$0Update;
 }
 
@@ -61,18 +75,21 @@ template$0.dispose = template$0Unmount;
 
 function template$0Update(host, scope) {
 	const { slotInner$0 } = scope;
-	scope.su$0 = scope.su$1 = 0;
+	enterSlots();
 	updateText(scope.text$0, host.props.header);
-	scope.su$0 |= updateText(scope.text$1, host.props.content);
+	slots[0] |= updateText(scope.text$1, host.props.content);
 	updateBlock(scope.if$0);
-	scope.su$1 |= updateText(scope.text$3, host.props.footer);
+	slots[1] |= updateText(scope.text$3, host.props.footer);
 	updateBlock(scope.if$1);
-	updateIncomingSlot(slotInner$0, "", scope.su$0);
-	updateIncomingSlot(slotInner$0, "footer", scope.su$1);
+	updateIncomingSlot(slotInner$0, "", slots[0]);
+	updateIncomingSlot(slotInner$0, "footer", slots[1]);
+	exitSlots();
 }
 
 function template$0Unmount(scope) {
+	enterSlots();
 	scope.if$0 = unmountBlock(scope.if$0);
 	scope.if$1 = unmountBlock(scope.if$1);
 	scope.slotInner$0 = unmountComponent(scope.slotInner$0);
+	exitSlots();
 }

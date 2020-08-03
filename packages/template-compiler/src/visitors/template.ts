@@ -43,8 +43,17 @@ export default {
 
                 if (state.slotSymbols.length) {
                     // Add entity to reset slot update symbols for each update
+                    const enter = 'enterSlots()';
+                    const exit = 'exitSlots()';
                     element.prepend(state.entity({
-                        update: () => `${state.slotSymbols.map(s => `${state.scope}.${s}`).join(' = ')} = 0`
+                        // NB: it’s possible that the same component can be invoked recursively,
+                        // so we have to maintain proper slots stacks for nested calls
+                        shared: () => enter,
+                        unmount: () => enter,
+                    }));
+                    element.add(state.entity({
+                        shared: () => exit,
+                        unmount: () => exit,
                     }));
                 }
 
