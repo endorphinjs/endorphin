@@ -3,7 +3,7 @@ import { compileAttributeValue } from '../lib/attributes';
 import Entity from '../entities/Entity';
 import generateExpression from '../expression';
 import { Chunk } from '../types';
-import { isIdentifier, isExpression, isCallExpression, sn } from '../lib/utils';
+import { isIdentifier, isExpression, isCallExpression, sn, qStr } from '../lib/utils';
 import CompileState from '../lib/CompileState';
 import { callExpr } from '../lib/ast-constructor';
 import ElementEntity from '../entities/ElementEntity';
@@ -34,7 +34,7 @@ export function animateIn(element: ElementEntity, state: CompileState) {
     }
 }
 
-export function animateOut(element: ElementEntity, block: BlockContext, state: CompileState): Entity {
+export function animateOut(element: ElementEntity, block: BlockContext, slotName: string | null, state: CompileState): Entity {
     const { injectorEntity } = state.element;
     const injector = injectorEntity ? injectorEntity.name : 'null';
 
@@ -63,10 +63,27 @@ export function animateOut(element: ElementEntity, block: BlockContext, state: C
     }
 
     anim.setUnmount(ent => {
+        // In case if element is animated in context of component slot,
+        // we should properly notify component about slot updates
+        const { receiver } = state;
+        let callback: Chunk;
+        if (slotName !== null && receiver) {
+            callback = sn([
+                '() => {',
+                'enterSlots();',
+                `${block.unmountSymbol}(${state.scope}, ${state.host});`,
+                state.runtime('updateIncomingSlot', [receiver.getSymbol(), qStr(slotName), receiver.slotMark(slotName)]),
+                ';exitSlots();',
+                '}'
+            ]);
+        } else {
+            callback = `() => ${block.unmountSymbol}(${state.scope}, ${state.host})`;
+        }
+
         return state.runtime('animate', [
             ent.getSymbol(),
             createAnimation(ent, element.animateOut, state),
-            `() => ${block.unmountSymbol}(${state.scope}, ${state.host})`
+            callback
         ]);
     });
 

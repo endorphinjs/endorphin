@@ -1,10 +1,9 @@
-<link rel="import" href="./basic3.html" as="slotted-inside" />
+<link rel="import" href="./basic1.html" as="slotted-inside" />
 
 <template>
     <h1>Animation inside slot unmount bug</h1>
-
-    <slotted-inside id={id}>
-        <div on:mouseenter={#show = true} on:mouseleave={#show = false} />
+    <slotted-inside>
+        <div></div>
         <div e:if={#show} animate:in="in 0.3s" animate:out="in 0.1s ease-out reverse"/>
     </slotted-inside>
 </template>

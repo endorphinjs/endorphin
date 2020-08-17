@@ -75,9 +75,11 @@ export default {
     ENDElement(node: ENDElement, state, next) {
         if (hasAnimationOut(node, state)) {
             let animatedElem: ElementEntity;
+            let slotName: string | null = null;
             const block = state.runChildBlock(`animated${nameToJS(node.name.name, true)}`, (b, elem) => {
                 b.unlinked = true;
                 elem.add(state.runElement(node, element => {
+                    slotName = state.slot;
                     animatedElem = handleElement(element, state, next);
 
                     if (animatedElem.code.unmount) {
@@ -92,7 +94,7 @@ export default {
                 }));
             });
 
-            return animateOut(animatedElem, block, state);
+            return animateOut(animatedElem, block, slotName, state);
         }
 
         return state.runElement(node, element => {
