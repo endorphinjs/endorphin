@@ -3,7 +3,7 @@ import * as MyComponent1 from "./my-component1.html";
 import * as MyComponent2 from "./my-component2.html";
 import * as InnerComponent from "./inner-component.html";
 
-let slots = null;
+let slots = [0, 0];
 const slotsStack = [];
 
 function enterSlots() {

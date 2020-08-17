@@ -178,14 +178,19 @@ function generatePartialsRuntime(state: CompileState): SourceNode {
  */
 function generateSlotsRuntime(state: CompileState): SourceNode {
     const { indent, slotSymbols } = state;
+    // XXX it‘s a small memory leak: in some cases (after animation) generated code
+    // updates slot markers, even if it’s not required. Setting `slots` variable
+    // to `null` causes these hard-to-handle issues, setting to array fixes issues
+    // yet keeps array with values (memory leak)
+    const slotMarkerValues = slotSymbols.map(() => '0').join(', ');
     return sn([
-        `\nlet slots = null;\nconst slotsStack = [];\n`,
+        `\nlet slots = [${slotMarkerValues}];\nconst slotsStack = [];\n`,
 
         // NB: it’s possible that the same component can be invoked recursivly,
         // so we have to maintain proper slots stacks for nested calls
         `\nfunction enterSlots() {`,
         `\n${indent}slotsStack.push(slots);`,
-        `\n${indent}slots = [${slotSymbols.map(() => '0').join(', ')}];`,
+        `\n${indent}slots = [${slotMarkerValues}];`,
         `\n}\n`,
 
         `\nfunction exitSlots() {`,

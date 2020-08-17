@@ -1,7 +1,7 @@
 import { appendChild, createComponent, elem, insert, mountBlock, mountComponent, propsSet, text, unmountBlock, unmountComponent, updateBlock, updateComponent, updateIncomingSlot } from "endorphin";
 import * as E1 from "./attrs.html";
 
-let slots = null;
+let slots = [0, 0, 0];
 const slotsStack = [];
 
 function enterSlots() {

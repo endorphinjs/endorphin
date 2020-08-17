@@ -67,7 +67,7 @@ export function animateOut(element: ElementEntity, block: BlockContext, slotName
         // we should properly notify component about slot updates
         const { receiver } = state;
         let callback: Chunk;
-        if (slotName !== null && receiver) {
+        if (slotName != null && receiver) {
             callback = sn([
                 '() => {',
                 'enterSlots();',

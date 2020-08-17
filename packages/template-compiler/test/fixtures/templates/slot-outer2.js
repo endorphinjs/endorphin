@@ -1,7 +1,7 @@
 import { appendChild, createComponent, createInjector, elem, elemWithText, insert, mountBlock, mountComponent, setAttribute, text, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot, updateText } from "endorphin";
 import * as SlotInner from "./slot-inner.js";
 
-let slots = null;
+let slots = [0, 0];
 const slotsStack = [];
 
 function enterSlots() {

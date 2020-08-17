@@ -1,7 +1,7 @@
 import { animate, appendChild, createComponent, domRemove, elem, elemWithText, insert, mountBlock, mountComponent, unmountBlock, unmountComponent, updateBlock, updateIncomingSlot } from "endorphin";
 import * as SlottedInside from "./basic1.html";
 
-let slots = null;
+let slots = [0];
 const slotsStack = [];
 
 function enterSlots() {
