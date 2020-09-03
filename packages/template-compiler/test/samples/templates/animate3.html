@@ -1,0 +1,15 @@
+<link rel="import" href="my-component.html" />
+
+<template>
+    <my-component>
+        <h4 slot="title">
+            <e:if test={enabled}>
+                <div class="preview">
+                    <e:for-each select={items}>
+                        <div animate:in="appear 0.2s backwards" animate:out="disappear 0.2s forwards"></div>
+                    </e:for-each>
+                </div>
+            </e:if>
+        </h4>
+    </my-component>
+</template>

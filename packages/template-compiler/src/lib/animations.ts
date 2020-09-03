@@ -65,7 +65,7 @@ export function animateOut(element: ElementEntity, block: BlockContext, slotName
     anim.setUnmount(ent => {
         // In case if element is animated in context of component slot,
         // we should properly notify component about slot updates
-        const { receiver } = state;
+        const receiver = state.component;
         let callback: Chunk;
         if (slotName != null && receiver) {
             callback = sn([
