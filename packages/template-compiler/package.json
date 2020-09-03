@@ -1,7 +1,7 @@
 {
   "name": "@endorphinjs/template-compiler",
   "description": "EndorphinJS Template compiler",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "main": "./dist/template-compiler.cjs.js",
   "module": "./dist/template-compiler.es.js",
   "types": "./dist/index.d.ts",
