@@ -62,6 +62,12 @@ export function mountSlot(host: Component, name: string, defaultContent?: MountB
  * Handles possible update of incoming data
  */
 export function updateIncomingSlot(host: Component, name: string, updated: number) {
+	// NB: may receive empty or unmounted component due to running animation
+	// is finished after component was unmounted
+	if (!host || !host.componentModel) {
+		return;
+	}
+
 	const ctx = getSlotContext(host.componentModel.input, name);
 
 	if (updated) {
