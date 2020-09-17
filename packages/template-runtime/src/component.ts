@@ -1,5 +1,5 @@
 import { elem } from './dom';
-import { assign, obj, getObjectDescriptors, captureError } from './utils';
+import { assign, obj, getObjectDescriptors, captureError, nextTick } from './utils';
 import { safeEventListener } from './event';
 import { classNames, setAttributeExpression } from './attribute';
 import { createInjector, Injector } from './injector';
@@ -392,7 +392,7 @@ export function scheduleRender(component: Component, changes?: Changes) {
 				drainQueue();
 			}, 1); // Different browsers behaviour, 1 is a best way to force planing callback to the next task
 
-			return Promise.resolve(drainQueue);
+			return nextTick(drainQueue);
 		}
 	}
 }
@@ -607,7 +607,13 @@ function addPropsState(element: Component) {
 }
 
 function drainQueue() {
-	const pending = renderQueue!;
+	const pending = renderQueue;
+
+	// If queue is empty nothing to do
+	if (!pending) {
+		return;
+	}
+
 	renderQueue = null;
 
 	for (let i = 0, component: Component; i < pending.length; i += 2) {

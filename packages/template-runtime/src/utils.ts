@@ -135,3 +135,22 @@ export function runtimeError(host: Component, error: Error) {
 		throw error;
 	}
 }
+
+/**
+ * Schedule a microtask
+ */
+export const nextTick = (function() {
+	if (typeof window.queueMicrotask !== 'undefined') {
+		return window.queueMicrotask
+	}
+
+	if (typeof Promise !== 'undefined') {
+		const promise = Promise.resolve();
+
+		return function(fn: (...args: any[]) => any) {
+			return promise.then(fn);
+		}
+	}
+
+	return window.requestAnimationFrame;
+})();
