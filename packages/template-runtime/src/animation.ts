@@ -1,4 +1,4 @@
-import { animatingKey, assign, safeCall } from './utils';
+import { animatingKey, assign, nextTick, safeCall } from './utils';
 
 export type EasingFunction = (t: number, b: number, c: number, d: number) => number;
 export type AnimationCallback = (elem: HTMLElement, options: TweenOptions) => void;
@@ -283,14 +283,6 @@ function findTween(elem: HTMLElement): Animation | null {
 function concat(name: string, suffix: string) {
 	const sep = suffix[0] === '_' || suffix[0] === '-' ? '' : '-';
 	return name + sep + suffix;
-}
-
-function nextTick(fn: (...args: any[]) => any) {
-	if (typeof Promise !== 'undefined') {
-		Promise.resolve().then(fn);
-	} else {
-		requestAnimationFrame(fn);
-	}
 }
 
 function notifyAnimation(elem: Element, stage: string, detail?: {}) {

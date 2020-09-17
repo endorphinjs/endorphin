@@ -135,3 +135,22 @@ export function runtimeError(host: Component, error: Error) {
 		throw error;
 	}
 }
+
+/**
+ * Schedule a microtask
+ */
+export const nextTick = (() => {
+	if (typeof queueMicrotask !== 'undefined') {
+		return queueMicrotask;
+	}
+
+	if (typeof Promise !== 'undefined') {
+		const promise = Promise.resolve();
+
+		return (fn: (...args: any[]) => any) => {
+			return promise.then(fn);
+		};
+	}
+
+	return requestAnimationFrame;
+})();
