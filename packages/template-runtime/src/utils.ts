@@ -140,8 +140,8 @@ export function runtimeError(host: Component, error: Error) {
  * Schedule a microtask
  */
 export const nextTick = (() => {
-	if (typeof window.queueMicrotask !== 'undefined') {
-		return window.queueMicrotask;
+	if (typeof queueMicrotask !== 'undefined') {
+		return queueMicrotask;
 	}
 
 	if (typeof Promise !== 'undefined') {
@@ -152,5 +152,5 @@ export const nextTick = (() => {
 		};
 	}
 
-	return window.requestAnimationFrame;
+	return requestAnimationFrame;
 })();
