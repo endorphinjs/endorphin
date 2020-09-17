@@ -139,7 +139,7 @@ export function runtimeError(host: Component, error: Error) {
 /**
  * Schedule a microtask
  */
-export const nextTick = (function() {
+export const nextTick = (() => {
 	if (typeof window.queueMicrotask !== 'undefined') {
 		return window.queueMicrotask
 	}
@@ -147,7 +147,7 @@ export const nextTick = (function() {
 	if (typeof Promise !== 'undefined') {
 		const promise = Promise.resolve();
 
-		return function(fn: (...args: any[]) => any) {
+		return (fn: (...args: any[]) => any) => {
 			return promise.then(fn);
 		}
 	}
