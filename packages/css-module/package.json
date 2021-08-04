@@ -10,7 +10,7 @@
     "css-tree": "^1.0.0-alpha.29"
   },
   "devDependencies": {
-    "mocha": "^6.1.4"
+    "mocha": "^9.0.3"
   },
   "scripts": {
     "test": "mocha",
