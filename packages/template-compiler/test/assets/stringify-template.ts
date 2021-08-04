@@ -71,7 +71,7 @@ function walk(node: WalkNode, state: State, next: WalkNext) {
 function tag(name: string, attrs: string, state: State, children?: WalkNode[], next?: WalkNext) {
     state.out += `<${name}${attrs ? ' ' + attrs : ''}`;
     if (children) {
-        children = children.filter(nonEmpty);
+        children = (children as ENDStatement[]).filter(nonEmpty);
     }
 
     if (children && children.length && next) {
@@ -95,7 +95,7 @@ function tag(name: string, attrs: string, state: State, children?: WalkNode[], n
 }
 
 function attribute(name: string | ENDAttributeName, value?: ENDAttributeValue): string {
-    let result: string = '';
+    let result = '';
     if (typeof name === 'string') {
         result += name;
     } else if (name.type === 'Identifier') {

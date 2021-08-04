@@ -112,7 +112,11 @@ export default {
             expr.prepend([next(dest), ` ${operator.slice(0, -1)} `]);
         }
 
-        return sn([next({ type: 'ThisExpression' }), `${prefix}({ ${propSetter(dest.name)}: `, expr, ' })']);
+        return sn([next({
+            type: 'ThisExpression',
+            start: node.start,
+            end: node.end,
+        }), `${prefix}({ ${propSetter(dest.name)}: `, expr, ' })']);
     },
     UpdateExpression(node: UpdateExpression, state, next) {
         return next({

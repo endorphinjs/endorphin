@@ -8,12 +8,15 @@
     "noImplicitThis": true,
     "module": "ESNext",
     "outDir": "./dist",
-    "declaration": true
+    "declaration": true,
+    "declarationDir": ".",
+    "moduleResolution": "Node"
   },
   "ts-node": {
     "compilerOptions": {
       "module": "CommonJS"
     }
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["./dist"]
 }

@@ -2,7 +2,7 @@ import typescript from '@rollup/plugin-typescript';
 
 export default {
 	input: './src/runtime.ts',
-	plugins: [typescript()],
+	plugins: [typescript({ tsconfig: './tsconfig.json' })],
 	output: [{
 		file: './dist/runtime.es.js',
 		format: 'es',

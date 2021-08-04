@@ -7,6 +7,7 @@ import compile, { CompileOptions } from '../src/index';
 describe('Template compiler', () => {
     const baseInput = path.resolve(__dirname, './samples');
     const baseOutput = path.resolve(__dirname, './fixtures');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const linterConfig = require('./fixtures/.eslintrc.js');
 
     function read(fileName: string): string {

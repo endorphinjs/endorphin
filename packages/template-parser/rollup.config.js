@@ -2,7 +2,7 @@ import typescript from '@rollup/plugin-typescript';
 
 export default {
     input: './src/index.ts',
-    plugins: [typescript()],
+    plugins: [typescript({ tsconfig: './tsconfig.json' })],
     external: ['acorn', 'acorn-walk'],
     output: [{
         file: './dist/template-parser.es.js',

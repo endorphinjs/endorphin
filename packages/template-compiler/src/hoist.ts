@@ -510,6 +510,8 @@ function concatLiterals(left: Literal, right: Literal): Literal {
 function finalizeVars(state: HoistState): ENDVariableStatement {
     const result: ENDVariableStatement = {
         type: 'ENDVariableStatement',
+        start: 0,
+        end: 0,
         variables: []
     };
 
@@ -528,6 +530,8 @@ function finalizeAttributes(attrs: Map<string, ENDAttributeValue>): ENDAttribute
     attrs.forEach((value, name) => {
         result.push({
             type: 'ENDAttribute',
+            start: value ? value.start : 0,
+            end: value ? value.end : 0,
             name: identifier(name),
             value
         });

@@ -7,12 +7,15 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "module": "ESNext",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationDir": "."
   },
   "ts-node": {
     "compilerOptions": {
       "module": "CommonJS"
     }
   },
-  "include": ["src/*.ts"]
+  "include": ["src/*.ts"],
+  "exclude": ["./dist"]
 }

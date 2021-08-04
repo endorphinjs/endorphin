@@ -1,4 +1,5 @@
 import parseTemplate, { ENDProgram } from '@endorphinjs/template-parser';
+import type { RawSourceMap } from 'source-map';
 import { HelpersMap } from './types';
 import generateTemplate from './template';
 import { ENDCompileError, ENDSyntaxError } from './lib/error';
@@ -14,7 +15,7 @@ export interface ParsedTemplate {
 
 export interface CodeWithMap {
     code: string;
-    map: object;
+    map: RawSourceMap;
 }
 
 export interface CompileOptions {

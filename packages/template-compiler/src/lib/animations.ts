@@ -5,7 +5,7 @@ import generateExpression from '../expression';
 import { Chunk } from '../types';
 import { isIdentifier, isExpression, isCallExpression, sn, qStr } from '../lib/utils';
 import CompileState from '../lib/CompileState';
-import { callExpr } from '../lib/ast-constructor';
+import { callExpr, identifier } from '../lib/ast-constructor';
 import ElementEntity from '../entities/ElementEntity';
 import BlockContext from './BlockContext';
 
@@ -137,10 +137,22 @@ function rewriteToDefinition<T extends Expression>(node: T): T {
     if (node.type === 'ObjectExpression') {
         return {
             ...node,
-            properties: (node as ObjectExpression).properties.map(prop => ({
-                ...prop,
-                value: rewriteToDefinition(prop.value)
-            }))
+            properties: (node as ObjectExpression).properties.map(prop => {
+                let { key } = prop;
+                const { value } = prop;
+
+                if (prop.shorthand && isIdentifier(value)) {
+                    if (value.context === 'state' || value.context === 'store' || value.context === 'variable') {
+                        key = identifier(value.name, null, value);
+                    }
+                }
+
+                return {
+                    ...prop,
+                    key,
+                    value: rewriteToDefinition(prop.value)
+                };
+            })
         };
     }
 
