@@ -1,4 +1,4 @@
-import { Component } from '../';
+import type { Component } from '../';
 
 const hasMap = typeof Map !== 'undefined';
 const hasSet = typeof Set !== 'undefined';
