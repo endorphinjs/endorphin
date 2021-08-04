@@ -8,7 +8,7 @@ export default class UsageStats {
     /**
      * Marks given render context as used
      */
-    use(ctx: RenderContext) {
+    use(ctx: RenderContext): void {
         if (ctx === 'shared') {
             this.mount++;
             this.update++;

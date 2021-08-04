@@ -26,7 +26,7 @@ export default class ConditionEntity extends Entity {
         return this;
     }
 
-    setSimple(test: Program, statements: ENDStatement[], next: TemplateContinue) {
+    setSimple(test: Program, statements: ENDStatement[], next: TemplateContinue): void {
         const fn = ifAttr(test, statements, this.state, next);
         this.setShared(() => {
             const args = sn([this.state.host]);

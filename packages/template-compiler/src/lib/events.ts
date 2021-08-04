@@ -35,7 +35,7 @@ const argNames: { [type in UsedArgs]: string } = {
     [UsedArgs.Scope]: 'scope',
 };
 
-export default function mountEvent(node: ENDDirective, eventReceiver: Entity, state: CompileState) {
+export default function mountEvent(node: ENDDirective, eventReceiver: Entity, state: CompileState): Entity {
     const eventType = node.name.split(':')[0];
     const { receiver } = state;
     const entity = state.entity();

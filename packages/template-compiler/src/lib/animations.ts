@@ -1,4 +1,4 @@
-import { Expression, MemberExpression, ArrowFunctionExpression, ENDAttributeValue, ObjectExpression, ENDElement } from '@endorphinjs/template-parser';
+import { Expression, MemberExpression, ENDAttributeValue, ObjectExpression, ENDElement } from '@endorphinjs/template-parser';
 import { compileAttributeValue } from '../lib/attributes';
 import Entity from '../entities/Entity';
 import generateExpression from '../expression';
@@ -21,7 +21,7 @@ export function hasAnimationOut(node: ENDElement, state: CompileState): boolean 
     return !!out;
 }
 
-export function animateIn(element: ElementEntity, state: CompileState) {
+export function animateIn(element: ElementEntity, state: CompileState): void {
     element.add(state.entity({
         mount: () => state.runtime('animate', [element.getSymbol(), createAnimation(element, element.animateIn, state)]),
     }));
@@ -90,7 +90,7 @@ export function animateOut(element: ElementEntity, block: BlockContext, slotName
     return anim;
 }
 
-export function createAnimation(elem: Entity, handler: ENDAttributeValue, state: CompileState, next?: ArrowFunctionExpression): Chunk | null {
+export function createAnimation(elem: Entity, handler: ENDAttributeValue, state: CompileState): Chunk | null {
     if (isExpression(handler) && handler.body.length === 1) {
         const expr = handler.body[0];
         if (expr.type === 'ExpressionStatement') {

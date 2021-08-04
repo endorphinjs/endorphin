@@ -57,7 +57,7 @@ export default class CompileState {
     }
 
     /** Symbol for referencing current element’s injector */
-    get injector() {
+    get injector(): SourceNode {
         return this.element.injector;
     }
 
@@ -194,7 +194,7 @@ export default class CompileState {
     /**
      * Returns current namespace JS symbol for given prefix, if available
      */
-    namespace(prefix: string = ''): string {
+    namespace(prefix = ''): string {
         const uri = this.namespaceMap[prefix];
         if (uri) {
             if (!this.namespaceSymbols.has(uri)) {
@@ -428,7 +428,7 @@ export default class CompileState {
         return this.componentsMap.get(elemName).symbol;
     }
 
-    registerComponent(elem: ENDImport) {
+    registerComponent(elem: ENDImport): void {
         this.componentsMap.set(elem.name, {
             symbol: nameToJS(elem.name, true),
             href: elem.href,
@@ -439,7 +439,7 @@ export default class CompileState {
     /**
      * Marks given local variable names as bound to component scope
      */
-    markScoped(...names: string[]) {
+    markScoped(...names: string[]): void {
         for (const name of names) {
             const value = this._scoped.get(name) || 0;
             this._scoped.set(name, value + 1);
@@ -449,7 +449,7 @@ export default class CompileState {
     /**
      * Removes local scope marks from given local variable names
      */
-    unmarkScoped(...names: string[]) {
+    unmarkScoped(...names: string[]): void {
         for (const name of names) {
             const value = this._scoped.get(name) || 0;
             if (value < 2) {
@@ -470,7 +470,7 @@ export default class CompileState {
     /**
      * Returns reverence to local variable
      */
-    localVar(name: string) {
+    localVar(name: string): string {
         return !this.options.moduleVars || this.isScoped(name)
             ? `${this.scope}${propGetter(name)}`
             : `__${name}`;

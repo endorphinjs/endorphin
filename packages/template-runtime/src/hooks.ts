@@ -35,13 +35,17 @@ export function reverseWalkDefinitions(component: Component, definition: Compone
  * Invokes `name` hook for given component definition
  */
 export function runHook<T, U>(component: Component, name: string, arg1?: T, arg2?: U) {
-	const { plugins } = component.componentModel;
+	const { plugins, hooks } = component.componentModel;
+	const callbacks: HookCallback[] | undefined = hooks[name];
 
-	for (let i = plugins.length - 1, hook: (...args: any[]) => any; i >= 0; i--) {
+	for (let i = plugins.length - 1, result: HookCallback | undefined, hook: (...args: any[]) => any; i >= 0; i--) {
 		hook = plugins[i][name];
 		if (typeof hook === 'function') {
 			try {
-				hook(component, arg1, arg2);
+				result = hook(component, arg1, arg2);
+				if (typeof result === 'function' && callbacks !== undefined) {
+					callbacks.push(result);
+				}
 			} catch (error) {
 				runtimeError(component, error);
 				// tslint:disable-next-line:no-console

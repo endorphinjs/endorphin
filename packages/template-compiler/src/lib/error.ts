@@ -67,7 +67,7 @@ function splitByLines(text: string): string[] {
     return text.replace(/\r\n/g, '\n').split('\n');
 }
 
-function replaceTabs(text: string, replacement: string, column: number = 0): { text: string, offset: number } {
+function replaceTabs(text: string, replacement: string, column = 0): { text: string, offset: number } {
     let offset = 0;
     let output = '';
 

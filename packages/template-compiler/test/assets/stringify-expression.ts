@@ -1,11 +1,11 @@
-import { generate, baseGenerator } from 'astring';
+import { generate, GENERATOR } from 'astring';
 import { Program, ENDGetterPrefix, IdentifierContext, ENDFilter, Identifier, ENDGetter, ENDCaller } from '@endorphinjs/template-parser';
 
 interface AstringState {
     write(text: string): void;
 }
 
-const generator = Object.assign({}, baseGenerator, {
+const generator = Object.assign({}, GENERATOR, {
     ENDGetterPrefix(node: ENDGetterPrefix, state: AstringState) {
         state.write(getPrefix(node.context));
     },

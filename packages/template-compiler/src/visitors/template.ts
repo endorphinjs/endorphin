@@ -148,7 +148,7 @@ export default {
         return result;
     },
 
-    ENDAddClassStatement(node: ENDAddClassStatement, state, next) {
+    ENDAddClassStatement(node: ENDAddClassStatement, state) {
         const { receiver }  = state;
         // No receiver means we are running inside partial
         const attrReceiver = receiver
@@ -293,7 +293,7 @@ function mountSlot(elem: ElementEntity, state: CompileState, next: AstVisitorCon
 /**
  * Generates object literal from given attributes
  */
-function generateObject(params: ENDAttribute[], state: CompileState, level: number = 0): SourceNode {
+function generateObject(params: ENDAttribute[], state: CompileState, level = 0): SourceNode {
     return toObjectLiteral(attributeMap(params, state), state.indent, level);
 }
 

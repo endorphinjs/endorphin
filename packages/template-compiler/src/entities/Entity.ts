@@ -155,14 +155,14 @@ export default class Entity {
     /**
      * Adds given entity as a child of current one
      */
-    add(ent: Entity) {
+    add(ent: Entity): void {
         this.children.push(ent);
     }
 
     /**
      * Adds given entity as the first child of current one
      */
-    prepend(ent: Entity) {
+    prepend(ent: Entity): void {
         this.children.unshift(ent);
     }
 

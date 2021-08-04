@@ -21,7 +21,7 @@ export default class ElementEntity extends Entity {
     readonly stats?: ElementStats;
 
     /** Indicates current entity is a *registered* DOM component */
-    isComponent: boolean = false;
+    isComponent = false;
 
     animateIn?: ENDAttributeValue;
     animateOut?: ENDAttributeValue;
@@ -117,11 +117,11 @@ export default class ElementEntity extends Entity {
     /**
      * Check if given event is pending, e.g. will be changed in runtime
      */
-    isPendingEvent(name: string) {
-        return this.stats && this.stats.pendingEvents.has(name);
+    isPendingEvent(name: string): boolean {
+        return this.stats ? this.stats.pendingEvents.has(name) : false;
     }
 
-    add(item: Entity) {
+    add(item: Entity): void {
         if ((item instanceof ElementEntity || item instanceof TextEntity) && item.code.mount) {
             item.setMount(() =>
                 !this.isComponent && this.stats && this.stats.staticContent
@@ -137,7 +137,7 @@ export default class ElementEntity extends Entity {
      * @param text If given, uses shortcut function for creating element with
      * given text value
      */
-    create(text?: Literal) {
+    create(text?: Literal): SourceNode | void {
         const { state, node } = this;
         if (isElement(node)) {
             this.setMount(() => {
@@ -178,13 +178,13 @@ export default class ElementEntity extends Entity {
         }
     }
 
-    mountAttributes() {
+    mountAttributes(): void {
         if (isElement(this.node)) {
             this.attrState = ownAttributes(this, this.stats, this.state);
         }
     }
 
-    mountDirectives() {
+    mountDirectives(): void {
         if (isElement(this.node)) {
             const { state } = this;
             this.node.directives.forEach(dir => {
@@ -207,7 +207,7 @@ export default class ElementEntity extends Entity {
      * content was rendered, we should add mount and update code
      * as a separate entity after element content
      */
-    mountComponent() {
+    mountComponent(): void {
         const props = this.attrState && this.attrState.receiver;
         const { state } = this;
 
@@ -256,7 +256,7 @@ export default class ElementEntity extends Entity {
     /**
      * Adds entity to update incoming slot data
      */
-    markSlotUpdate() {
+    markSlotUpdate(): void {
         const { state, slotMarks } = this;
         Object.keys(slotMarks).forEach(slot => {
             this.add(state.entity({
@@ -268,7 +268,7 @@ export default class ElementEntity extends Entity {
     /**
      * Adds entity to finalize attributes of current element
      */
-    finalizeAttributes() {
+    finalizeAttributes(): void {
         if (this.stats.partials || this.attrState.hasPendingAttrs) {
             // There are pending dynamic attributes
             const { state } = this;
@@ -291,7 +291,7 @@ export default class ElementEntity extends Entity {
     /**
      * Adds entity to finalize attributes of current element
      */
-    finalizeEvents() {
+    finalizeEvents(): void {
         if (this.pendingEvents) {
             const { state } = this;
             this.add(state.entity({
@@ -303,7 +303,7 @@ export default class ElementEntity extends Entity {
     /**
      * Adds entity to set named ref to current element
      */
-    setRef(refName: string | Program) {
+    setRef(refName: string | Program): SourceNode | void {
         const { state } = this;
         const { refStats } = state;
         const refStat = typeof refName === 'string'

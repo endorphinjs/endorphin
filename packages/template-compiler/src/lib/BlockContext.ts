@@ -57,7 +57,7 @@ export default class BlockContext {
         return data.refs[context];
     }
 
-    setMounted(entity: Entity) {
+    setMounted(entity: Entity): void {
         this.getEntityData(entity).mounted = true;
     }
 

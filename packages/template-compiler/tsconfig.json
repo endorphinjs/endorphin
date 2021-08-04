@@ -1,14 +1,19 @@
 {
   "compilerOptions": {
     "target": "es2017",
-    "diagnostics": true,
+    "diagnostics": false,
     "sourceMap": true,
     "noUnusedLocals": true,
     "alwaysStrict": true,
     "noImplicitThis": true,
-    "module": "commonjs",
+    "module": "ESNext",
     "outDir": "./dist",
-    "declaration": false
+    "declaration": true
   },
-  "files": ["src/index.ts"]
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  },
+  "include": ["src/**/*.ts"]
 }

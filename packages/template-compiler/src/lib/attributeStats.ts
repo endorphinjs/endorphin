@@ -20,6 +20,7 @@ export interface ElementStats {
     pendingEvents: Set<string>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VisitorCallback = (node: ENDStatement) => any;
 
 /**

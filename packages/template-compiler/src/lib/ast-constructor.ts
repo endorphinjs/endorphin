@@ -15,6 +15,7 @@ interface SourceDataAlike {
     start?: number;
     end?: number;
     loc?: SourceLocation;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
 

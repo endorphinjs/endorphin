@@ -26,7 +26,7 @@ const reservedKeywords = new Set([
 /**
  * Converts given HTML tag name to JS variable name
  */
-export function nameToJS(name: string, capitalize: boolean = false): string {
+export function nameToJS(name: string, capitalize = false): string {
     name = name
         .replace(/-(\w)/g, (str: string, p1: string) => p1.toUpperCase())
         .replace(/\W/g, '_');
@@ -191,7 +191,7 @@ export function pendingEvents(state: CompileState): Chunk {
         : `${state.scope}.$$_events`;
 }
 
-export function toObjectLiteral(map: Map<Chunk, Chunk>, indent: string = '\t', level: number = 0): SourceNode {
+export function toObjectLiteral(map: Map<Chunk, Chunk>, indent = '\t', level = 0): SourceNode {
     const _indent = indent.repeat(level);
     const _innerIndent = indent.repeat(level + 1);
     const result = sn();
@@ -232,7 +232,7 @@ export function prepareHelpers(...helpers: HelpersMap[]): PlainObject {
 /**
  * Generates function from given fragments
  */
-export function createFunction(name: string, args: string[], chunks: ChunkList, indent: string = '\t'): SourceNode {
+export function createFunction(name: string, args: string[], chunks: ChunkList, indent = '\t'): SourceNode {
     if (chunks && chunks.length) {
         return sn([
             `function ${name}(${args.filter(Boolean).join(', ')}) {\n${indent}`,
@@ -267,7 +267,7 @@ export function commaChunks(items: Chunk[], before?: string, after?: string): Ch
     return chunks;
 }
 
-export function format(chunks: ChunkList, pfx: string = '', suffix: string = '\n'): ChunkList {
+export function format(chunks: ChunkList, pfx = '', suffix = '\n'): ChunkList {
     const result: ChunkList = [];
 
     chunks.filter(isValidChunk).forEach((chunk, i, arr) => {
