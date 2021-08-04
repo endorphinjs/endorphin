@@ -327,6 +327,8 @@ function getDirective(attr: ENDAttribute): ENDDirective {
 
             return {
                 type: 'ENDDirective',
+                start: attr.start,
+                end: attr.end,
                 prefix: pfx,
                 name: directiveId.name,
                 value: attr.value,
@@ -361,7 +363,7 @@ function castAttributeValue(value: string): LiteralValue {
 function createTag(scanner: Scanner,
                    name: Identifier,
                    tagType: 'open' | 'close',
-                   selfClosing: boolean = false): ParsedTag {
+                   selfClosing = false): ParsedTag {
     return {
         type: 'ParsedTag',
         name,

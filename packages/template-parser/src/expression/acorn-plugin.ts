@@ -6,12 +6,15 @@ import { Parser, isIdentifierStart, isIdentifierChar, tokTypes, keywordTypes } f
  */
 export default function endorphinJS(P: typeof Parser): typeof Parser {
     return class EndorphinParser extends P {
+        input: string;
         pos: number;
+        keywords: RegExp;
+
         readToken(code: number) {
             if (isIdentifierStart(code) || code === 35 /* # */ || code === 64 /* @ */) {
                 return this.end_readWord();
             }
-            // @ts-ignore
+            //@ts-ignore
             super.readToken(code);
         }
 
@@ -24,17 +27,14 @@ export default function endorphinJS(P: typeof Parser): typeof Parser {
             let ch: number;
             const start = this.pos;
             do {
-                // @ts-ignore
                 ch = this.input.charCodeAt(++this.pos);
             } while (isIdentifierChar(ch) || ch === 45); // '-'
 
-            // @ts-ignore
             const value = this.input.slice(start, this.pos);
-            // @ts-ignore
             const isKeyword = this.keywords.test(value);
             const type = isKeyword ? keywordTypes[value] : tokTypes.name;
 
-            // @ts-ignore
+            //@ts-ignore
             return this.finishToken(type, value);
         }
     };

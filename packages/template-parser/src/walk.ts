@@ -1,132 +1,36 @@
-import * as acornWalk from 'acorn-walk';
-import * as Ast from './ast';
+import type { Node } from 'acorn';
+import type { FullAncestorWalkerCallback, RecursiveWalkerFn, WalkerCallback } from 'acorn-walk';
+import { simple, fullAncestor, make } from 'acorn-walk';
+import type * as Ast from './ast';
 
-export type AstWalker<T> = (node: Ast.Node, state: T, c: AstWalkerContinuation<T>) => void;
-export type AstWalkerContinuation<T> = (node: Ast.Node, state: T, type?: string) => void;
-export type AstVisitor<T, U> = (node: Ast.Node, state: T, addon: U) => void;
-export type AstVisitorCallback<T> = (node: Ast.Node, state: T, type: string) => void;
-export type AstAncestorVisitorCallback<T> = (node: Ast.Node, state: T, ancestors: Ast.Node[], type: string) => void;
-export type AstTestFn = (type: string) => boolean;
+type TState = Record<string, unknown>;
 
-export interface AstVisitors<T> {
-    [nodeType: string]: AstWalker<T>;
-}
+type AstSimpleVisitors<N extends Node> = {
+    [type: string]: AstSimpleWalkerFn<N>
+};
 
-export interface AstVisitorMap<T, U> {
-    [nodeType: string]: AstVisitor<T, U>;
-}
+type AstSimpleWalkerFn<N extends Node> = (
+    node: N,
+    state: TState
+) => void;
 
-// tslint:disable-next-line:no-empty
-const ignore: AstWalker<object> = () => {};
+const ignore: RecursiveWalkerFn<TState> = () => {
+    // empty
+};
 
-/**
- * A simple walk is one where you simply specify callbacks to be
- * called on specific nodes. The last two arguments are optional. A
- * simple use would be
- *
- * ```js
- * walk(myTree, {
- *     Expression(node) { ... }
- * });
- * ```
- *
- * to do something with all expressions. All Parser API node types
- * can be used to identify node types, as well as Expression and
- * Statement, which denote categories of nodes.
- *
- * The base argument can be used to pass a custom (recursive)
- * walker, and state can be used to give this walked an initial
- * state.
- */
-export function walk<T>(node: Ast.Node, visitors: AstVisitorMap<T, void>, baseVisitor = base, state?: T, override?: string): void {
-    acornWalk.simple(node, visitors, baseVisitor, state, override);
-}
-
-/**
- * An ancestor walk keeps an array of ancestor nodes (including the
- * current node) and passes them to the callback as third parameter
- * (and also as state parameter when no other state is present).
- */
-export function walkAncestor<T>(node: Ast.Node, visitors: AstVisitorMap<T, Ast.Expression[]>, baseVisitor = base, state?: T): void {
-    acornWalk.ancestor(node, visitors, baseVisitor, state);
-}
-
-/**
- * A recursive walk is one where your functions override the default
- * walkers. They can modify and replace the state parameter that's
- * threaded through the walk, and can opt how and whether to walk
- * their child nodes (by calling their third argument on these
- * nodes).
- */
-export function walkRecursive<T>(node: Ast.Node, state?: T, funcs?: AstVisitors<T>, baseVisitor = base, override?: string): void {
-    acornWalk.recursive(node, state, funcs, baseVisitor, override);
-}
-
-/**
- *  A full walk triggers the callback on each node
- */
-export function walkFull<T>(node: Ast.Node, callback: AstVisitorCallback<T>, baseVisitor = base, state?: T, override?: string): void {
-    acornWalk.full(node, callback, baseVisitor, state, override);
+export function walk<S extends Node, N extends Node>(node: S, visitors: AstSimpleVisitors<N>, baseVisitor = base, state?: TState): void {
+    simple(node, visitors, baseVisitor, state);
 }
 
 /**
  * An fullAncestor walk is like an ancestor walk, but triggers
  * the callback on each node
  */
-export function walkFullAncestor<T>(node: Ast.Node, callback: AstAncestorVisitorCallback<T>, baseVisitor = base, state?: T): void {
-    acornWalk.fullAncestor(node, callback, baseVisitor, state);
+export function walkFullAncestor<N extends Node>(node: N, callback: FullAncestorWalkerCallback<TState>, baseVisitor = base, state?: TState): void {
+    fullAncestor<TState>(node, callback, baseVisitor, state);
 }
 
-/**
- * Find a node with a given start, end, and type (all are optional,
- * null can be used as wildcard). Returns a `{node, state}` object, or
- * `undefined` when it doesn't find a matching node.
- */
-export function findNodeAt<T>(node: Ast.Node,
-                              start?: number | null,
-                              end?: number | null,
-                              test?: string | AstTestFn | null,
-                              baseVisitor = base, state?: T):
-                              { node: Node, state: T } {
-    return acornWalk.findNodeAt(node, start, end, test, baseVisitor, state);
-}
-
-/**
- * Find the innermost node of a given type that contains the given
- * position. Interface similar to `findNodeAt`.
- */
-export function findNodeAround<T>(node: Ast.Node,
-                                  pos: number,
-                                  test: string | AstTestFn | null,
-                                  baseVisitor = base,
-                                  state?: T):
-                                  { node: Node, state: T } {
-    return acornWalk.findNodeAround(node, pos, test, baseVisitor, state);
-}
-
-/**
- * Find the outermost matching node after a given position.
- */
-export function findNodeAfter<T>(node: Ast.Node,
-                                 pos: number,
-                                 test: string | AstTestFn | null,
-                                 baseVisitor = base, state?: T): { node: Node, state: T } {
-    return acornWalk.findNodeAfter(node, pos, test, baseVisitor, state);
-}
-
-/**
- * Find the outermost matching node before a given position.
- */
-export function findNodeBefore<T>(node: Ast.Node,
-                                  pos: number,
-                                  test: string | AstTestFn | null,
-                                  baseVisitor = base,
-                                  state?: T):
-                                  { node: Node, state: T } {
-    return acornWalk.findNodeAfter(node, pos, test, baseVisitor, state);
-}
-
-export const base: AstVisitors<object> = acornWalk.make({
+export const base = make<TState>({
     ENDProgram(node: Ast.ENDProgram, state, c) {
         walkArray(node.body, state, c);
         walkArray(node.stylesheets, state, c);
@@ -212,8 +116,8 @@ export const base: AstVisitors<object> = acornWalk.make({
     ENDStylesheet: ignore,
     ENDScript: ignore,
     ENDGetterPrefix: ignore
-} as AstVisitors<object>);
+});
 
-function walkArray<T>(nodes: Ast.Node[], state: T, c: AstWalkerContinuation<T>) {
+function walkArray<N extends Node, T>(nodes: N[], state: T, c: WalkerCallback<T>) {
     nodes.forEach(node => c(node, state));
 }

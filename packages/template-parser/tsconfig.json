@@ -5,9 +5,14 @@
     "noUnusedLocals": true,
     "alwaysStrict": true,
     "noImplicitThis": true,
-    "module": "commonjs",
+    "module": "ESNext",
     "outDir": "./dist",
     "declaration": true
   },
-  "files": ["./src/index.ts"]
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  },
+  "include": ["./src/**/*.ts"]
 }

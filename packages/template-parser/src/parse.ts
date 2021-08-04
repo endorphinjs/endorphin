@@ -110,6 +110,8 @@ function statement(scanner: Scanner, open: ParsedTag): ENDStatement {
             assertExpression(scanner, dir);
             parents.push({
                 type: 'ENDIfStatement',
+                start: open.start,
+                end: open.end,
                 test: dir.value as Program,
                 consequent: [],
                 loc: dir.loc

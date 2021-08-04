@@ -6,10 +6,9 @@
   "module": "./dist/template-parser.es.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "rollup -c && npm run types",
-    "lint": "tslint ./src/**/*.ts",
+    "build": "rollup -c",
+    "lint": "eslint ./src/**/*.ts",
     "test": "mocha",
-    "types": "tsc -p ./tsconfig.declaration.json",
     "clean": "rm -rf ./dist",
     "prepare": "npm run lint && npm run test && npm run clean && npm run build"
   },
@@ -23,19 +22,21 @@
   "author": "Sergey Chikuyonok <serge.che@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^12.11.1",
-    "astring": "^1.4.3",
-    "mocha": "^6.2.2",
-    "rollup": "^1.25.1",
-    "rollup-plugin-typescript": "^1.0.1",
-    "ts-node": "^8.4.1",
-    "tslint": "^5.20.0",
-    "typescript": "^3.6.4"
+    "@rollup/plugin-typescript": "^8.2.5",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.4.11",
+    "@typescript-eslint/eslint-plugin": "^4.29.0",
+    "@typescript-eslint/parser": "^4.29.0",
+    "astring": "^1.7.5",
+    "eslint": "^7.32.0",
+    "mocha": "^9.0.3",
+    "rollup": "^2.55.1",
+    "ts-node": "^10.1.0",
+    "typescript": "^4.3.5"
   },
   "dependencies": {
-    "acorn": "^7.1.0",
-    "acorn-walk": "^7.0.0"
+    "acorn": "^8.4.1",
+    "acorn-walk": "^8.1.1"
   },
   "repository": {
     "type": "git",

@@ -56,6 +56,7 @@ export function parseJS(code: string, options: JSParserOptions = {}): Program {
     let ast: Program;
     try {
         ast = JSParser.parse(code, {
+            ecmaVersion: 6,
             sourceType: 'module',
             sourceFile: options.url,
             locations: true

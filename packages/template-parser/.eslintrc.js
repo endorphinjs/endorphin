@@ -1,36 +1,25 @@
+// eslint-disable-next-line no-undef
 module.exports = {
-    "env": {
-        "es6": true,
-        "node": true,
-        "mocha": true,
-        "browser": false
+    root: true,
+    env: {
+        browser: true,
+        es6: true
     },
-    "extends": "eslint:recommended",
-    "parserOptions": {
-        "sourceType": "module"
-    },
-    "rules": {
-        "indent": [
-            "error",
-            4
-        ],
-        "linebreak-style": [
-            "error",
-            "unix"
-        ],
-        "quotes": [
-            "error",
-            "single"
-        ],
-        "semi": [
-            "error",
-            "always"
-        ],
-		"no-cond-assign": "off",
-		"no-empty": [
-			"error",
-			{ "allowEmptyCatch": true }
-		],
-		"no-console": "warn"
+    parser: '@typescript-eslint/parser',
+    plugins: [
+        '@typescript-eslint',
+    ],
+    extends: [
+        'eslint:recommended',
+        'plugin:@typescript-eslint/eslint-recommended',
+        'plugin:@typescript-eslint/recommended',
+    ],
+    rules: {
+        '@typescript-eslint/no-use-before-define': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-empty-interface': ['error', { 'allowSingleExtends': true }],
+        '@typescript-eslint/ban-ts-comment': 'off',
+        'no-cond-assign': 'off'
     }
 };

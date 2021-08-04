@@ -1,4 +1,4 @@
-import { deepEqual, equal, throws } from 'assert';
+import { deepStrictEqual as deepEqual, strictEqual as equal, throws } from 'assert';
 import { parseJS, walk } from '../src/index';
 import { Identifier, Program, IdentifierContext } from '../src/ast';
 import generateJS from './assets/generate';

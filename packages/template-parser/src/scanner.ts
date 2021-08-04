@@ -113,7 +113,9 @@ export default class Scanner {
      */
     eatWhile(match: number | MatchFunction): boolean {
         const start = this.pos;
-        while (!this.eof() && this.eat(match)) { } // tslint:disable-line
+        while (!this.eof() && this.eat(match)) {
+            // empty
+        }
         return this.pos !== start;
     }
 
@@ -121,7 +123,7 @@ export default class Scanner {
      * Backs up the stream n characters. Backing it up further than the
      * start of the current token will cause things to break, so be careful.
      */
-    backUp(n: number = 1): void {
+    backUp(n = 1): void {
         this.pos -= (n || 1);
     }
 

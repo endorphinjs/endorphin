@@ -13,6 +13,8 @@ export default function variableStatement(scanner: Scanner, openTag: ParsedTag):
     emptyBody(scanner, openTag);
     return {
         type: 'ENDVariableStatement',
+        start: openTag.start,
+        end: openTag.end,
         variables: openTag.attributes.map(attrToVariable),
         loc: openTag.loc
     };
@@ -25,6 +27,8 @@ function attrToVariable(attr: ENDAttribute): ENDVariable {
 
     return {
         type: 'ENDVariable',
+        start: attr.start,
+        end: attr.end,
         name: attr.name.name,
         value: attr.value,
         loc: attr.loc

@@ -1,5 +1,5 @@
 import Scanner, { MatchFunction, SourceData } from './scanner';
-import { Identifier, LiteralValue, Literal, Node, Expression, FunctionDeclaration, ArrowFunctionExpression } from './ast';
+import type { Identifier, LiteralValue, Literal, Node, Expression, FunctionDeclaration, ArrowFunctionExpression, Position, SourceLocation } from './ast';
 
 export const SINGLE_QUOTE = 39; // '
 export const DOUBLE_QUOTE = 34; // "
@@ -13,7 +13,22 @@ export const TAG_CLOSE = 47; // /
 export const ATTR_DELIMITER = 61; // =
 export const DOT = 46; // .
 
-type SourceDataAlike = { [P in keyof SourceData]?: SourceData[P] } & { [name: string]: any };
+const emptyPos: Position = {
+    line: 0,
+    column: 0,
+    offset: 0
+};
+
+const emptyLoc: SourceLocation = {
+    start: emptyPos,
+    end: emptyPos,
+};
+
+const emptySourceData: SourceData = {
+    start: 0,
+    end: 0,
+    loc: emptyLoc
+};
 
 /**
  * Check if given character can be used as a start of tag name or attribute
@@ -32,14 +47,14 @@ export function nameChar(ch: number): boolean {
 /**
  * Factory function for creating `Identifier` AST node
  */
-export function identifier(name: string, loc: SourceDataAlike): Identifier {
+export function identifier(name: string, loc?: Partial<SourceData>): Identifier {
     return { type: 'Identifier', name, ...toSourceData(loc) };
 }
 
 /**
  * Factory function for creating `Literal` AST node
  */
-export function literal(value: LiteralValue, raw?: string, loc?: SourceDataAlike): Literal {
+export function literal(value: LiteralValue, raw?: string, loc?: Partial<SourceData>): Literal {
     return { type: 'Literal', value, raw, ...toSourceData(loc) };
 }
 
@@ -64,12 +79,12 @@ export function isFunction(node: Expression): node is FunctionDeclaration | Arro
     return node.type === 'FunctionDeclaration' || node.type === 'ArrowFunctionExpression';
 }
 
-export function toSourceData(node?: SourceDataAlike): SourceData | object {
+export function toSourceData(node?: Partial<SourceData>): SourceData {
     return node ? {
-        start: node.start,
-        end: node.end,
-        loc: node.loc
-    } : {};
+        start: node.start || 0,
+        end: node.end || 0,
+        loc: node.loc || emptyLoc
+    } : emptySourceData;
 }
 
 /**
@@ -111,7 +126,7 @@ export function eatArray(scanner: Scanner, codes: number[]): boolean {
  * and ends with `close` character codes
  * @param allowUnclosed Allow omitted `close` part in text stream
  */
-export function eatSection(scanner: Scanner, open: number[], close: number[], allowUnclosed: boolean = false): boolean {
+export function eatSection(scanner: Scanner, open: number[], close: number[], allowUnclosed = false): boolean {
     const start = scanner.pos;
 
     if (eatArray(scanner, open)) {
@@ -225,7 +240,7 @@ export function isNumber(code: number): boolean {
 /**
  * Check if given character code is alpha code (letter through A to Z)
  */
-export function isAlpha(code: number, from: number = 65, to: number = 90): boolean {
+export function isAlpha(code: number, from = 65, to = 90): boolean {
     code &= ~32; // quick hack to convert any char code to uppercase char code
     return code >= from && code <= to;
 }

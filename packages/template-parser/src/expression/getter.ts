@@ -31,6 +31,8 @@ export function convert(node: Expression, options: JSParserOptions = {}): ENDGet
 export function createGetter(expr: MemberExpression): ENDGetter | MemberExpression {
     const result: ENDGetter = {
         type: 'ENDGetter',
+        start: expr.start,
+        end: expr.end,
         path: []
     };
 
@@ -80,13 +82,19 @@ export function createCaller(expr: CallExpression): ENDCaller | CallExpression {
             // as first argument
             return {
                 ...expr,
-                arguments: [{ type: 'ThisExpression' }, ...expr.arguments]
+                arguments: [{
+                    type: 'ThisExpression',
+                    start: expr.start,
+                    end: expr.end
+                }, ...expr.arguments]
             };
         }
 
         if (callee.context !== 'store') {
             return {
                 type: 'ENDCaller',
+                start: callee.start,
+                end: callee.end,
                 object: getterPrefix(callee.context),
                 property: idToLiteral(callee),
                 arguments: expr.arguments
@@ -102,6 +110,8 @@ export function createCaller(expr: CallExpression): ENDCaller | CallExpression {
 
         return {
             type: 'ENDCaller',
+            start: callee.start,
+            end: callee.end,
             object: convert(callee.object),
             property: isIdentifier(callee.property)
                 ? idToLiteral(callee.property)
@@ -119,6 +129,8 @@ function createFilter(expr: MemberExpression): ENDFilter {
 
     return {
         type: 'ENDFilter',
+        start: expr.start,
+        end: expr.end,
         object: convert(object),
         expression: filter,
         multiple: isArray(property)
@@ -144,5 +156,10 @@ function isArray(node: JSNode): node is ArrayExpression {
 }
 
 function getterPrefix(context: IdentifierContext): ENDGetterPrefix {
-    return { type: 'ENDGetterPrefix', context };
+    return {
+        type: 'ENDGetterPrefix',
+        start: 0,
+        end: 0,
+        context
+    };
 }

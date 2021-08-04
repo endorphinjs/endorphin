@@ -13,7 +13,7 @@ export default function importStatement(scanner: Scanner, openTag: ParsedTag): E
         tagName = stringValue(asAttr);
     } else {
         // TODO provide overridable option to detect component name from import path
-        const parts = href.replace(/\.\w+$/, '').split(/[\\\/]/);
+        const parts = href.replace(/\.\w+$/, '').split(/[\\/]/);
         const fileName = parts.pop();
         const dirName = parts.pop();
         tagName = fileName.includes('-') ? fileName : dirName;

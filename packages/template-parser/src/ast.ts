@@ -1,3 +1,5 @@
+import type { Node } from 'acorn';
+
 export interface Position {
     line: number;
     column: number;
@@ -10,13 +12,15 @@ export interface SourceLocation {
     source?: string | null;
 }
 
-export interface Node {
-    type: string;
-    start?: number;
-    end?: number;
-    loc?: SourceLocation;
-    sourceFile?: string;
-}
+export type { Node };
+
+// export interface Node {
+//     type: string;
+//     start?: number;
+//     end?: number;
+//     loc?: SourceLocation;
+//     sourceFile?: string;
+// }
 
 // AST types for JavaScript-like expressions
 export type JSNode = Node;

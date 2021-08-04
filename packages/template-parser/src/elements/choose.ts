@@ -3,7 +3,9 @@ import { openTag, closesTag, tagBody } from '../tag';
 import { ENDChooseStatement, Program, ParsedTag, ENDAttribute } from '../ast';
 import { ignored, getControlName, InnerStatement, prefix, expectAttributeExpression, tagName } from './utils';
 
-export default function chooseStatement(conditionTag: string, fallbackTag: string) {
+type ParseFn = (scanner: Scanner, open: ParsedTag, next: InnerStatement) => ENDChooseStatement;
+
+export default function chooseStatement(conditionTag: string, fallbackTag: string): ParseFn {
     return (scanner: Scanner, open: ParsedTag, next: InnerStatement) =>
         parse(scanner, open, conditionTag, fallbackTag, next);
 }
@@ -16,7 +18,8 @@ function parse(scanner: Scanner, open: ParsedTag, conditionTag: string, fallback
     const choose: ENDChooseStatement = {
         type: 'ENDChooseStatement',
         cases: [],
-        start: open.start
+        start: open.start,
+        end: open.end
     };
     let finished = false;
     let tagEntry: ParsedTag;

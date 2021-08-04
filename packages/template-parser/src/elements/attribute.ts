@@ -1,6 +1,5 @@
 import Scanner from '../scanner';
 import { ENDAttributeStatement, ParsedTag } from '../ast';
-import { InnerStatement } from './utils';
 import { emptyBody } from '../tag';
 
 /**
@@ -8,11 +7,13 @@ import { emptyBody } from '../tag';
  * @param scanner
  * @param openTag
  */
-export default function attributeStatement(scanner: Scanner, openTag: ParsedTag, next?: InnerStatement): ENDAttributeStatement {
+export default function attributeStatement(scanner: Scanner, openTag: ParsedTag): ENDAttributeStatement {
     // TODO extract class directives
     emptyBody(scanner, openTag);
     return {
         type: 'ENDAttributeStatement',
+        start: openTag.start,
+        end: openTag.end,
         attributes: openTag.attributes,
         directives: openTag.directives,
         loc: openTag.loc
