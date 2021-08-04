@@ -1,5 +1,5 @@
 import { elem } from './dom';
-import { assign, obj, getObjectDescriptors, captureError, nextTick } from './utils';
+import { assign, obj, getObjectDescriptors, captureError, nextTick, runtimeError } from './utils';
 import { safeEventListener } from './event';
 import { classNames, setAttributeExpression } from './attribute';
 import { createInjector, Injector } from './injector';
@@ -62,6 +62,17 @@ export interface Component<P = Data, S = Data, T = Store | undefined> extends HT
 	setState(value: Partial<S>): void;
 }
 
+type HookCallback = () => void;
+
+interface ComponentHooks {
+	init: [];
+	didChange: HookCallback[];
+	willMount: HookCallback[];
+	didMount: HookCallback[];
+	willRender: HookCallback[];
+	willUpdate: HookCallback[];
+}
+
 /**
  * Internal Endorphin component descriptor
  */
@@ -77,6 +88,9 @@ interface ComponentModel {
 
 	/** Runtime variables */
 	vars: object;
+
+	/** Hooks callbacks */
+	hooks: ComponentHooks;
 
 	/**
 	 * A function for updating rendered component content. Might be available
@@ -264,7 +278,15 @@ export function createComponentFromElement(el: HTMLElement | Component, definiti
 		events,
 		plugins,
 		partialDeps: null,
-		defaultProps: props
+		defaultProps: props,
+		hooks: {
+			init: [],
+			didChange: [],
+			willMount: [],
+			didMount: [],
+			willRender: [],
+			willUpdate: []
+		}
 	};
 
 	runHook(element, 'init');
@@ -297,8 +319,14 @@ export function mountComponent(component: Component, props?: object) {
 	componentModel.preparing = false;
 	componentModel.update = captureError(component, definition.default, component, getScope(component));
 	componentModel.mounted = true;
+
+	runCallbacks(component, 'willRender');
 	runHook(component, 'didRender', arg);
+
+	runCallbacks(component, 'willMount');
 	runHook(component, 'didMount', arg);
+
+	runCallbacks(component, 'didChange');
 }
 
 /**
@@ -346,6 +374,8 @@ export function unmountComponent(component: Component): void {
 	captureError(component, dispose, getScope(component));
 
 	runHook(component, 'didUnmount');
+	runCallbacks(component, 'didMount');
+	runCallbacks(component, 'init');
 
 	// @ts-ignore: Nulling disposed object
 	component.componentModel = null;
@@ -415,8 +445,14 @@ export function renderComponent(component: Component, changes?: Changes) {
 	runHook(component, 'willRender', arg);
 	componentModel.preparing = false;
 	captureError(component, componentModel.update, component, getScope(component));
+
+	runCallbacks(component, 'willRender');
 	runHook(component, 'didRender', arg);
+
+	runCallbacks(component, 'willUpdate');
 	runHook(component, 'didUpdate', arg);
+
+	runCallbacks(component, 'didChange');
 }
 
 /**
@@ -656,4 +692,24 @@ function partialDepsUpdated(prev: PartialDeps | null, next: PartialDeps) {
 	}
 
 	return false;
+}
+
+/**
+ * Runs hook callbacks
+ */
+function runCallbacks(component: Component, name: keyof ComponentHooks): void {
+	const callbacks = component.componentModel.hooks[name];
+	if (callbacks !== undefined) {
+		for (let i = 0; i < callbacks.length; i++) {
+			try {
+				callbacks[i]();
+			} catch (error) {
+				runtimeError(component, error);
+				// tslint:disable-next-line:no-console
+				console.error(error);
+			}
+		}
+
+		callbacks.length = 0;
+	}
 }
