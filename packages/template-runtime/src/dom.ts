@@ -1,4 +1,4 @@
-type TextNode = Text & { $value: any };
+type TextNode = Text & { $value: unknown };
 
 /**
  * Shorthand for `elem.appendChild()` for better minification
@@ -57,18 +57,18 @@ export function text(value: string): TextNode {
 /**
  * Creates text node with given value
  */
-function textNode(value: any): Text {
-	return document.createTextNode(value != null ? value : '');
+function textNode(value: unknown): Text {
+	return document.createTextNode(value != null ? value as string : '');
 }
 
 /**
  * Updates given text node value, if required
  * @returns Returns `1` if text was updated, `0` otherwise
  */
-export function updateText(node: TextNode, value: any): number {
+export function updateText(node: TextNode, value: unknown): number {
 	if (value !== node.$value) {
 		// node.nodeValue = textValue(value);
-		node.nodeValue = value != null ? value : '';
+		node.nodeValue = value != null ? value as string : '';
 		node.$value = value;
 		return 1;
 	}
@@ -95,9 +95,8 @@ export function domInsert<T extends Node>(node: T, parent: Node, anchor?: Node):
 
 /**
  * Removes given DOM node from its tree
- * @param {Node} node
  */
-export function domRemove(node: Node) {
+export function domRemove(node: Node): void {
 	const { parentNode } = node;
 	parentNode && parentNode.removeChild(node);
 }

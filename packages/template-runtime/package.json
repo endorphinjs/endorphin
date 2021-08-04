@@ -7,10 +7,9 @@
   "types": "./dist/runtime.d.ts",
   "scripts": {
     "test": "mocha",
-    "lint": "tslint ./src/**/*.ts",
-    "build": "rollup -c && npm run types",
+    "lint": "eslint ./src/**/*.ts",
+    "build": "rollup -c",
     "watch": "rollup -wc",
-    "types": "tsc -p ./tsconfig.declaration.json",
     "clean": "rm -rf ./dist",
     "prepare": "npm run lint && npm test && npm run clean && npm run build"
   },
@@ -24,14 +23,16 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@endorphinjs/template-compiler": "^0.8.7",
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^12.11.1",
-    "mocha": "^6.2.2",
-    "rollup": "^1.25.1",
-    "rollup-plugin-typescript": "^1.0.1",
-    "ts-node": "^8.4.1",
-    "tslint": "^5.20.0",
-    "typescript": "^3.6.4"
+    "@rollup/plugin-typescript": "^8.2.5",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.4.11",
+    "@typescript-eslint/eslint-plugin": "^4.29.0",
+    "@typescript-eslint/parser": "^4.29.0",
+    "eslint": "^7.32.0",
+    "mocha": "^9.0.3",
+    "rollup": "^2.55.1",
+    "ts-node": "^10.1.0",
+    "typescript": "^4.3.5"
   },
   "directories": {
     "lib": "lib",

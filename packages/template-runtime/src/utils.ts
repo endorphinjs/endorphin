@@ -6,14 +6,14 @@ export const animatingKey = '$$animating';
 /**
  * Creates fast object
  */
-export function obj(proto: any = null): {} {
+export function obj(proto: any = null): Record<string, unknown> {
 	return Object.create(proto);
 }
 
 /**
  * Check if given value id defined, e.g. not `null`, `undefined` or `NaN`
  */
-export function isDefined(value: any): boolean {
+export function isDefined(value: unknown): boolean {
 	return value != null && value === value;
 }
 
@@ -28,7 +28,7 @@ export function changeSet(): ChangeSet {
  * Returns properties from `next` which were changed since `prev` state.
  * Returns `null` if there are no changes
  */
-export function changed(next: any, prev: any, prefix = ''): Changes | null {
+export function changed(next: Record<string, unknown>, prev: Record<string, unknown>, prefix = ''): Changes | null {
 	const result: Changes = obj();
 	let dirty = false;
 
@@ -56,11 +56,13 @@ export function cssScope(el: HTMLElement, host?: Component): HTMLElement {
 }
 
 // tslint:disable-next-line:only-arrow-functions
-const assign = Object.assign || function(target: any) {
+const assign = Object.assign || function (target: Record<string, unknown>) {
 	for (let i = 1, source: any; i < arguments.length; i++) {
-		source = arguments[i];
+		// eslint-disable-next-line prefer-rest-params
+		source = arguments[i] as Record<string, unknown>;
 
 		for (const p in source) {
+			// eslint-disable-next-line no-prototype-builtins
 			if (source.hasOwnProperty(p)) {
 				target[p] = source[p];
 			}
@@ -95,10 +97,11 @@ export { assign, getObjectDescriptors };
  * Assign data from `next` to `prev` if there are any updates
  * @return Returns `true` if data was assigned
  */
-export function assignIfNeeded(prev: any, next: any): boolean {
+export function assignIfNeeded(prev: Record<string, unknown>, next: Record<string, unknown>): boolean {
 	for (const p in next) {
+		// eslint-disable-next-line no-prototype-builtins
 		if (next.hasOwnProperty(p) && prev[p] !== next[p]) {
-			return assign(prev, next);
+			return assign(prev, next) ? true : false;
 		}
 	}
 
@@ -124,7 +127,7 @@ export function captureError<T, U, Y>(host: Component, fn?: (p1?: T, p2?: U) => 
 	}
 }
 
-export function runtimeError(host: Component, error: Error) {
+export function runtimeError(host: Component, error: Error): void {
 	if (typeof CustomEvent !== 'undefined') {
 		host.dispatchEvent(new CustomEvent('runtime-error', {
 			bubbles: true,

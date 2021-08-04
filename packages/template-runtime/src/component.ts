@@ -7,9 +7,9 @@ import { runHook } from './hooks';
 import { getScope } from './scope';
 import { Changes, Data, UpdateTemplate, MountTemplate } from './types';
 import { Store } from './store';
-import { notifySlotUpdate } from './slot';
+import { notifySlotUpdate, SlotContext } from './slot';
 
-type DescriptorMap = object & { [x: string]: PropertyDescriptor };
+type DescriptorMap = Record<string, PropertyDescriptor>;
 export interface RefMap { [key: string]: Element | null; }
 
 export type ComponentEventHandler = (component: Component, event: Event, target: HTMLElement) => void;
@@ -87,7 +87,7 @@ interface ComponentModel {
 	input: Injector;
 
 	/** Runtime variables */
-	vars: object;
+	vars: Record<string, unknown>;
 
 	/** Hooks callbacks */
 	hooks: ComponentHooks;
@@ -111,7 +111,7 @@ interface ComponentModel {
 	preparing: boolean;
 
 	/** Default props values */
-	defaultProps: object;
+	defaultProps: Record<string, unknown>;
 
 	partialDeps: PartialDeps | null;
 }
@@ -130,7 +130,7 @@ export interface ComponentDefinition {
 	methods?: { [name: string]: (this: Component) => void; };
 
 	/** Methods and properties to extend component with */
-	extend?: object;
+	extend?: Record<string, unknown>;
 
 	/** List of plugins for current component of factory method for producing plugins */
 	plugins?: ComponentDefinition[] | PluginFactory;
@@ -147,10 +147,10 @@ export interface ComponentDefinition {
 	default?: MountTemplate;
 
 	/** Initial props factory */
-	props?(component: Component): {};
+	props?(component: Component): Record<string, unknown>;
 
 	/** Initial state factory */
-	state?(component: Component): {};
+	state?(component: Component): Record<string, unknown>;
 
 	/** Returns instance of store used for components */
 	store?(): Store;
@@ -245,7 +245,7 @@ export function createComponentFromElement(el: HTMLElement | Component, definiti
 
 	const { props, state, extend, events, plugins } = prepare(element, definition);
 
-	element.refs = obj();
+	element.refs = obj() as RefMap;
 	element.props = obj();
 	element.state = state;
 	element.componentView = element; // XXX Should point to Shadow Root in Web Components
@@ -265,7 +265,7 @@ export function createComponentFromElement(el: HTMLElement | Component, definiti
 
 	// Create slotted input
 	const input = createInjector(element.componentView);
-	input.slots = obj();
+	input.slots = obj() as Record<string, SlotContext>;
 
 	element.componentModel = {
 		definition,
@@ -297,7 +297,7 @@ export function createComponentFromElement(el: HTMLElement | Component, definiti
 /**
  * Mounts given component
  */
-export function mountComponent(component: Component, props?: object) {
+export function mountComponent(component: Component, props?: Record<string, unknown>): void {
 	const { componentModel } = component;
 	const { input, definition } = componentModel;
 	const changes = setPropsInternal(component, props || componentModel.defaultProps);
@@ -332,7 +332,7 @@ export function mountComponent(component: Component, props?: object) {
 /**
  * Updates given mounted component
  */
-export function updateComponent(component: Component, props?: object, partialDeps?: PartialDeps): number {
+export function updateComponent(component: Component, props?: Record<string, unknown>, partialDeps?: PartialDeps): number {
 	const { componentModel } = component;
 	let changes = props && setPropsInternal(component, props);
 
@@ -384,7 +384,7 @@ export function unmountComponent(component: Component): void {
 /**
  * Subscribes to store updates of given component
  */
-export function subscribeStore(component: Component, keys?: string[]) {
+export function subscribeStore(component: Component, keys?: string[]): void {
 	if (!component.store) {
 		throw new Error(`Store is not defined for ${component.nodeName} component`);
 	}
@@ -406,7 +406,7 @@ function renderNext(component: Component, changes?: Changes) {
 /**
  * Schedules render of given component on next tick
  */
-export function scheduleRender(component: Component, changes?: Changes) {
+export function scheduleRender(component: Component, changes?: Changes): void {
 	if (!component.componentModel.queued) {
 		component.componentModel.queued = true;
 		if (renderQueue) {
@@ -430,7 +430,7 @@ export function scheduleRender(component: Component, changes?: Changes) {
 /**
  * Renders given component
  */
-export function renderComponent(component: Component, changes?: Changes) {
+export function renderComponent(component: Component, changes?: Changes): void {
 	const { componentModel } = component;
 	const arg = changes || {};
 
@@ -469,7 +469,7 @@ function kebabCase(ch: string): string {
 	return '-' + ch.toLowerCase();
 }
 
-function setPropsInternal(component: Component, nextProps: object): Changes | undefined {
+function setPropsInternal(component: Component, nextProps: Record<string, unknown>): Changes | undefined {
 	let changes: Changes | undefined;
 	const { props } = component;
 	const { defaultProps } = component.componentModel;
@@ -507,7 +507,7 @@ function setPropsInternal(component: Component, nextProps: object): Changes | un
 /**
  * Check if `next` contains value that differs from one in `prev`
  */
-function hasChanges(prev: {}, next: {}): boolean {
+function hasChanges(prev: Record<string, unknown>, next: Record<string, unknown>): boolean {
 	for (const p in next) {
 		if (next[p] !== prev[p]) {
 			return true;
@@ -575,13 +575,13 @@ function collectPlugins(component: Component, definition: ComponentDefinition, d
  * Extracts property descriptors from given source object and merges it with `prev`
  * descriptor map, if given
  */
-function getDescriptors(source: object, prev?: DescriptorMap): DescriptorMap {
+function getDescriptors(source: Record<string, unknown>, prev?: DescriptorMap): DescriptorMap {
 	const descriptors = getObjectDescriptors(source);
 	return prev ? assign(prev, descriptors) : descriptors;
 }
 
 function createEventsMap(component: Component): AttachedStaticEvents {
-	const listeners: { [event: string]: ComponentEventHandler[]; } = obj();
+	const listeners = obj() as Record<string, ComponentEventHandler[]>;
 
 	const handler: StaticEventHandler = function(this: HTMLElement, evt: Event) {
 		if (component.componentModel) {

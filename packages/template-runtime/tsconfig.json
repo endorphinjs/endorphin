@@ -6,8 +6,13 @@
     "alwaysStrict": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
-    "module": "commonjs",
+    "module": "ESNext",
     "outDir": "./dist"
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
   },
   "include": ["src/*.ts"]
 }

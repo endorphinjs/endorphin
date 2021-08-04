@@ -52,7 +52,7 @@ let blocked = false;
 /**
  * Starts animation on given element
  */
-export function animate(elem: HTMLElement, animation: string | TweenFactory, callback?: Callback) {
+export function animate(elem: HTMLElement, animation: string | TweenFactory, callback?: Callback): void {
 	if (!blocked && animation) {
 		if (typeof animation === 'function') {
 			tweenAnimate(elem, animation, callback);
@@ -69,7 +69,7 @@ export function animate(elem: HTMLElement, animation: string | TweenFactory, cal
 /**
  * Starts CSS animation on given element
  */
-export function cssAnimate(elem: HTMLElement, animation: string, callback?: Callback) {
+export function cssAnimate(elem: HTMLElement, animation: string, callback?: Callback): void {
 	// Stop previous animation, if any
 	stopAnimation(elem, true);
 
@@ -123,7 +123,7 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 /**
  * Starts JS animation on given element
  */
-export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callback?: () => void) {
+export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callback?: () => void): void {
 	// Stop previous animation, if any
 	const prevAnim = findTween(elem);
 	stopAnimation(elem, true);
@@ -256,7 +256,7 @@ function tweenLoop(now: number) {
 	}
 }
 
-export function stopAnimation(elem: HTMLElement, cancel?: boolean) {
+export function stopAnimation(elem: HTMLElement, cancel?: boolean): void {
 	const callback: Callback = elem && elem[animatingKey];
 	if (callback) {
 		elem[animatingKey] = null;
@@ -285,7 +285,7 @@ function concat(name: string, suffix: string) {
 	return name + sep + suffix;
 }
 
-function notifyAnimation(elem: Element, stage: string, detail?: {}) {
+function notifyAnimation(elem: Element, stage: string, detail?: Record<string, unknown>) {
 	try {
 		elem.dispatchEvent(new CustomEvent(`animate-${stage}`, {
 			bubbles: false,

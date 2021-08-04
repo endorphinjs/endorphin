@@ -53,14 +53,14 @@ export function listInsertValueAfter<T>(value: T, ref: LinkedListItem<any>): Lin
 /**
  * Removes given item from list
  */
-export function listRemove(list: LinkedList<any>, item: LinkedListItem<any>) {
+export function listRemove(list: LinkedList<any>, item: LinkedListItem<any>): void {
 	listDetachFragment(list, item, item);
 }
 
 /**
  * Moves list fragment with `start` and `end` bounds right after `ref` item
  */
-export function listMoveFragmentAfter(list: LinkedList<any>, start: LinkedListItem<any>, end: LinkedListItem<any>, ref: LinkedListItem<any>) {
+export function listMoveFragmentAfter(list: LinkedList<any>, start: LinkedListItem<any>, end: LinkedListItem<any>, ref: LinkedListItem<any>): void {
 	listDetachFragment(list, start, end);
 
 	if (end.next = ref.next) {
@@ -74,7 +74,7 @@ export function listMoveFragmentAfter(list: LinkedList<any>, start: LinkedListIt
 /**
  * Moves list fragment with `start` and `end` to list head
  */
-export function listMoveFragmentFirst(list: LinkedList<any>, start: LinkedListItem<any>, end: LinkedListItem<any>) {
+export function listMoveFragmentFirst(list: LinkedList<any>, start: LinkedListItem<any>, end: LinkedListItem<any>): void {
 	listDetachFragment(list, start, end);
 
 	if (end.next = list.head) {
@@ -87,7 +87,7 @@ export function listMoveFragmentFirst(list: LinkedList<any>, start: LinkedListIt
 /**
  * Detaches list fragment with `start` and `end` from list
  */
-export function listDetachFragment(list: LinkedList<any>, start: LinkedListItem<any>, end: LinkedListItem<any>) {
+export function listDetachFragment(list: LinkedList<any>, start: LinkedListItem<any>, end: LinkedListItem<any>): void {
 	const { prev } = start;
 	const { next } = end;
 

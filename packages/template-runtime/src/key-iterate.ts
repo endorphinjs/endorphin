@@ -56,7 +56,7 @@ export function mountKeyIterator(host: Component, injector: Injector, get: Rende
 export function updateKeyIterator(block: KeyIteratorBlock): number {
 	const { host, injector, rendered } = block;
 	injector.ptr = block.start;
-	block.used = obj();
+	block.used = obj() as ItemLookup;
 	block.index = block.updated = 0;
 	block.needReorder = false;
 
@@ -82,11 +82,11 @@ export function updateKeyIterator(block: KeyIteratorBlock): number {
 	return block.updated;
 }
 
-export function unmountKeyIterator(block: KeyIteratorBlock) {
+export function unmountKeyIterator(block: KeyIteratorBlock): void {
 	disposeBlock(block);
 }
 
-export function clearKeyIterator(block: KeyIteratorBlock) {
+export function clearKeyIterator(block: KeyIteratorBlock): void {
 	disposeBlock(block, true);
 }
 

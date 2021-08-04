@@ -4,7 +4,7 @@ import { Data } from './types';
 
 const prefix = '$';
 
-type StoreUpdateHandler = (state: any, changes: object) => void;
+type StoreUpdateHandler = (state: any, changes: Record<string, unknown>) => void;
 
 export interface StoreUpdateEntry {
 	keys?: string[];
@@ -14,7 +14,7 @@ export interface StoreUpdateEntry {
 
 export class Store<T = Data> {
 	data: T;
-	sync: boolean = false;
+	sync = false;
 	private listeners: StoreUpdateEntry[] = [];
 
 	constructor(data?: T) {
@@ -32,7 +32,7 @@ export class Store<T = Data> {
 	 * Updates data in store
 	 */
 	set(data: Partial<T>): void {
-		const updated = changed(data, this.data, prefix);
+		const updated = changed(data, this.data as Record<string, unknown>, prefix);
 		const render = this.sync ? renderComponent : scheduleRender;
 
 		if (updated) {
@@ -71,7 +71,7 @@ export class Store<T = Data> {
 	/**
 	 * Unsubscribes from further updates
 	 */
-	unsubscribe(obj: StoreUpdateEntry) {
+	unsubscribe(obj: StoreUpdateEntry): void {
 		const ix = this.listeners.indexOf(obj);
 		if (ix !== -1) {
 			this.listeners.splice(ix, 1);
@@ -81,7 +81,7 @@ export class Store<T = Data> {
 	/**
 	 * Watches for updates of given `keys` in store and runs `component` render on change
 	 */
-	watch(component: Component, keys?: string[]) {
+	watch(component: Component, keys?: string[]): void {
 		this.listeners.push({
 			component,
 			keys: scopeKeys(keys, prefix)
@@ -90,9 +90,8 @@ export class Store<T = Data> {
 
 	/**
 	 * Stops watching for store updates for given component
-	 * @param {Component} component
 	 */
-	unwatch(component: Component) {
+	unwatch(component: Component): void {
 		for (let i = 0; i < this.listeners.length; i++) {
 			if (this.listeners[i].component === component) {
 				this.listeners.splice(i, 1);
@@ -103,11 +102,8 @@ export class Store<T = Data> {
 
 /**
  * Check if any of `keys` was changed in `next` object since `prev` state
- * @param {string[]} keys
- * @param {Object} updated
- * @return {boolean}
  */
-function hasChange(keys: string[], updated: object): boolean {
+function hasChange(keys: string[], updated: Record<string, unknown>): boolean {
 	for (let i = 0; i < keys.length; i++) {
 		if (keys[i] in updated) {
 			return true;

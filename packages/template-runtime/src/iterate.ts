@@ -54,15 +54,15 @@ export function updateIterator(block: IteratorBlock): number {
 	return block.updated;
 }
 
-export function unmountIterator(block: IteratorBlock) {
+export function unmountIterator(block: IteratorBlock): void {
 	disposeBlock(block);
 }
 
-export function clearIterator(block: IteratorBlock) {
+export function clearIterator(block: IteratorBlock): void {
 	disposeBlock(block, true);
 }
 
-export function prepareScope(scope: Scope, index: number, key: any, value: any): Scope {
+export function prepareScope(scope: Scope, index: number, key: unknown, value: unknown): Scope {
 	scope.index = index;
 	scope.key = key;
 	scope.value = value;

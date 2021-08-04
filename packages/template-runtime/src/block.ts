@@ -47,10 +47,10 @@ export function updateBlock(block: FunctionBlock): number {
 	return updated;
 }
 
-export function unmountBlock(block: FunctionBlock) {
+export function unmountBlock(block: FunctionBlock): void {
 	disposeBlock(block);
 }
 
-export function clearBlock(block: FunctionBlock) {
+export function clearBlock(block: FunctionBlock): void {
 	disposeBlock(block, true);
 }

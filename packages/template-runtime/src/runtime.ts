@@ -26,7 +26,7 @@ interface ComponentOptions {
 	target?: HTMLElement;
 
 	/** Initial component props */
-	props?: {};
+	props?: Record<string, unknown>;
 
 	/** Store for component */
 	store?: Store;
@@ -55,13 +55,12 @@ export default function endorphin(name: string, definition: ComponentDefinition,
 
 /**
  * Safe property getter
- * @param {*} ctx
- * @param {*} ...args
- * @returns {*}
  */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function get(ctx: any): any {
 	const hasMap = typeof Map !== 'undefined';
 	for (let i = 1, il = arguments.length, arg: any; ctx != null && i < il; i++) {
+		// eslint-disable-next-line prefer-rest-params
 		arg = arguments[i];
 		if (hasMap && ctx instanceof Map) {
 			ctx = ctx.get(arg);
@@ -76,7 +75,7 @@ export function get(ctx: any): any {
 /**
  * Invokes `methodName` of `ctx` object with given args
  */
-export function call(ctx: any, methodName: string, args?: any[]): any {
+export function call(ctx: Record<string, unknown>, methodName: string, args?: any[]): any {
 	const method = ctx != null && ctx[methodName];
 	if (typeof method === 'function') {
 		return args ? method.apply(ctx, args) : method.call(ctx);

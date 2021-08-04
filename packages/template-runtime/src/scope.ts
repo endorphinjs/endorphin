@@ -5,7 +5,7 @@ import { Component } from './component';
 /**
  * Enters new variable scope context
  */
-export function enterScope(host: Component, incoming?: any): Scope {
+export function enterScope(host: Component, incoming?: Record<string, unknown>): Scope {
 	return setScope(host, createScope(host, incoming));
 }
 
@@ -19,7 +19,7 @@ export function exitScope(host: Component): Scope {
 /**
  * Creates new scope from given component state
  */
-export function createScope(host: Component, incoming?: any): Scope {
+export function createScope(host: Component, incoming?: Record<string, unknown>): Scope {
 	return assign(obj(host.componentModel.vars), incoming);
 }
 
@@ -61,6 +61,6 @@ export function getVar(elem: Component, name: string): any {
 /**
  * Sets value of given runtime variable for component
  */
-export function setVar(elem: Component, name: string, value: any) {
+export function setVar(elem: Component, name: string, value: unknown): void {
 	elem.componentModel.vars[name] = value;
 }

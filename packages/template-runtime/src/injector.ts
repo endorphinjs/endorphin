@@ -16,7 +16,7 @@ export interface Injector extends LinkedList {
 	ptr: LinkedListItem | null;
 
 	/** Slots container */
-	slots: { [name: string]: SlotContext } | null;
+	slots: Record<string, SlotContext> | null;
 }
 
 export interface Block {
@@ -106,7 +106,8 @@ export function emptyBlockContent<T extends Block>(block: T, detached?: boolean)
 	let item = block.start.next;
 	while (item && item !== block.end) {
 		// tslint:disable-next-line:prefer-const
-		let { value, next, prev } = item;
+		let { next } = item;
+		const { value, prev } = item;
 
 		if (!isElement(value)) {
 			next = value.end.next;
@@ -126,7 +127,7 @@ export function emptyBlockContent<T extends Block>(block: T, detached?: boolean)
 /**
  * Moves contents of `block` after `ref` list item
  */
-export function move<T extends Node, B extends Block>(injector: Injector, block: B, ref?: LinkedListItem<T | Block>) {
+export function move<T extends Node, B extends Block>(injector: Injector, block: B, ref?: LinkedListItem<T | Block>): void {
 	if (ref && ref.next && ref.next.value === block) {
 		return;
 	}
@@ -158,7 +159,7 @@ export function move<T extends Node, B extends Block>(injector: Injector, block:
 /**
  * Disposes given block
  */
-export function disposeBlock(block: Block, detached?: boolean) {
+export function disposeBlock(block: Block, detached?: boolean): void {
 	emptyBlockContent(block, detached);
 	listDetachFragment(block.injector, block.start, block.end);
 

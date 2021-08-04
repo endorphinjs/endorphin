@@ -12,20 +12,20 @@ interface UseDirectiveInternal {
 	directive?: UseDirectiveResult;
 }
 
-export function mountUse(host: Component, elem: HTMLElement, factory: UseDirectiveFactory, param?: any): UseDirectiveInternal {
+export function mountUse(host: Component, elem: HTMLElement, factory: UseDirectiveFactory, param?: unknown): UseDirectiveInternal {
 	return {
 		param,
 		directive: factory.call(host, elem, param)
 	};
 }
 
-export function updateUse(data: UseDirectiveInternal, param?: any): void {
+export function updateUse(data: UseDirectiveInternal, param?: unknown): void {
 	if (param !== data.param && data.directive && data.directive.update) {
 		data.directive.update(data.param = param);
 	}
 }
 
-export function unmountUse(data: UseDirectiveInternal) {
+export function unmountUse(data: UseDirectiveInternal): void {
 	if (data.directive && data.directive.destroy) {
 		data.directive.destroy();
 	}

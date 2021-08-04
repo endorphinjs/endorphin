@@ -11,7 +11,7 @@ interface PartialBlock extends Block {
 interface PartialDefinition {
 	host: Component;
 	body: MountBlock;
-	defaults: object;
+	defaults: Record<string, unknown>;
 }
 
 interface PartialsMap {
@@ -19,13 +19,13 @@ interface PartialsMap {
 }
 
 export function getPartial(host: Component, name: string, componentPartials: PartialsMap): PartialDefinition | undefined {
-	return host.props['partial:' + name] || componentPartials[name];
+	return host.props['partial:' + name] as PartialDefinition || componentPartials[name];
 }
 
 /**
  * Mounts given partial into injector context
  */
-export function mountPartial(host: Component, injector: Injector, partial: PartialDefinition, args: object): PartialBlock {
+export function mountPartial(host: Component, injector: Injector, partial: PartialDefinition, args: Record<string, unknown>): PartialBlock {
 	const block = injectBlock<PartialBlock>(injector, {
 		host,
 		injector,
@@ -42,7 +42,7 @@ export function mountPartial(host: Component, injector: Injector, partial: Parti
  * Updates mounted partial
  * @returns Returns `1` if partial was updated, `0` otherwise
  */
-export function updatePartial(block: PartialBlock, partial: PartialDefinition, args: object): number {
+export function updatePartial(block: PartialBlock, partial: PartialDefinition, args: Record<string, unknown>): number {
 	const host = partial.host || block.host;
 	const { injector } = block;
 	const prevHost = block.host;
@@ -79,10 +79,10 @@ export function updatePartial(block: PartialBlock, partial: PartialDefinition, a
 	return updated;
 }
 
-export function unmountPartial(block: PartialBlock) {
+export function unmountPartial(block: PartialBlock): void {
 	disposeBlock(block);
 }
 
-export function clearPartial(block: PartialBlock) {
+export function clearPartial(block: PartialBlock): void {
 	disposeBlock(block, true);
 }

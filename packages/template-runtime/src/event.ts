@@ -5,7 +5,7 @@ import { Component } from './component';
 interface PendingEvents {
 	target: Element;
 	host: Component;
-	events: { [type: string]: EventBinding | void };
+	events: Record<string, EventBinding | void>;
 }
 
 /**
@@ -27,10 +27,10 @@ export function removeEvent(type: string, binding: EventBinding): void {
  * Creates structure for collecting pending events
  */
 export function pendingEvents(host: Component, target: Element): PendingEvents {
-	return { host, target, events: obj() };
+	return { host, target, events: obj() as Record<string, EventBinding | void> };
 }
 
-export function setPendingEvent(pending: PendingEvents, type: string, listener: ComponentEventListener, scope: Scope) {
+export function setPendingEvent(pending: PendingEvents, type: string, listener: ComponentEventListener, scope: Scope): void {
 	let binding = pending.events[type];
 	if (binding) {
 		binding.listener = listener;
@@ -41,7 +41,7 @@ export function setPendingEvent(pending: PendingEvents, type: string, listener: 
 	binding.pending = listener;
 }
 
-export function finalizePendingEvents(pending: PendingEvents) {
+export function finalizePendingEvents(pending: PendingEvents): void {
 	// For event listeners, we should only bind or unbind events, depending
 	// on current listener value
 	const { events } = pending;
@@ -57,7 +57,7 @@ export function finalizePendingEvents(pending: PendingEvents) {
 	}
 }
 
-export function detachPendingEvents(pending: PendingEvents) {
+export function detachPendingEvents(pending: PendingEvents): void {
 	const { events } = pending;
 	for (const type in events) {
 		const binding = events[type];

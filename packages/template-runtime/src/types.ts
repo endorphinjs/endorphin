@@ -26,7 +26,7 @@ export interface Scope {
 }
 
 export interface Data {
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 export interface ChangeSet<T = any> {
@@ -34,7 +34,7 @@ export interface ChangeSet<T = any> {
 	cur: { [name: string]: T | null };
 }
 
-export type Changes<T = any> = {
+export type Changes<T = unknown> = {
 	[P in keyof T]?: {
 		current: T[P] | null,
 		prev: T[P] | null

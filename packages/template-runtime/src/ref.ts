@@ -3,7 +3,7 @@ import { Component, RefMap } from './component';
 /**
  * Adds given element as a named ref
  */
-export function setRef(host: Component, key: string, elem: Element) {
+export function setRef(host: Component, key: string, elem: Element): void {
 	elem.setAttribute(getRefAttr(key, host), '');
 	host.refs[key] = elem;
 }
@@ -11,7 +11,7 @@ export function setRef(host: Component, key: string, elem: Element) {
 /**
  * Removes ref for given key
  */
-export function removeRef(host: Component, key: string) {
+export function removeRef(host: Component, key: string): void {
 	// NB: Do not remove ref attribute in order to keep CSS styles for animated
 	// ref’ed element (`animate:out`). In case if its introduces unexpected side
 	// effects, update compiler to properly unmount refs but keep HTML attribute
@@ -23,13 +23,13 @@ export function removeRef(host: Component, key: string) {
 	host.refs[key] = null;
 }
 
-export function setPendingRef(pending: RefMap, key: string | void, elem: Element | null) {
+export function setPendingRef(pending: RefMap, key: string | void, elem: Element | null): void {
 	if (key && elem) {
 		pending[key] = elem;
 	}
 }
 
-export function finalizePendingRefs(host: Component, pending: RefMap) {
+export function finalizePendingRefs(host: Component, pending: RefMap): void {
 	for (const key in pending) {
 		const prev = host.refs[key];
 		const next = pending[key];

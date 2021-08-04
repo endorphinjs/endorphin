@@ -48,11 +48,11 @@ export function updateInnerHTML(block: InnerHtmlBlock): number {
 	return 0;
 }
 
-export function unmountInnerHTML(block: InnerHtmlBlock) {
+export function unmountInnerHTML(block: InnerHtmlBlock): void {
 	disposeBlock(block);
 }
 
-export function clearInnerHTML(block: InnerHtmlBlock) {
+export function clearInnerHTML(block: InnerHtmlBlock): void {
 	disposeBlock(block, true);
 }
 

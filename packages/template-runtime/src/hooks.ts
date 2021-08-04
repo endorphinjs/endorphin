@@ -6,7 +6,7 @@ type HookCallback = (dfn: ComponentDefinition) => void;
 /**
  * Walks over each definition (including given one) and runs callback on it
  */
-export function walkDefinitions(component: Component, definition: ComponentDefinition, fn: HookCallback) {
+export function walkDefinitions(component: Component, definition: ComponentDefinition, fn: HookCallback): void {
 	captureError(component, fn, definition);
 	const { plugins } = definition;
 	if (plugins) {
@@ -19,7 +19,7 @@ export function walkDefinitions(component: Component, definition: ComponentDefin
 /**
  * Same as `walkDefinitions` but runs in reverse order
  */
-export function reverseWalkDefinitions(component: Component, definition: ComponentDefinition, fn: HookCallback) {
+export function reverseWalkDefinitions(component: Component, definition: ComponentDefinition, fn: HookCallback): void {
 	const { plugins } = definition;
 	if (plugins) {
 		let i = plugins.length;
@@ -34,7 +34,7 @@ export function reverseWalkDefinitions(component: Component, definition: Compone
 /**
  * Invokes `name` hook for given component definition
  */
-export function runHook<T, U>(component: Component, name: string, arg1?: T, arg2?: U) {
+export function runHook<T, U>(component: Component, name: string, arg1?: T, arg2?: U): void {
 	const { plugins, hooks } = component.componentModel;
 	const callbacks: HookCallback[] | undefined = hooks[name];
 

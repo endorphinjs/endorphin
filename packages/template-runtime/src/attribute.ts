@@ -24,7 +24,7 @@ const nsProto = obj();
 /**
  * Create pending props change set
  */
-export function propsSet(elem: Component, initial?: {}): {} {
+export function propsSet(elem: Component, initial?: Record<string, unknown>): Record<string, unknown> {
 	const base = obj(elem.componentModel.defaultProps);
 	return initial ? assign(base, initial) : base;
 }
@@ -32,8 +32,8 @@ export function propsSet(elem: Component, initial?: {}): {} {
 /**
  * Alias for `elem.setAttribute`
  */
-export function setAttribute(elem: Element, name: string, value: any) {
-	elem.setAttribute(name, value);
+export function setAttribute<T = unknown>(elem: Element, name: string, value: T): T {
+	elem.setAttribute(name, value as unknown as string);
 	return value;
 }
 
@@ -41,7 +41,7 @@ export function setAttribute(elem: Element, name: string, value: any) {
  * Updates element’s `name` attribute value only if it differs from previous value,
  * defined in `prev`
  */
-export function updateAttribute(elem: Element, prev: ValueMap, name: string, value: any): number {
+export function updateAttribute(elem: Element, prev: ValueMap, name: string, value: unknown): number {
 	if (value !== prev[name]) {
 		const primitive = representedValue(value);
 		if (primitive === null) {
@@ -59,15 +59,15 @@ export function updateAttribute(elem: Element, prev: ValueMap, name: string, val
 /**
  * Alias for `elem.className`
  */
-export function setClass(elem: Element, value: any) {
-	elem.className = value;
+export function setClass<T = unknown>(elem: Element, value: T): T {
+	elem.className = value as unknown as string;
 	return value;
 }
 
 /**
  * Shorthand to update class name, specific to Endorphin compiled code
  */
-export function updateClass(elem: Element, prev: ValueMap, value: any) {
+export function updateClass(elem: Element, prev: ValueMap, value: unknown): number {
 	return updateAttribute(elem, prev, 'class', value === '' ? undefined : value);
 }
 
@@ -77,7 +77,7 @@ export function updateClass(elem: Element, prev: ValueMap, value: any) {
  * converted to string representations. Also, expression resolved to `false`,
  * `null` or `undefined` will remove attribute from element
  */
-export function setAttributeExpression(elem: Element, name: string, value: any) {
+export function setAttributeExpression<T = unknown>(elem: Element, name: string, value: T): T {
 	const primitive = representedValue(value);
 	primitive === null
 		? elem.removeAttribute(name)
@@ -88,8 +88,8 @@ export function setAttributeExpression(elem: Element, name: string, value: any) 
 /**
  * Alias for `elem.setAttributeNS`
  */
-export function setAttributeNS(elem: Element, ns: string, name: string, value: any) {
-	elem.setAttributeNS(ns, name, value);
+export function setAttributeNS<T = unknown>(elem: Element, ns: string, name: string, value: T): T {
+	elem.setAttributeNS(ns, name, value as unknown as string);
 	return value;
 }
 
@@ -97,7 +97,7 @@ export function setAttributeNS(elem: Element, ns: string, name: string, value: a
  * Updates element’s `name` attribute value only if it differs from previous value,
  * defined in `prev`
  */
-export function updateAttributeNS(elem: Element, prevNS: ValueMapNS, ns: string, name: string, value: any): number {
+export function updateAttributeNS(elem: Element, prevNS: ValueMapNS, ns: string, name: string, value: unknown): number {
 	const prev = ns in prevNS ? prevNS[ns] : (prevNS[ns] = obj());
 	if (value !== prev[name]) {
 		const primitive = representedValue(value);
@@ -116,7 +116,7 @@ export function updateAttributeNS(elem: Element, prevNS: ValueMapNS, ns: string,
 /**
  * Same as `setAttributeExpression()` but for namespaced attributes
  */
-export function setAttributeExpressionNS(elem: Element, ns: string, name: string, value: any) {
+export function setAttributeExpressionNS<T = unknown>(elem: Element, ns: string, name: string, value: T): T {
 	const primitive = representedValue(value);
 	primitive === null
 		? elem.removeAttributeNS(ns, name)
@@ -127,7 +127,7 @@ export function setAttributeExpressionNS(elem: Element, ns: string, name: string
 /**
  * Sets pending namespaced attribute value which will be added to element later
  */
-export function setPendingAttributeNS(attrs: ValueMapNS, ns: string, name: string, value: any) {
+export function setPendingAttributeNS(attrs: ValueMapNS, ns: string, name: string, value: unknown): void {
 	const map = pendingNS(attrs, ns);
 	map[name] = value;
 }
@@ -135,7 +135,7 @@ export function setPendingAttributeNS(attrs: ValueMapNS, ns: string, name: strin
 /**
  * Updates pending `name` value only if given `value` is not null
  */
-export function updatePendingAttribute(attrs: ValueMap, name: string, value: any) {
+export function updatePendingAttribute(attrs: ValueMap, name: string, value: unknown): void {
 	if (value != null) {
 		attrs[name] = value;
 	}
@@ -144,7 +144,7 @@ export function updatePendingAttribute(attrs: ValueMap, name: string, value: any
 /**
  * Updates pending namespaced `name` value only if given `value` is not null
  */
-export function updatePendingAttributeNS(attrs: ValueMap, ns: string, name: string, value: any) {
+export function updatePendingAttributeNS(attrs: ValueMap, ns: string, name: string, value: unknown): void {
 	if (value != null) {
 		pendingNS(attrs, ns)[name] = value;
 	}
@@ -153,7 +153,7 @@ export function updatePendingAttributeNS(attrs: ValueMap, ns: string, name: stri
 /**
  * Adds given class name to pending attribute set
  */
-export function addPendingClass(data: ValueMap, className: string) {
+export function addPendingClass(data: ValueMap, className: string): void {
 	if (className != null) {
 		const prev = data.class;
 		data.class = prev ? prev + ' ' + className : String(className);
@@ -163,7 +163,7 @@ export function addPendingClass(data: ValueMap, className: string) {
 /**
  * Adds given class name to pending attribute set if condition is truthy
  */
-export function addPendingClassIf(data: ValueMap, className: string, condition: any) {
+export function addPendingClassIf(data: ValueMap, className: string, condition: unknown): void {
 	condition && addPendingClass(data, className);
 }
 
@@ -219,15 +219,15 @@ export function classNames(str: string): string {
 /**
  * Returns value for <input> element
  */
-export function inputValue(value: any) {
-	return value != null ? value : '';
+export function inputValue(value: unknown): string {
+	return value != null ? value as string : '';
 }
 
 /**
  * Updates element’s `name` property value only if it differs from previous value,
  * defined in `prev`
  */
-export function updateProperty(elem: Element, prev: ValueMap, name: string, value: any): number {
+export function updateProperty(elem: Element, prev: ValueMap, name: string, value: unknown): number {
 	if (value !== prev[name]) {
 		elem[name] = name === 'value' ? inputValue(value) : value;
 		prev[name] = value;

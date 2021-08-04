@@ -61,7 +61,7 @@ export function mountSlot(host: Component, name: string, defaultContent?: MountB
 /**
  * Handles possible update of incoming data
  */
-export function updateIncomingSlot(host: Component, name: string, updated: number) {
+export function updateIncomingSlot(host: Component, name: string, updated: number): void {
 	// NB: may receive empty or unmounted component due to running animation
 	// is finished after component was unmounted
 	if (!host || !host.componentModel) {
@@ -93,7 +93,7 @@ export function updateIncomingSlot(host: Component, name: string, updated: numbe
 /**
  * Updates default slot content only if it was already rendered
  */
-export function updateDefaultSlot(ctx: SlotContext) {
+export function updateDefaultSlot(ctx: SlotContext): void {
 	if (ctx.isDefault) {
 		const block = ctx.defaultContent!;
 		if (block.update) {
@@ -105,7 +105,7 @@ export function updateDefaultSlot(ctx: SlotContext) {
 /**
  * Unmounts default content of given slot context
  */
-export function unmountSlot(ctx: SlotContext) {
+export function unmountSlot(ctx: SlotContext): void {
 	const block = ctx.defaultContent;
 	if (block) {
 		disposeBlock(block);
@@ -115,7 +115,7 @@ export function unmountSlot(ctx: SlotContext) {
 	}
 }
 
-export function notifySlotUpdate(host: Component, ctx: SlotContext) {
+export function notifySlotUpdate(host: Component, ctx: SlotContext): void {
 	runHook(host, 'didSlotUpdate', ctx.name, ctx.element);
 }
 
