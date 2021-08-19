@@ -5,7 +5,7 @@ import { classNames, setAttributeExpression } from './attribute';
 import { createInjector, Injector } from './injector';
 import { runHook } from './hooks';
 import { getScope } from './scope';
-import { Changes, Data, UpdateTemplate, MountTemplate } from './types';
+import { Changes, UpdateTemplate, MountTemplate } from './types';
 import { Store } from './store';
 import { notifySlotUpdate, SlotContext } from './slot';
 
@@ -24,7 +24,7 @@ export interface AttachedStaticEvents {
 	};
 }
 
-export interface Component<P = Data, S = Data, T = Store | undefined> extends HTMLElement {
+export interface Component<P = any, S = any, T = Store | undefined> extends HTMLElement {
 	/**
 	 * Pointer to component view container. By default, it’s the same as component
 	 * element, but for native Web Components it points to shadow root
@@ -453,6 +453,10 @@ export function renderComponent(component: Component, changes?: Changes): void {
 	runHook(component, 'didUpdate', arg);
 
 	runCallbacks(component, 'didChange');
+}
+
+export function afterUpdate<C extends Component>(component: C, callback: HookCallback): void {
+	component.componentModel.hooks.willRender.push(callback);
 }
 
 /**

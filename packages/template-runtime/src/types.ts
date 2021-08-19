@@ -25,9 +25,8 @@ export interface Scope {
 	[key: string]: any;
 }
 
-export interface Data {
-	[key: string]: unknown;
-}
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type Data = object;
 
 export interface ChangeSet<T = any> {
 	prev: { [name: string]: T | null };
