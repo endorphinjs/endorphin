@@ -53,16 +53,21 @@ let blocked = false;
  * Starts animation on given element
  */
 export function animate(elem: HTMLElement, animation: string | TweenFactory, callback?: Callback): void {
+	debug(elem, 'request animate', { blocked, animation, callback });
 	if (!blocked && animation) {
 		if (typeof animation === 'function') {
 			tweenAnimate(elem, animation, callback);
 		} else {
+			debug(elem, 'css animate');
 			cssAnimate(elem, animation, callback);
 		}
 	} else if (callback) {
 		// Stop previous animation, if any
+		debug(elem, 'immediate cancel');
 		stopAnimation(elem, true);
 		callback();
+	} else {
+		debug(elem, 'stale animate request');
 	}
 }
 
@@ -80,13 +85,18 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 		direction: callback ? 'out' : 'in'
 	};
 
+	debug(elem, 'run css animation', { animation, prevAnimation, evtPayload });
 	elem[animatingKey] = (cancel?: boolean) => {
+		debug(elem, 'run css completion callback', { cancel });
 		clearTimeout(timer);
 		elem.removeEventListener('animationend', handler);
 		elem.removeEventListener('animationcancel', handler);
 		elem.style.animation = prevAnimation;
 		notifyAnimation(elem, 'end', evtPayload);
-		!cancel && finalizeAnimation(callback);
+		if (!cancel) {
+			debug(elem, 'finalize css animation', { callback });
+			finalizeAnimation(callback);
+		}
 	};
 
 	const handler = (evt: AnimationEvent) => evt.target === elem && stopAnimation(elem);
@@ -103,6 +113,7 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 			const style = window.getComputedStyle(elem, null);
 			if (!style.animationName || style.animationName === 'none') {
 				stopAnimation(elem);
+				debug(elem, 'stop css animation due to global css');
 			} else {
 				// Handle edge case: animation runs but during animation parent
 				// element is unmounted. In this case `animationend` callback won’t
@@ -129,6 +140,7 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 	stopAnimation(elem, true);
 
 	let options = animation(elem);
+	debug(elem, 'tween animation', { prevAnim, options });
 	if (options) {
 		options = assign({}, defaultTween, options);
 
@@ -156,19 +168,34 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 		};
 		pool.push(anim);
 
+		debug(elem, 'push pool', { size: pool.length, evtPayload });
+
 		elem[animatingKey] = (cancel?: boolean) => {
-			pool.splice(pool.indexOf(anim), 1);
+			debug(elem, 'run completion callback', { cancel });
+			const ix = pool.indexOf(anim);
+			if (ix !== -1) {
+				debug(elem, 'remove pool item', { ix });
+				pool.splice(ix, 1);
+			} else {
+				debug(elem, 'no pool item');
+				console.warn('No pool item found for', anim);
+			}
 			options.complete && options.complete(elem, options);
 			notifyAnimation(elem, 'end', evtPayload);
-			!cancel && finalizeAnimation(callback);
+			if (!cancel) {
+				debug(elem, 'finalize animation', { callback });
+				finalizeAnimation(callback);
+			}
 		};
 
 		if (pool.length === 1) {
+			debug(elem, 'start tween loop');
 			tweenLoop(now);
 		}
 
 		notifyAnimation(elem, 'start', evtPayload);
 	} else if (callback) {
+		debug(elem, 'no options, run callback', { callback });
 		callback();
 	}
 }
@@ -258,6 +285,7 @@ function tweenLoop(now: number) {
 
 export function stopAnimation(elem: HTMLElement, cancel?: boolean): void {
 	const callback: Callback = elem && elem[animatingKey];
+	debug(elem, 'stop animation', { cancel, callback });
 	if (callback) {
 		elem[animatingKey] = null;
 		callback(cancel);
@@ -304,4 +332,20 @@ function parseDuration(value?: string): number {
 
 	const ms = value.indexOf('ms') !== -1 ? 1 : 1000;
 	return parseFloat(value) * ms;
+}
+
+function debug(elem: Element, message: string, data?: unknown) {
+	if (typeof window['__endorphinDebug'] === 'undefined') {
+		return;
+	}
+
+	window['__endorphinPool'] = pool;
+
+	const animDebug = elem['__animDebug'] || [];
+	animDebug.push({
+		date: new Date(),
+		message,
+		data
+	});
+	elem['__animDebug'] = animDebug;
 }
