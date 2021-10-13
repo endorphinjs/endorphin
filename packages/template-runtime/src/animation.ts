@@ -174,7 +174,7 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 			debug(elem, 'run completion callback', { cancel });
 			const ix = pool.indexOf(anim);
 			if (ix !== -1) {
-				debug(elem, 'remove pool item', { ix });
+				debug(elem, 'remove pool item', { ix, size: pool.length });
 				pool.splice(ix, 1);
 			} else {
 				debug(elem, 'no pool item');
@@ -188,10 +188,7 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 			}
 		};
 
-		if (pool.length === 1) {
-			debug(elem, 'start tween loop');
-			tweenLoop(now);
-		}
+		resumeTweenLoop();
 
 		notifyAnimation(elem, 'start', evtPayload);
 	} else if (callback) {
@@ -257,7 +254,7 @@ function finalizeAnimation(callback?: () => void) {
 	}
 }
 
-function tweenLoop(now: number) {
+function tweenLoopIteration(now: number) {
 	for (let i = pool.length - 1, anim: Animation; i >= 0; i--) {
 		anim = pool[i];
 		const { elem, options } = anim;
@@ -278,8 +275,14 @@ function tweenLoop(now: number) {
 		}
 	}
 
+	resumeTweenLoop();
+}
+
+let rafId = 0;
+function resumeTweenLoop() {
+	cancelAnimationFrame(rafId);
 	if (pool.length) {
-		requestAnimationFrame(tweenLoop);
+		rafId = requestAnimationFrame(tweenLoopIteration);
 	}
 }
 
