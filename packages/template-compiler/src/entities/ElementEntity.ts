@@ -10,7 +10,7 @@ import attributeStats, { ElementStats } from '../lib/attributeStats';
 import { Chunk, ChunkList } from '../types';
 import generateExpression from '../expression';
 import { ENDCompileError } from '../lib/error';
-import { ownAttributes, AttributesState, mountPartialOverride } from '../lib/attributes';
+import { ownAttributes, AttributesState, mountPartialOverride, compileAttributeValue } from '../lib/attributes';
 import mountEvent from '../lib/events';
 import mountUse from '../lib/use';
 import { constructPartialDeps } from '../lib/partials';
@@ -151,7 +151,12 @@ export default class ElementEntity extends Entity {
 
                 if (this.isComponent) {
                     // Create component
-                    return state.runtime('createComponent', [qStr(elemName), state.getComponent(node), state.host], node);
+                    const nameDir = node.directives.find(dir => dir.prefix === 'e' && dir.name === 'name');
+                    return state.runtime('createComponent', [
+                        nameDir?.value ? compileAttributeValue(nameDir.value, state) : qStr(elemName),
+                        state.getComponent(node),
+                        state.host
+                    ], node);
                 }
 
                 if (elemName === 'slot') {
