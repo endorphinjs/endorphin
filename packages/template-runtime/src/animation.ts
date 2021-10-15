@@ -49,12 +49,14 @@ const defaultTween: TweenOptions = {
 // If `true` then no animations will be invoked
 let blocked = false;
 
-document.addEventListener('visibilitychange', () => {
-	if (pool.length && pageInvisible()) {
-		globalDebug('resume on page visible', { poolSize: pool.length });
-		resumeTweenLoop();
-	}
-});
+if (typeof document !== 'undefined') {
+	document.addEventListener('visibilitychange', () => {
+		if (pool.length && pageInvisible()) {
+			globalDebug('resume on page visible', { poolSize: pool.length });
+			resumeTweenLoop();
+		}
+	});
+}
 
 /**
  * Starts animation on given element
