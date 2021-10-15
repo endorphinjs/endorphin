@@ -49,6 +49,13 @@ const defaultTween: TweenOptions = {
 // If `true` then no animations will be invoked
 let blocked = false;
 
+document.addEventListener('visibilitychange', () => {
+	if (pool.length && pageInvisible()) {
+		globalDebug('resume on page visible', { poolSize: pool.length });
+		resumeTweenLoop();
+	}
+});
+
 /**
  * Starts animation on given element
  */
@@ -138,6 +145,14 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 	// Stop previous animation, if any
 	const prevAnim = findTween(elem);
 	stopAnimation(elem, true);
+
+	if (!pageInvisible()) {
+		if (callback) {
+			callback();
+		}
+		globalDebug('cancel tween due to hidden page');
+		return;
+	}
 
 	let options = animation(elem);
 	debug(elem, 'tween animation', { prevAnim, options });
@@ -275,14 +290,17 @@ function tweenLoopIteration(now: number) {
 		}
 	}
 
-	resumeTweenLoop();
+	resumeTweenLoop(true);
 }
 
 let rafId = 0;
-function resumeTweenLoop() {
+function resumeTweenLoop(isNextFrame?: boolean) {
 	cancelAnimationFrame(rafId);
 	if (pool.length) {
 		rafId = requestAnimationFrame(tweenLoopIteration);
+		if (!isNextFrame) {
+			globalDebug('begin loop', { rafId, poolSize: pool.length });
+		}
 	}
 }
 
@@ -337,8 +355,16 @@ function parseDuration(value?: string): number {
 	return parseFloat(value) * ms;
 }
 
+function pageInvisible(): boolean {
+	return document.visibilityState ? document.visibilityState !== 'hidden' : false;
+}
+
+function isDebugEnabled(): boolean {
+	return typeof window['__endorphinDebug'] !== 'undefined'
+}
+
 function debug(elem: Element, message: string, data?: unknown) {
-	if (typeof window['__endorphinDebug'] === 'undefined') {
+	if (!isDebugEnabled()) {
 		return;
 	}
 
@@ -351,4 +377,22 @@ function debug(elem: Element, message: string, data?: unknown) {
 		data
 	});
 	elem['__animDebug'] = animDebug;
+}
+
+function globalDebug(message: string, data?: unknown) {
+	if (!isDebugEnabled()) {
+		return;
+	}
+
+	const animDebug = window['__animDebug'] || [];
+	while (animDebug.length > 500) {
+		animDebug.shift();
+	}
+
+	animDebug.push({
+		date: new Date(),
+		message,
+		data
+	});
+	window['__animDebug'] = animDebug;
 }
