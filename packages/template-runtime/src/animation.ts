@@ -52,7 +52,6 @@ let blocked = false;
 if (typeof document !== 'undefined') {
 	document.addEventListener('visibilitychange', () => {
 		if (pool.length && pageInvisible()) {
-			globalDebug('resume on page visible', { poolSize: pool.length });
 			resumeTweenLoop();
 		}
 	});
@@ -62,21 +61,16 @@ if (typeof document !== 'undefined') {
  * Starts animation on given element
  */
 export function animate(elem: HTMLElement, animation: string | TweenFactory, callback?: Callback): void {
-	debug(elem, 'request animate', { blocked, animation, callback });
 	if (!blocked && animation) {
 		if (typeof animation === 'function') {
 			tweenAnimate(elem, animation, callback);
 		} else {
-			debug(elem, 'css animate');
 			cssAnimate(elem, animation, callback);
 		}
 	} else if (callback) {
 		// Stop previous animation, if any
-		debug(elem, 'immediate cancel');
 		stopAnimation(elem, true);
 		callback();
-	} else {
-		debug(elem, 'stale animate request');
 	}
 }
 
@@ -94,16 +88,13 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 		direction: callback ? 'out' : 'in'
 	};
 
-	debug(elem, 'run css animation', { animation, prevAnimation, evtPayload });
 	elem[animatingKey] = (cancel?: boolean) => {
-		debug(elem, 'run css completion callback', { cancel });
 		clearTimeout(timer);
 		elem.removeEventListener('animationend', handler);
 		elem.removeEventListener('animationcancel', handler);
 		elem.style.animation = prevAnimation;
 		notifyAnimation(elem, 'end', evtPayload);
 		if (!cancel) {
-			debug(elem, 'finalize css animation', { callback });
 			finalizeAnimation(callback);
 		}
 	};
@@ -122,7 +113,6 @@ export function cssAnimate(elem: HTMLElement, animation: string, callback?: Call
 			const style = window.getComputedStyle(elem, null);
 			if (!style.animationName || style.animationName === 'none') {
 				stopAnimation(elem);
-				debug(elem, 'stop css animation due to global css');
 			} else {
 				// Handle edge case: animation runs but during animation parent
 				// element is unmounted. In this case `animationend` callback won’t
@@ -152,12 +142,10 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 		if (callback) {
 			callback();
 		}
-		globalDebug('cancel tween due to hidden page');
 		return;
 	}
 
 	let options = animation(elem);
-	debug(elem, 'tween animation', { prevAnim, options });
 	if (options) {
 		options = assign({}, defaultTween, options);
 
@@ -185,22 +173,16 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 		};
 		pool.push(anim);
 
-		debug(elem, 'push pool', { size: pool.length, evtPayload });
-
 		elem[animatingKey] = (cancel?: boolean) => {
-			debug(elem, 'run completion callback', { cancel });
 			const ix = pool.indexOf(anim);
 			if (ix !== -1) {
-				debug(elem, 'remove pool item', { ix, size: pool.length });
 				pool.splice(ix, 1);
 			} else {
-				debug(elem, 'no pool item');
 				console.warn('No pool item found for', anim);
 			}
 			options.complete && options.complete(elem, options);
 			notifyAnimation(elem, 'end', evtPayload);
 			if (!cancel) {
-				debug(elem, 'finalize animation', { callback });
 				finalizeAnimation(callback);
 			}
 		};
@@ -209,7 +191,6 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 
 		notifyAnimation(elem, 'start', evtPayload);
 	} else if (callback) {
-		debug(elem, 'no options, run callback', { callback });
 		callback();
 	}
 }
@@ -300,15 +281,11 @@ function resumeTweenLoop(isNextFrame?: boolean) {
 	cancelAnimationFrame(rafId);
 	if (pool.length) {
 		rafId = requestAnimationFrame(tweenLoopIteration);
-		if (!isNextFrame) {
-			globalDebug('begin loop', { rafId, poolSize: pool.length });
-		}
 	}
 }
 
 export function stopAnimation(elem: HTMLElement, cancel?: boolean): void {
 	const callback: Callback = elem && elem[animatingKey];
-	debug(elem, 'stop animation', { cancel, callback });
 	if (callback) {
 		elem[animatingKey] = null;
 		callback(cancel);
@@ -361,40 +338,3 @@ function pageInvisible(): boolean {
 	return document.visibilityState ? document.visibilityState !== 'hidden' : false;
 }
 
-function isDebugEnabled(): boolean {
-	return typeof window['__endorphinDebug'] !== 'undefined'
-}
-
-function debug(elem: Element, message: string, data?: unknown) {
-	if (!isDebugEnabled()) {
-		return;
-	}
-
-	window['__endorphinPool'] = pool;
-
-	const animDebug = elem['__animDebug'] || [];
-	animDebug.push({
-		date: new Date(),
-		message,
-		data
-	});
-	elem['__animDebug'] = animDebug;
-}
-
-function globalDebug(message: string, data?: unknown) {
-	if (!isDebugEnabled()) {
-		return;
-	}
-
-	const animDebug = window['__animDebug'] || [];
-	while (animDebug.length > 500) {
-		animDebug.shift();
-	}
-
-	animDebug.push({
-		date: new Date(),
-		message,
-		data
-	});
-	window['__animDebug'] = animDebug;
-}
