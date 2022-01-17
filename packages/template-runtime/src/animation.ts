@@ -8,6 +8,18 @@ export type TweenFactory = (elem: HTMLElement, options?: TweenOptions) => TweenO
 type Callback = (cancel?: boolean) => void;
 type TweenCallbackKeys = 'start' | 'step' | 'complete';
 
+interface AnimationState {
+	start: number;
+	animation: string | TweenFactory;
+	onComplete: Callback;
+	timeout?: number;
+	callback?: () => void;
+}
+
+interface HTMLElementAnim extends HTMLElement {
+	[animatingKey]?: AnimationState
+}
+
 export interface TweenOptions {
 	/** Animation duration, ms */
 	duration?: number;
@@ -60,7 +72,7 @@ if (typeof document !== 'undefined') {
 /**
  * Starts animation on given element
  */
-export function animate(elem: HTMLElement, animation: string | TweenFactory, callback?: Callback): void {
+export function animate(elem: HTMLElementAnim, animation: string | TweenFactory, callback?: Callback): void {
 	if (!blocked && animation) {
 		if (typeof animation === 'function') {
 			tweenAnimate(elem, animation, callback);
@@ -77,71 +89,96 @@ export function animate(elem: HTMLElement, animation: string | TweenFactory, cal
 /**
  * Starts CSS animation on given element
  */
-export function cssAnimate(elem: HTMLElement, animation: string, callback?: Callback): void {
-	// Stop previous animation, if any
-	stopAnimation(elem, true);
+export function cssAnimate(elem: HTMLElementAnim, animation: string, callback?: Callback): void {
+	const prevState = elem[animatingKey];
 
-	let timer: number | undefined;
-	const prevAnimation = elem.style.animation;
-	const evtPayload = {
-		animation,
-		direction: callback ? 'out' : 'in'
-	};
+	clearStateTimeout(prevState);
 
-	elem[animatingKey] = (cancel?: boolean) => {
-		clearTimeout(timer);
-		elem.removeEventListener('animationend', handler);
-		elem.removeEventListener('animationcancel', handler);
-		elem.style.animation = prevAnimation;
-		notifyAnimation(elem, 'end', evtPayload);
-		if (!cancel) {
-			finalizeAnimation(callback);
+	if (prevState && !prevState.start) {
+		// There’s previous animation, which is not started yet: no need to start
+		// new animation
+		prevState.onComplete(true);
+		finalizeAnimation(callback);
+		return;
+	}
+
+	const prevName = prevState ? elem.style.animationName : '';
+	const delay = getCSSDelay(animation);
+
+	const begin = (noDelay?: boolean) => {
+		const nextState: AnimationState = {
+			start: prevState ? now() : 0,
+			animation,
+			onComplete: (cancel?: boolean) => {
+				clearCSSAnimationState(elem);
+				if (!cancel) {
+					notifyAnimation(elem, 'end', {
+						animation,
+						direction: callback ? 'out' : 'in'
+					});
+					finalizeAnimation(callback);
+				}
+			}
+		};
+
+		clearStateTimeout(prevState);
+		elem.style.animation = animation;
+
+		if (prevState && prevName !== elem.style.animationName) {
+			// Есть незавершённая анимация: нужно запустить новую с учётом
+			// прошедшего времени текущей анимации.
+			// Произошла смена анимации: попробуем запустить новую с того момента,
+			// где завершилась предыдущая
+			const delay = getStartDelay(animation, prevState);
+			elem.style.animationDelay = `-${delay}ms`;
+		} else if (noDelay) {
+			elem.style.animationDelay = '0';
+		}
+
+		if (parseFloat(elem.style.animationDelay) && elem.style.animationFillMode === 'none') {
+			elem.style.animationFillMode = 'both';
+		}
+
+		elem[animatingKey] = nextState;
+		bindCSSAnimationEvents(elem);
+
+		// In case if callback is provided, we have to ensure that animation is actually applied.
+		// In some testing environments, animations could be disabled via
+		// `* { animation: none !important; }`. In this case, we should complete animation ASAP.
+		if (callback) {
+			nextTick(() => {
+				const style = window.getComputedStyle(elem, null);
+				if (!style.animationName || style.animationName === 'none') {
+					nextState.onComplete();
+				}
+			});
 		}
 	};
 
-	const handler = (evt: AnimationEvent) => evt.target === elem && stopAnimation(elem);
-
-	elem.addEventListener('animationend', handler);
-	elem.addEventListener('animationcancel', handler);
-	elem.style.animation = animation;
-
-	// In case if callback is provided, we have to ensure that animation is actually applied.
-	// In some testing environments, animations could be disabled via
-	// `* { animation: none !important; }`. In this case, we should complete animation ASAP.
-	if (callback) {
-		nextTick(() => {
-			const style = window.getComputedStyle(elem, null);
-			if (!style.animationName || style.animationName === 'none') {
-				stopAnimation(elem);
-			} else {
-				// Handle edge case: animation runs but during animation parent
-				// element is unmounted. In this case `animationend` callback won’t
-				// fire, causing memory leak.
-				// Create timer which will forcibly dispose animation after animation
-				// duration
-				const duration = parseDuration(style.animationDelay) + parseDuration(style.animationDuration);
-				if (duration) {
-					timer = window.setTimeout(() => stopAnimation(elem), duration);
-				}
-			}
-		});
+	if (delay && prevState) {
+		// Нужно запустить анимацию с задержкой во время работы другой анимации:
+		if (callback) {
+			// Запускаем анимацию скрытия во время работы анимации открытия:
+			// нужно подождать
+			prevState.timeout = window.setTimeout(() => begin(true), delay);
+		} else if (animation !== prevState.animation) {
+			begin();
+		}
+	} else {
+		begin();
 	}
-
-	notifyAnimation(elem, 'start', evtPayload);
 }
 
 /**
  * Starts JS animation on given element
  */
-export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callback?: () => void): void {
+export function tweenAnimate(elem: HTMLElementAnim, animation: TweenFactory, callback?: () => void): void {
 	// Stop previous animation, if any
 	const prevAnim = findTween(elem);
 	stopAnimation(elem, true);
 
 	if (!pageInvisible()) {
-		if (callback) {
-			callback();
-		}
+		finalizeAnimation(callback);
 		return;
 	}
 
@@ -153,12 +190,12 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 			throw new Error('Easing must be a function');
 		}
 
-		const now = performance.now();
+		const _now = now();
 		const offset = prevAnim
-			? 1 - (now - prevAnim.start) / (prevAnim.end - prevAnim.start)
+			? 1 - (_now - prevAnim.start) / (prevAnim.end - prevAnim.start)
 			: 0;
 
-		const start = now + options.delay! - (offset * options.duration!);
+		const start = _now + options.delay! - (offset * options.duration!);
 		const anim: Animation = {
 			elem,
 			options,
@@ -173,20 +210,25 @@ export function tweenAnimate(elem: HTMLElement, animation: TweenFactory, callbac
 		};
 		pool.push(anim);
 
-		elem[animatingKey] = (cancel?: boolean) => {
-			const ix = pool.indexOf(anim);
-			if (ix !== -1) {
-				pool.splice(ix, 1);
-			} else {
-				console.warn('No pool item found for', anim);
-			}
-			options.complete && options.complete(elem, options);
-			notifyAnimation(elem, 'end', evtPayload);
-			if (!cancel) {
-				finalizeAnimation(callback);
+		const nextState: AnimationState = {
+			start: 0,
+			animation,
+			onComplete: (cancel?: boolean) => {
+				const ix = pool.indexOf(anim);
+				if (ix !== -1) {
+					pool.splice(ix, 1);
+				} else {
+					console.warn('No pool item found for', anim);
+				}
+				options.complete && options.complete(elem, options);
+				notifyAnimation(elem, 'end', evtPayload);
+				if (!cancel) {
+					finalizeAnimation(callback);
+				}
 			}
 		};
 
+		elem[animatingKey] = nextState;
 		resumeTweenLoop();
 
 		notifyAnimation(elem, 'start', evtPayload);
@@ -284,11 +326,11 @@ function resumeTweenLoop(isNextFrame?: boolean) {
 	}
 }
 
-export function stopAnimation(elem: HTMLElement, cancel?: boolean): void {
-	const callback: Callback = elem && elem[animatingKey];
-	if (callback) {
-		elem[animatingKey] = null;
-		callback(cancel);
+export function stopAnimation(elem: HTMLElementAnim, cancel?: boolean): void {
+	const state = elem && elem[animatingKey];
+	if (state) {
+		elem[animatingKey] = undefined;
+		state.onComplete(cancel);
 	}
 }
 
@@ -338,3 +380,99 @@ function pageInvisible(): boolean {
 	return document.visibilityState ? document.visibilityState !== 'hidden' : false;
 }
 
+function clearCSSAnimationState(elem: HTMLElementAnim) {
+	const state = elem[animatingKey];
+	if (state) {
+		unbindCSSAnimationEvents(elem);
+		elem[animatingKey] = undefined;
+		elem.style.animation = '';
+		clearStateTimeout(state);
+	}
+}
+
+function bindCSSAnimationEvents(elem: HTMLElementAnim) {
+	elem.addEventListener('animationstart', onAnimationStart);
+	elem.addEventListener('animationcancel', onAnimationEnd);
+	elem.addEventListener('animationend', onAnimationEnd);
+}
+
+function unbindCSSAnimationEvents(elem: HTMLElementAnim) {
+	elem.removeEventListener('animationstart', onAnimationStart);
+	elem.removeEventListener('animationcancel', onAnimationEnd);
+	elem.removeEventListener('animationend', onAnimationEnd);
+}
+
+function onAnimationStart(evt: AnimationEvent) {
+	const state = getAnimationState(evt);
+	if (state && !state.start) {
+		state.start = now();
+		notifyAnimation(evt.currentTarget as HTMLElementAnim, 'start', {
+			animation: state.animation,
+			direction: state.callback ? 'out' : 'in'
+		});
+	}
+}
+
+function onAnimationEnd(evt: AnimationEvent) {
+	const state = getAnimationState(evt);
+	if (state) {
+		if (state.timeout) {
+			const elem = evt.currentTarget as HTMLElementAnim;
+			elem.style.animation = '';
+		} else {
+			state.onComplete();
+		}
+	}
+}
+
+function getAnimationState(evt: AnimationEvent): AnimationState | undefined {
+	const elem = evt.currentTarget as HTMLElementAnim;
+	const state = elem[animatingKey];
+	if (state && elem === evt.target && typeof state.animation === 'string' && state.animation.includes(evt.animationName)) {
+		return state;
+	}
+}
+
+const now: () => number = typeof performance !== 'undefined'
+	? () => performance.now()
+	: () => Date.now();
+
+/**
+ * Возвращает начальную задержку для анимации. Если у элемента есть уже рабочая анимация,
+ * вернётся время, с которого надо начать новую анимацию, либо 0, если нужно
+ * начинать с начала.
+ */
+function getStartDelay(animation: string, state: AnimationState): number {
+	if (state && state.start && typeof state.animation === 'string') {
+		// Анимация уже началась, перевернём её
+		const duration = getAnimationDuration(state.animation);
+		const now = performance.now();
+		const timeLeft = duration - (now - state.start);
+		if (timeLeft > 0) {
+			const ratio = timeLeft / duration;
+			return Math.round(getAnimationDuration(animation) * ratio);
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * Возвращает длительность указанного объявления анимации
+ */
+function getAnimationDuration(animation: string): number {
+	const duration = animation.split(/\s+/).find(chunk => /([\d.]+(?:s|ms))/.test(chunk));
+	return parseDuration(duration || '1s');
+}
+
+function getCSSDelay(animation: string): number {
+	const m = animation.match(/(?:^|\s)(?:\.\d+|\d+(?:\.\d*)?)(?:ms|s)\b/g);
+	return m && m[1] ? parseDuration(m[1]) : 0;
+}
+
+function clearStateTimeout(state?: AnimationState): void {
+	if (state && state.timeout) {
+		clearTimeout(state.timeout);
+		state.timeout = 0;
+	}
+}
