@@ -149,7 +149,8 @@ export function cssAnimate(elem: HTMLElementAnim, animation: string, callback?: 
 
 	const duration = getCSSDuration(elem);
 
-	if (elem.style.animationFillMode === 'none') {
+	const fillMode = elem.style.animationFillMode;
+	if (fillMode !== 'forwards' && fillMode !== 'backwards') {
 		elem.style.animationFillMode = 'both';
 	}
 
