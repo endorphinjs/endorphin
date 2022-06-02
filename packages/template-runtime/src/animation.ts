@@ -107,22 +107,38 @@ export function cssAnimate(elem: HTMLElementAnim, animation: string, callback?: 
 		direction: callback ? 'out' : 'in'
 	};
 
-	const onStart = () => {
-		const state = getCSSAnimationState(elem, id);
-		if (state) {
-			notifyAnimation(elem, 'start', evtPayload);
-			state.start = now();
+	const isValidEvent = (evt: AnimationEvent) => {
+		return evt.target === elem;
+	}
+
+	const onStart = (evt: AnimationEvent) => {
+		if (isValidEvent(evt)) {
+			const state = getCSSAnimationState(elem, id);
+			if (state) {
+				notifyAnimation(elem, 'start', evtPayload);
+				state.start = now();
+
+				if (duration) {
+					const timeout = parseDuration(elem.style.animationDelay) + duration + 16;
+					completeTimeout = window.setTimeout(finalize, timeout);
+				}
+			}
+		}
+
+	};
+	const onCancel = (evt: AnimationEvent) => {
+		if (isValidEvent(evt)) {
+			cleanUp();
+		}
+	}
+
+	const onComplete = (evt: AnimationEvent) => {
+		if (isValidEvent(evt)) {
+			finalize();
 		}
 	};
 
-	const cleanUp = () => {
-		clearTimeout(completeTimeout);
-		elem.removeEventListener('animationstart', onStart);
-		elem.removeEventListener('animationend', onComplete);
-		elem.removeEventListener('animationcancel', cleanUp);
-	};
-
-	const onComplete = (cancel?: boolean | Event) => {
+	const finalize = (cancel?: boolean) => {
 		cleanUp();
 		if (getCSSAnimationState(elem, id)) {
 			elem.style.animation = '';
@@ -133,9 +149,16 @@ export function cssAnimate(elem: HTMLElementAnim, animation: string, callback?: 
 				finalizeAnimation(callback);
 			}
 		}
+	}
+
+	const cleanUp = () => {
+		clearTimeout(completeTimeout);
+		elem.removeEventListener('animationstart', onStart);
+		elem.removeEventListener('animationend', onComplete);
+		elem.removeEventListener('animationcancel', onCancel);
 	};
 
-	const nextState: AnimationState = { animation: id, start: 0, onComplete };
+	const nextState: AnimationState = { animation: id, start: 0, onComplete: finalize };
 	elem[animatingKey] = nextState;
 
 	const curAnimation = elem.style.animationName;
@@ -143,7 +166,7 @@ export function cssAnimate(elem: HTMLElementAnim, animation: string, callback?: 
 	const curDuration = getCSSDuration(elem);
 
 	elem.addEventListener('animationstart', onStart);
-	elem.addEventListener('animationcancel', cleanUp);
+	elem.addEventListener('animationcancel', onCancel);
 	elem.addEventListener('animationend', onComplete);
 	elem.style.animation = animation;
 
@@ -167,10 +190,6 @@ export function cssAnimate(elem: HTMLElementAnim, animation: string, callback?: 
 			nextState.start = now() + delay;
 			elem.style.animationDelay = `${delay}ms`;
 		}
-	}
-
-	if (duration) {
-		completeTimeout = window.setTimeout(onComplete, parseDuration(elem.style.animationDelay) + duration + 16);
 	}
 
 	// In case if callback is provided, we have to ensure that animation is actually applied.
@@ -346,8 +365,8 @@ function resumeTweenLoop(isNextFrame?: boolean) {
 export function stopAnimation(elem: HTMLElementAnim, cancel?: boolean): void {
 	const state = elem && elem[animatingKey];
 	if (state) {
-		elem[animatingKey] = undefined;
 		state.onComplete(cancel);
+		elem[animatingKey] = undefined;
 	}
 }
 
