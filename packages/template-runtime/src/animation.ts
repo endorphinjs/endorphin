@@ -108,7 +108,7 @@ export function cssAnimate(elem: HTMLElementAnim, animation: string, callback?: 
 	};
 
 	const isValidEvent = (evt: AnimationEvent) => {
-		return evt.target === elem;
+		return evt.target === elem && animation.includes(evt.animationName);
 	}
 
 	const onStart = (evt: AnimationEvent) => {
