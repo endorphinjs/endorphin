@@ -43,7 +43,7 @@ const statements: StatementMap = {
 
 /**
  * Parses given Endorphin template text into AST
- * @param text Template source
+ * @param code Template source
  * @param url Location of source, used for source mapping
  */
 export default function parse(code: string, url?: string, options?: ParserOptions): ENDProgram {

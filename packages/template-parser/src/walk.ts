@@ -56,7 +56,9 @@ export const base = make<TState>({
         }
     },
     ENDDirective(node: Ast.ENDDirective, state, c) {
-        c(node.value, state);
+        if (node.value) {
+            c(node.value, state);
+        }
     },
     ENDAttributeValueExpression(node: Ast.ENDAttributeValueExpression, state, c) {
         walkArray(node.elements, state, c);

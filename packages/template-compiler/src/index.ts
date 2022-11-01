@@ -5,6 +5,7 @@ import generateTemplate from './template';
 import { ENDCompileError, ENDSyntaxError } from './lib/error';
 import { prepareHelpers } from './lib/utils';
 import hoist from './hoist';
+import scopeClass from './lib/scope-class';
 
 export interface ParsedTemplate {
     /** Original template source code */
@@ -33,6 +34,13 @@ export interface CompileOptions {
 
     /** String token for scoping CSS styles of component */
     cssScope?: string;
+
+    /**
+     * Adds `cssScope` token to element’s class names. If `RegExp` is given,
+     * scope will be added to elements that _does NOT_ match regexp, e.g. with regexp
+     * you specify class names that should be kept as-is
+     */
+    classScope?: boolean | RegExp;
 
     /**
      * Mangle symbol names, used for scope variables. If enabled, outputs shorter
@@ -95,6 +103,16 @@ export default function transform(code: string, url?: string, options?: CompileO
 export function parse(code: string, url?: string, options?: CompileOptions): ParsedTemplate {
     const helpers = prepareHelpers(options && options.helpers || {});
     const ast = parseTemplate(code, url, { helpers: Object.keys(helpers) });
+    if (options) {
+        const { classScope, cssScope } = options;
+        if (classScope && cssScope) {
+            scopeClass(ast, {
+                scope: cssScope,
+                ignore: classScope instanceof RegExp ? classScope : undefined
+            });
+        }
+    }
+
     hoist(ast, options);
     return { code, url, ast };
 }
