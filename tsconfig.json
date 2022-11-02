@@ -11,6 +11,8 @@
     "declaration": true
   },
   "files": [
-    "./index.ts"
+    "./src/transitions.ts",
+    "./src/runtime.ts",
+    "./src/helpers.ts"
   ]
 }

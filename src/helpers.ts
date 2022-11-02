@@ -1,4 +1,4 @@
-import type { Component } from '../';
+import type { Component } from '@endorphinjs/template-runtime';
 
 const hasMap = typeof Map !== 'undefined';
 const hasSet = typeof Set !== 'undefined';

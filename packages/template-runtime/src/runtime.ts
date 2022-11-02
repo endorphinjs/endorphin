@@ -19,6 +19,8 @@ export * from './animation';
 export * from './use';
 export { assign, obj } from './utils';
 
+export type { Changes } from './types';
+
 type FilterCallback<T> = (value: T, key: string | number) => boolean;
 
 interface ComponentOptions {

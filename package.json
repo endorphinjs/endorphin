@@ -2,23 +2,21 @@
   "name": "endorphin",
   "version": "0.9.6-alpha.5",
   "description": "Component-based UI rendering library",
-  "main": "./runtime/runtime.cjs.js",
-  "module": "./runtime/runtime.es.js",
-  "types": "./runtime/runtime-types.d.ts",
+  "main": "./runtime.js",
+  "module": "./runtime.js",
+  "types": "./runtime.d.ts",
   "scripts": {
-    "build": "npm run build:runtime && npm run build:helpers && npm run build:compiler && npm run build:transitions",
-    "build:runtime": "mkdir -p runtime && cp ./node_modules/@endorphinjs/template-runtime/dist/*.* ./runtime",
-    "build:helpers": "tsc -p ./helpers",
-    "build:compiler": "tsc -p ./compiler",
-    "build:transitions": "tsc -p ./transitions",
+    "build": "npm run build:runtime && npm run build:compiler",
+    "build:runtime": "tsc -p .",
+    "build:compiler": "tsc -p ./tsconfig.compiler.json",
     "test": "lerna run test",
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@endorphinjs/css-module": "^0.9.0",
+    "@endorphinjs/postcss-plugin": "^1.1.0",
     "@endorphinjs/template-compiler": "^0.9.3",
     "@endorphinjs/template-runtime": "^0.9.6-alpha.5",
-    "source-map": "^0.7.3"
+    "postcss": "^8.4.18"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
