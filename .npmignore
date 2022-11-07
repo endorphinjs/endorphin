@@ -4,6 +4,8 @@ jspm_packages
 .npm
 /*.*
 !/*.js
+!/*.d.ts
+!/*.js.map
 /.*
 /test
 /src
