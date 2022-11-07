@@ -36,7 +36,7 @@ export class Store<T = Data> {
 		const render = this.sync ? renderComponent : scheduleRender;
 
 		if (updated) {
-			const next = this.data = assign(this.data, data);
+			const next = this.data = assign(this.data as any, data) as T;
 			// Notify listeners.
 			// Run in reverse order for listener safety (in case if handler decides
 			// to unsubscribe during notification)

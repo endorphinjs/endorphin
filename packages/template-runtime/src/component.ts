@@ -153,7 +153,7 @@ export interface ComponentDefinition {
 	state?(component: Component): Record<string, unknown>;
 
 	/** Returns instance of store used for components */
-	store?(): Store;
+	store?(root?: Component): Store;
 
 	/** Component created */
 	init?(component: Component): void;
@@ -258,7 +258,7 @@ export function createComponentFromElement(el: HTMLElement | Component, definiti
 	}
 
 	if (definition.store) {
-		element.store = definition.store();
+		element.store = definition.store(root);
 	} else if (root && root.store) {
 		element.store = root.store;
 	}

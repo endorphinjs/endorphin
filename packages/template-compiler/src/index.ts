@@ -5,6 +5,7 @@ import generateTemplate from './template';
 import { ENDCompileError, ENDSyntaxError } from './lib/error';
 import { prepareHelpers } from './lib/utils';
 import hoist from './hoist';
+import scopeClass, { ClassScopeOptions } from './lib/scope-class';
 
 export interface ParsedTemplate {
     /** Original template source code */
@@ -33,6 +34,11 @@ export interface CompileOptions {
 
     /** String token for scoping CSS styles of component */
     cssScope?: string;
+
+    /**
+     * Apply class scoping for template
+     */
+    classScope?: boolean | ClassScopeOptions;
 
     /**
      * Mangle symbol names, used for scope variables. If enabled, outputs shorter
@@ -95,6 +101,23 @@ export default function transform(code: string, url?: string, options?: CompileO
 export function parse(code: string, url?: string, options?: CompileOptions): ParsedTemplate {
     const helpers = prepareHelpers(options && options.helpers || {});
     const ast = parseTemplate(code, url, { helpers: Object.keys(helpers) });
+    if (options) {
+        const { classScope, cssScope } = options;
+        if (classScope) {
+            const opt: ClassScopeOptions = {};
+
+            if (typeof classScope !== 'boolean') {
+                Object.assign(opt, classScope);
+            }
+
+            if (!opt.prefix && !opt.suffix && cssScope) {
+                opt.suffix = `_${cssScope}`;
+            }
+
+            scopeClass(ast, opt);
+        }
+    }
+
     hoist(ast, options);
     return { code, url, ast };
 }
