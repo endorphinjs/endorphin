@@ -1,6 +1,6 @@
 import transform, { parse, generate, CompileOptions, CodeWithMap } from '@endorphinjs/template-compiler';
 import postcss from 'postcss';
-import scopeCSSPlugin from '@endorphinjs/postcss-plugin';
+import scopeCSSPlugin, { type ClassScopeOptions } from '@endorphinjs/postcss-plugin';
 
 interface ScopeCSSOptions {
 	/** Source map of incoming source code */
@@ -13,7 +13,7 @@ interface ScopeCSSOptions {
      * Scope class names with `scope` suffix. If `RegExp` given, will scope class
      * names that does NOT match given regexp (e.g. excluded from scoping)
      */
-    scopeClass?: boolean | RegExp;
+     classScope?: boolean | ClassScopeOptions;
 }
 
 /**
@@ -40,7 +40,7 @@ module.exports.scopeCSS = scopeCSS;
 async function scopeCSS(code: string, scope: string, options: ScopeCSSOptions = {}): Promise<string | CodeWithMap> {
     const processor = postcss(scopeCSSPlugin({
         scope,
-        scopeClass: options.scopeClass
+        classScope: options.classScope
     }));
 
     const { css, map } = processor.process(code, {

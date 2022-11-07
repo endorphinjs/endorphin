@@ -27,8 +27,8 @@ describe('Template compiler', () => {
         }
     }
 
-    function compare(input: string, options?: CompileOptions, save?: boolean) {
-        const output = input.replace(/\.html$/, '.js');
+    function compare(input: string, options?: CompileOptions, save?: boolean | string) {
+        const output = input.replace(/\.html$/, `${typeof save === 'string' && save ? save : ''}.js`);
         const fileName = path.basename(input);
         const absInput = path.resolve(baseInput, input);
         const absOutput = path.resolve(baseOutput, output);
@@ -70,6 +70,9 @@ describe('Template compiler', () => {
     });
 
     it.skip('debug', () => {
-        compare('templates/partials.html', null, true);
+        compare('templates/class.html', {
+            cssScope: 'ecls',
+            classScope: true
+        }, '-scoped');
     });
 });

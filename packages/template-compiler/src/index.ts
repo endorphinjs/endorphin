@@ -5,7 +5,7 @@ import generateTemplate from './template';
 import { ENDCompileError, ENDSyntaxError } from './lib/error';
 import { prepareHelpers } from './lib/utils';
 import hoist from './hoist';
-import scopeClass from './lib/scope-class';
+import scopeClass, { ClassScopeOptions } from './lib/scope-class';
 
 export interface ParsedTemplate {
     /** Original template source code */
@@ -36,11 +36,9 @@ export interface CompileOptions {
     cssScope?: string;
 
     /**
-     * Adds `cssScope` token to element’s class names. If `RegExp` is given,
-     * scope will be added to elements that _does NOT_ match regexp, e.g. with regexp
-     * you specify class names that should be kept as-is
+     * Apply class scoping for template
      */
-    classScope?: boolean | RegExp;
+    classScope?: boolean | ClassScopeOptions;
 
     /**
      * Mangle symbol names, used for scope variables. If enabled, outputs shorter
@@ -105,11 +103,18 @@ export function parse(code: string, url?: string, options?: CompileOptions): Par
     const ast = parseTemplate(code, url, { helpers: Object.keys(helpers) });
     if (options) {
         const { classScope, cssScope } = options;
-        if (classScope && cssScope) {
-            scopeClass(ast, {
-                scope: cssScope,
-                ignore: classScope instanceof RegExp ? classScope : undefined
-            });
+        if (classScope) {
+            const opt: ClassScopeOptions = {};
+
+            if (typeof classScope !== 'boolean') {
+                Object.assign(opt, classScope);
+            }
+
+            if (!opt.prefix && !opt.suffix && cssScope) {
+                opt.suffix = `_${cssScope}`;
+            }
+
+            scopeClass(ast, opt);
         }
     }
 
