@@ -1,6 +1,6 @@
 {
   "name": "endorphin",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "Component-based UI rendering library",
   "main": "./runtime.js",
   "module": "./runtime.js",
@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@endorphinjs/postcss-plugin": "^1.1.2",
-    "@endorphinjs/template-compiler": "^0.10.0",
-    "@endorphinjs/template-runtime": "^0.10.0",
+    "@endorphinjs/template-compiler": "^0.11.0",
+    "@endorphinjs/template-runtime": "^0.11.0",
     "postcss": "^8.4.18"
   },
   "devDependencies": {
