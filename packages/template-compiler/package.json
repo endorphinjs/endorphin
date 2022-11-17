@@ -37,7 +37,7 @@
   "dependencies": {
     "@endorphinjs/template-parser": "^0.10.0",
     "entities": "^1.1.2",
-    "source-map": "^0.7.3"
+    "source-map": "0.7.4"
   },
   "directories": {
     "test": "test"
